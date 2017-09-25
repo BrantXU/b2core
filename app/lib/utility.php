@@ -1,5 +1,5 @@
 <?
-// 验证 FORM 有效性
+// function : verify the validity of form
 function validate($conf = array(),$data = array()){
   $data = empty($data)?$_POST:$data;
   $err = array();
@@ -28,7 +28,7 @@ function validate($conf = array(),$data = array()){
   return TRUE;
 }
 
-// 跳转函数
+// function : redirect 
 function redirect($url , $msg ='',$ext_msg = '') //跳转
 {
   $param = array('url'=>$url, 'msg'=>$msg, 'ext_msg'=>$ext_msg);
