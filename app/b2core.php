@@ -52,26 +52,6 @@ function render_url(){
   exit(0);
 }
 
-// 处理魔术引号(Magic Quotes)
-if(get_magic_quotes_gpc()) {
-  /**
-   * 递归去除转义字符
-   * @param mixed $value 需要处理的值
-   * @return mixed 处理后的值
-   */
-  function stripslashes_deep($value) {
-    $value = is_array($value) ? 
-      array_map('stripslashes_deep', $value) : 
-      (isset($value) ? stripslashes($value) : null);
-    return $value;
-  }
-  
-  // 去除POST、GET、COOKIE中的转义字符
-  $_POST = stripslashes_deep($_POST);
-  $_GET = stripslashes_deep($_GET);
-  $_COOKIE = stripslashes_deep($_COOKIE);
-}
-
 /**
  * 路由处理
  * 根据config.php中的路由配置进行URL重写
@@ -243,46 +223,128 @@ class c {
 class db {
   var $link;
   var $last_query;
+  var $driver;
   
   /**
    * 构造函数 - 建立数据库连接
    * @param array $conf 数据库配置
    */
   function __construct($conf) {
-    $this->link = mysqli_connect($conf['host'], $conf['user'], $conf['password'], $conf['default_db']);
+    try {
+      // 检查数据库驱动类型
+      if (!isset($conf['driver'])) {
+        throw new Exception("Missing database driver configuration");
+      }
+      
+      $this->driver = strtolower($conf['driver']);
+      
+      switch ($this->driver) {
+        case 'sqlite':
+          $this->connect_sqlite($conf['sqlite']);
+          break;
+        case 'mysql':
+          $this->connect_mysql($conf['mysql']);
+          break;
+        default:
+          throw new Exception("Unsupported database driver: {$this->driver}");
+      }
+    } catch (Exception $e) {
+      __msg($e->getMessage() . '<br><br>如果是初次使用b2core:<br>1. 请检查并配置 config.php 文件<br>2. 导入数据库结构');
+      exit(1);
+    }
+  }
+
+  /**
+   * 连接SQLite数据库
+   */
+  private function connect_sqlite($conf) {
+    if (!isset($conf['database'])) {
+      throw new Exception("Missing SQLite database path configuration");
+    }
+    
+    // 确保数据库目录存在
+    $db_dir = dirname($conf['database']);
+    if (!is_dir($db_dir)) {
+      if (!mkdir($db_dir, 0777, true)) {
+        throw new Exception("Failed to create database directory: {$db_dir}");
+      }
+    }
+    
+    try {
+      $this->link = new SQLite3($conf['database']);
+    } catch (Exception $e) {
+      throw new Exception("SQLite connection failed: " . $e->getMessage());
+    }
+  }
+
+  /**
+   * 连接MySQL数据库
+   */
+  private function connect_mysql($conf) {
+    $required = ['host', 'user', 'password', 'database'];
+    foreach($required as $param) {
+      if(!isset($conf[$param])) {
+        throw new Exception("Missing required MySQL config: {$param}");
+      }
+    }
+    
+    // 设置默认值
+    $conf['port'] = isset($conf['port']) ? $conf['port'] : 3306;
+    $conf['charset'] = isset($conf['charset']) ? $conf['charset'] : 'utf8mb4';
+    
+    $this->link = mysqli_connect(
+      $conf['host'],
+      $conf['user'],
+      $conf['password'],
+      $conf['database'],
+      $conf['port']
+    );
+
     if (!$this->link) {
-      __msg('无法连接: ' . mysqli_connect_error() .' <br /> 如果是初次使用b2core 请配置 config.php 文件，并导入 db.sql ');
-      return FALSE;
+      throw new Exception("MySQL connection failed: " . mysqli_connect_error());
     }
 
-    mysqli_query($this->link, 'set names utf8');
+    if (!mysqli_set_charset($this->link, $conf['charset'])) {
+      throw new Exception('Failed to set charset: ' . mysqli_error($this->link));
+    }
   }
 
   /**
    * 执行SQL查询
-   * @param string $query SQL语句
-   * @return mixed 查询结果
    */
   function query($query) {
     $ret = array();
     $this->last_query = $query;
-    $result = mysqli_query($this->link, $query);
-    if (!$result) {
-      echo "DB Error, could not query the database\n";
-      echo 'MySQL Error: ' . mysqli_error($this->link);
-      echo 'Error Query: ' . $query;
-      exit;
-    }
-    if($result === TRUE) return TRUE;
-    while($record = mysqli_fetch_assoc($result)) {
-      $ret[] = $record;
+    
+    if ($this->driver == 'sqlite') {
+      $result = $this->link->query($query);
+      if (!$result) {
+        throw new Exception("SQLite query failed: " . $this->link->lastErrorMsg());
+      }
+      if ($result->numColumns() == 0) return true;
+      while($row = $result->fetchArray(SQLITE3_ASSOC)) {
+        $ret[] = $row;
+      }
+    } else {
+      $result = mysqli_query($this->link, $query);
+      if (!$result) {
+        throw new Exception("MySQL query failed: " . mysqli_error($this->link));
+      }
+      if ($result === TRUE) return TRUE;
+      while($record = mysqli_fetch_assoc($result)) {
+        $ret[] = $record;
+      }
     }
     return $ret;
   }
 
-  // 获取最后插入的ID
+  /**
+   * 获取最后插入的ID
+   */
   function insert_id() {
-    return mysqli_insert_id($this->link);
+    return $this->driver == 'sqlite' ? 
+      $this->link->lastInsertRowID() : 
+      mysqli_insert_id($this->link);
   }
   
   /**
@@ -300,11 +362,11 @@ class db {
   
   /**
    * 转义字符串
-   * @param string $str 需要转义的字符串
-   * @return string 转义后的字符串
    */
-  function escape($str){
-    return mysqli_real_escape_string($this->link, $str);
+  function escape($str) {
+    return $this->driver == 'sqlite' ?
+      SQLite3::escapeString($str) :
+      mysqli_real_escape_string($this->link, $str);
   }
 }
 
@@ -313,11 +375,11 @@ class db {
  * 封装了通用的CRUD操作
  */
 class m { 
-  var $db;
-  var $table;
-  var $filter = 1;
-  var $fields;
-  var $key;
+  protected $db;
+  protected $filter = 1;
+  protected $key;
+  public $table;  // 保持 table 为 public
+  public $fields; // 保持 fields 为 public
   
   function __construct($table) {
     global $db;

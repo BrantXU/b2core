@@ -1,7 +1,7 @@
 <?php
 class user_m extends m {
-	protected $table;
-	protected $fields;
+	public $table;
+	public $fields;
 	protected $auth;
 	protected $login_err;
 
@@ -78,7 +78,13 @@ class user_m extends m {
 	        return $u;
 	      }
 	    }
-	    return array('id'=>0,'level'=>0);
+	    return array(
+	      'id' => 0,
+	      'level' => 0,
+	      'name' => '',
+	      'email' => '',
+	      'seed' => ''
+	    );
 	  }
     
 	

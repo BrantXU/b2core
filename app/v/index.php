@@ -1,7 +1,7 @@
-
 <div> 
   <?if($u['id']!=0){?>
-   当前登录 <?=$u['name']?$u['name']:$u['email']?> ，<a href="?/user/logout">退出登录</a><?
+   当前登录 <?=isset($u['name']) ? $u['name'] : (isset($u['email']) ? $u['email'] : '用户')?> ，
+   <a href="?/user/logout">退出登录</a><?
   }
   else {?>
   <ul class="nav nav-pills">

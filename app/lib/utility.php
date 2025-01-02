@@ -1,4 +1,4 @@
-<?
+<?php
 // function : verify the validity of form
 function validate($conf = array(), $data = array()) {
   $data = empty($data) ? $_POST : $data;

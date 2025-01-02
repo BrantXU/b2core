@@ -16,10 +16,18 @@ $route_config = array(
 
 // 数据库配置信息
 $db_config = array(
-    'host'=>'localhost',          // 数据库主机
-    'user'=>'root',              // 数据库用户名
-    'password'=>'root',          // 数据库密码
-    'default_db'=>'b2core'       // 默认数据库名
+    'driver' => 'sqlite',        // 数据库类型：mysql 或 sqlite
+    'sqlite' => array(
+        'database' => APP.'db/b2core.db',  // SQLite数据库文件路径
+    ),
+    'mysql' => array(
+        'host' => 'localhost',     // MySQL主机
+        'user' => 'root',         // MySQL用户名
+        'password' => 'root',     // MySQL密码
+        'database' => 'b2core',   // MySQL数据库名
+        'port' => 3306,          // MySQL端口号
+        'charset' => 'utf8mb4'   // 字符集
+    )
 );      
  
 
