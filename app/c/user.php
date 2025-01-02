@@ -1,7 +1,7 @@
 <?php
 class user extends base{
-  var $m;
-  function __construct(){
+  protected $m;
+  public function __construct(){
     parent::__construct();
     $this->m=load('m/user_m');
   }

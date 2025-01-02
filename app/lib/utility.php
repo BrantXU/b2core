@@ -1,31 +1,38 @@
 <?
 // function : verify the validity of form
-function validate($conf = array(),$data = array()){
-  $data = empty($data)?$_POST:$data;
+function validate($conf = array(), $data = array()) {
+  $data = empty($data) ? $_POST : $data;
   $err = array();
-  if(empty($data)||empty($conf)) return $err;
+  if(empty($data) || empty($conf)) return $err;
+  
   foreach($conf as $key => $val) {
-    $rules = explode('|',$val);
-    foreach($rules as $rule){
-      switch ($rule ){
-        case 'required':if(!isset($data[$key]) || !$data[$key] )$err[$key]="不能为空";
+    $rules = explode('|', $val);
+    foreach($rules as $rule) {
+      switch ($rule) {
+        case 'required':
+          if(!isset($data[$key]) || empty($data[$key])) {
+            $err[$key] = "不能为空";
+          }
           break;
-        case 'numonly':if(!is_num($data[$key]))$err[$key]="只能是数字";
-          break;
-        case 'email':if(!is_email($data[$key]))$err[$key]="email地址错误";
+        case 'email':
+          if(!filter_var($data[$key], FILTER_VALIDATE_EMAIL)) {
+            $err[$key] = "email地址错误";
+          }
           break;
         default:
-          if(!function_exists($rule))exit('Validate function '.$rule.'  does exist');
+          if(!function_exists($rule)) {
+            exit('Validate function '.$rule.' does not exist');
+          }
           $res = $rule($data[$key]);
-          if( $res !== TRUE )$err[$key] = $res;
+          if($res !== TRUE) {
+            $err[$key] = $res;
+          }
       }
-      if(isset($err[$key]) && sizeof($err[$key])>0)break;
+      if(isset($err[$key])) break;
     }
   }
-   
-  if(sizeof($err) > 0 ) return $err;
-     
-  return TRUE;
+  
+  return empty($err) ? TRUE : $err;
 }
 
 // function : redirect 

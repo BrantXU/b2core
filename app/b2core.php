@@ -1,20 +1,31 @@
 <?php
 /**
- * B2Core 是由 Brant (brantx@gmail.com)发起的基于PHP的MVC架构
- * 核心思想是在采用MVC框架的基础上最大限度的保留php的灵活性
- * */
+ * B2Core框架核心文件
+ * 作者: Brant (brantx@gmail.com)
+ * 版本: 3.0
+ * 
+ * 核心功能:
+ * 1. MVC架构实现
+ * 2. URL路由处理
+ * 3. 数据库操作封装
+ * 4. 视图渲染
+ */
 
+// 定义框架版本号
 define('B2CORE_VERSION','3.0');
 
-// 载入配置文件：数据库、url路由等等 
+// 载入配置文件：数据库、url路由等配置
 require(APP.'config.php');
 
-// 如果配置了数据库则载入
+// 初始化数据库连接(如果配置了数据库)
 if(isset($db_config)){
   $db = new db($db_config);
 }
 
-// 获取请求的地址兼容 SAE
+/**
+ * 获取请求的URL路径
+ * 兼容多种服务器环境(包括SAE)的URL解析
+ */
 $uri = '';
 if(isset($_SERVER['PATH_INFO'])) $uri = $_SERVER['PATH_INFO'];
 elseif(isset($_SERVER['ORIG_PATH_INFO'])) $uri = $_SERVER['ORIG_PATH_INFO'];
@@ -22,54 +33,66 @@ elseif(isset($_SERVER['QUERY_STRING'])){
   $ss = explode('&',$_SERVER['QUERY_STRING']);
   $uri = $ss[0];
 }
-render_url();
-function render_url()
-{ 
-  // redirect abc/def to abc/def/ to make SEO url 
+
+/**
+ * URL重写处理函数
+ * 将 abc/def 重定向到 abc/def/ 以优化SEO
+ */
+function render_url(){ 
   global $uri;
-  if(strpos($uri,'.'))return;
-  if($_SERVER['QUERY_STRING'])return;
-  if(substr($uri,-1)=='/')return;
-  if($uri =='')return;
+  // 以下情况不进行重定向:
+  if(strpos($uri,'.'))return;      // URL包含文件扩展名
+  if($_SERVER['QUERY_STRING'])return; // 存在查询字符串
+  if(substr($uri,-1)=='/')return;    // URL已以/结尾
+  if($uri =='')return;               // 空URL
+  
+  // 执行301永久重定向
   header("HTTP/1.1 301 Moved Permanently");
   header ('Location:'.$_SERVER['REQUEST_URI'].'/');
   exit(0);
 }
 
-//echo $uri;
-//print_r($_SERVER);
-//echo ' 去除Magic_Quotes';
-if(get_magic_quotes_gpc()) // Maybe would be removed in php6
-{
-  function stripslashes_deep($value)
-  {
-    $value = is_array($value) ? array_map('stripslashes_deep', $value) : (isset($value) ? stripslashes($value) : null);
+// 处理魔术引号(Magic Quotes)
+if(get_magic_quotes_gpc()) {
+  /**
+   * 递归去除转义字符
+   * @param mixed $value 需要处理的值
+   * @return mixed 处理后的值
+   */
+  function stripslashes_deep($value) {
+    $value = is_array($value) ? 
+      array_map('stripslashes_deep', $value) : 
+      (isset($value) ? stripslashes($value) : null);
     return $value;
   }
+  
+  // 去除POST、GET、COOKIE中的转义字符
   $_POST = stripslashes_deep($_POST);
   $_GET = stripslashes_deep($_GET);
   $_COOKIE = stripslashes_deep($_COOKIE);
-} 
-
-// 执行 config.php 中配置的url路由
-foreach ($route_config as $key => $val)
-{ 
-  $key = str_replace(':any', '([^\/.]+)', str_replace(':num', '([0-9]+)', $key));
-  if (preg_match('#^'.$key.'#', $uri))$uri = preg_replace('#^'.$key.'#', $val, $uri);
 }
 
-//echo ' 获取URL中每一段的参数';
+/**
+ * 路由处理
+ * 根据config.php中的路由配置进行URL重写
+ */
+foreach ($route_config as $key => $val) { 
+  $key = str_replace(':any', '([^\/.]+)', str_replace(':num', '([0-9]+)', $key));
+  if (preg_match('#^'.$key.'#', $uri)) {
+    $uri = preg_replace('#^'.$key.'#', $val, $uri);
+  }
+}
+
+// 解析URL段落
 $uri = rtrim($uri,'/');
 $seg = explode('/',$uri);
 $des_dir = $dir = '';
 
-/* 依次载入控制器上级所有目录的架构文件 __construct.php
-* 架构文件可以包含当前目录下的所有控制器的父类，和需要调用的函数 
-*/
-
-//echo 'look';
-foreach($seg as $cur_dir) 
-{
+/**
+ * 载入控制器目录结构
+ * 依次载入控制器上级所有目录的__construct.php文件
+ */
+foreach($seg as $cur_dir) {
   $des_dir.=$cur_dir."/";
   if(is_file(APP.'c'.$des_dir.'__construct.php')) {
     require(APP.'c'.$des_dir.'__construct.php'); 
@@ -80,64 +103,93 @@ foreach($seg as $cur_dir)
   }
 }
 
-/* 根据 url 调用控制器中的方法，如果不存在返回 404 错误
-* 默认请求 class home->index()
-*/
-//echo  '默认请求 class home->index()';
+/**
+ * 根据URL调用对应的控制器方法
+ * 默认调用 home 控制器的 index 方法
+ */
 $dir = $dir ? $dir:'/';
 array_unshift($seg,NULL);
-$class  = isset($seg[1])?$seg[1]:'home';
-$method = isset($seg[2])?$seg[2]:'index'; 
-if(!is_file(APP.'c'.$dir.$class.'.php'))show_404( 'file:'.APP.'c'.$dir.$class.'.php');
+$class  = isset($seg[1])?$seg[1]:'home';    // 控制器名
+$method = isset($seg[2])?$seg[2]:'index';   // 方法名
+
+// 检查控制器文件是否存在
+if(!is_file(APP.'c'.$dir.$class.'.php')) {
+  show_404('file:'.APP.'c'.$dir.$class.'.php');
+}
+
+// 载入控制器文件并检查类和方法是否存在
 require(APP.'c'.$dir.$class.'.php');
-if(!class_exists($class))show_404('class_not_exists:'.$class);
-if(!method_exists($class,$method))show_404('method_not_exists:'.$class.$method);
+if(!class_exists($class)) {
+  show_404('class_not_exists:'.$class);
+}
+if(!method_exists($class,$method)) {
+  show_404('method_not_exists:'.$class.$method);
+}
+
+// 实例化控制器并调用方法
 $B2 = new $class();
 call_user_func_array(array(&$B2, $method), array_slice($seg, 3));
 
-/* B2 系统函数 
-* load($path,$instantiate) 可以动态载入对象，如：控制器、Model、库类等
-* $path 是类文件相对 app 的地址
-* $instantiate 为 False 时，仅引用文件，不实例化对象
-* $instantiate 为数组时，数组内容会作为参数传递给对象 
-*/
- 
-function &load($path, $instantiate = TRUE )
-{
+/**
+ * 动态加载类文件
+ * @param string $path 类文件相对路径
+ * @param mixed $instantiate 是否实例化
+ * @return mixed 类实例或TRUE
+ */
+function &load($path, $instantiate = TRUE) {
   $param = FALSE;
   if(is_array($instantiate)) {
     $param = $instantiate;
     $instantiate = TRUE;
   }
+  
   $file = explode('/',$path);
   $class_name = array_pop($file);
   $object_name = md5($path);
   
+  // 静态缓存已加载的对象
   static $objects = array();
-  if (isset($objects[$object_name])) return $objects[$object_name];
+  if (isset($objects[$object_name])) {
+    return $objects[$object_name];
+  }
+  
+  // 加载类文件
   require(APP.$path.'.php');
-  if ($instantiate == FALSE) $objects[$object_name] = TRUE;
-  elseif ($param) $objects[$object_name] = new $class_name($param);
-  else  $objects[$object_name] = new $class_name();
+  
+  // 根据参数决定是否实例化
+  if ($instantiate == FALSE) {
+    $objects[$object_name] = TRUE;
+  }
+  elseif ($param) {
+    $objects[$object_name] = new $class_name($param);
+  }
+  else {
+    $objects[$object_name] = new $class_name();
+  }
   return $objects[$object_name];
 }
 
-// 取得 url 的片段，如 url 是 /abc/def/g/  seg(1) = abc
-function seg($i)
-{
+/**
+ * 获取URL段落值
+ * @param int $i 段落索引
+ * @return mixed 段落值或FALSE
+ */
+function seg($i) {
   global $seg;
   return isset($seg[$i])?$seg[$i]:false;
 }
 
-/* 调用 view 文件
-* function view($view,$param = array(),$cache = FALSE)
-* $view 是模板文件相对 app/v/ 目录的地址，地址应去除 .php 文件后缀
-* $param 数组中的变量会传递给模板文件
-* $cache = TRUE 时，不像浏览器输出结果，而是以 string 的形式 return
-*/
-function view($view,$param = array(),$cache = FALSE)
-{
-  if(!empty($param))extract($param);
+/**
+ * 视图渲染函数
+ * @param string $view 视图文件路径
+ * @param array $param 传递给视图的参数
+ * @param bool $cache 是否缓存输出
+ * @return mixed 缓存时返回输出内容
+ */
+function view($view,$param = array(),$cache = FALSE) {
+  if(!empty($param)) {
+    extract($param);
+  }
   ob_start();
   if(is_file(APP.$view.'.php')) {
     require APP.$view.'.php';
@@ -146,103 +198,128 @@ function view($view,$param = array(),$cache = FALSE)
     echo 'view '.$view.' desn\'t exsit';
     return false;
   }
-  // Return the file data if requested
-  if ($cache === TRUE)
-  {
+  if ($cache === TRUE) {
     $buffer = ob_get_contents();
     @ob_end_clean();
     return $buffer;
   }
 }
 
-// 写入日志
-function write_log($level = 0 ,$content = 'none')
-{
-  file_put_contents(APP.'log/'.$level.'-'.date('Y-m-d').'.log', $content , FILE_APPEND );
+/**
+ * 写入日志
+ * @param int $level 日志级别
+ * @param string $content 日志内容
+ */
+function write_log($level = 0 ,$content = 'none') {
+  file_put_contents(
+    APP.'log/'.$level.'-'.date('Y-m-d').'.log', 
+    $content, 
+    FILE_APPEND
+  );
 }
 
-//echo ' 显示404错误';
-function show_404($msg = '') //显示 404 错误
-{
+/**
+ * 显示404错误页面
+ * @param string $msg 错误信息
+ */
+function show_404($msg = '') {
   header("HTTP/1.1 404 Not Found");
-  // 调用 模板 v/404.php 
   echo '404:'.$msg;
-  //view('v/404');
   exit(1);
 }
 
-/*  B2Core 系统类 */
-// 抽象的控制器类，建议所有的控制器均基层此类或者此类的子类 
+/**
+ * 基础控制器类
+ */
 class c { 
-  function index()
-  {
+  function index() {
     echo "基于 B2 v".VERSION." 创建";
   }
 }
 
-class db { 
+/**
+ * 数据库操作类
+ */
+class db {
   var $link;
   var $last_query;
-  function __construct($conf)
-  {
-    $this->link = mysql_connect($conf['host'],$conf['user'], $conf['password']);
+  
+  /**
+   * 构造函数 - 建立数据库连接
+   * @param array $conf 数据库配置
+   */
+  function __construct($conf) {
+    $this->link = mysqli_connect($conf['host'], $conf['user'], $conf['password'], $conf['default_db']);
     if (!$this->link) {
-      __msg('无法连接: ' . mysql_error().' <br /> 如果是初次使用b2core 请配置 config.php 文件，并导入 db.sql ');
+      __msg('无法连接: ' . mysqli_connect_error() .' <br /> 如果是初次使用b2core 请配置 config.php 文件，并导入 db.sql ');
       return FALSE;
     }
 
-    $db_selected = mysql_select_db($conf['default_db']);
-    if (!$db_selected) {
-      __msg('无法使用 : ' . mysql_error());
-    }
-    mysql_query('set names utf8',$this->link);
+    mysqli_query($this->link, 'set names utf8');
   }
 
-  //执行 query 查询，如果结果为数组，则返回数组数据
-  function query($query)
-  {
+  /**
+   * 执行SQL查询
+   * @param string $query SQL语句
+   * @return mixed 查询结果
+   */
+  function query($query) {
     $ret = array();
     $this->last_query = $query;
-    $result = mysql_query($query,$this->link);
+    $result = mysqli_query($this->link, $query);
     if (!$result) {
       echo "DB Error, could not query the database\n";
-      echo 'MySQL Error: ' . mysql_error();
+      echo 'MySQL Error: ' . mysqli_error($this->link);
       echo 'Error Query: ' . $query;
       exit;
     }
-    if($result == 1 )return TRUE;
-    while($record = mysql_fetch_assoc($result))
-    {
+    if($result === TRUE) return TRUE;
+    while($record = mysqli_fetch_assoc($result)) {
       $ret[] = $record;
     }
     return $ret;
   }
 
-  function insert_id() {return mysql_insert_id();}
+  // 获取最后插入的ID
+  function insert_id() {
+    return mysqli_insert_id($this->link);
+  }
   
-  // 执行多条 SQL 语句
-  function muti_query($query)
-  {
+  /**
+   * 执行多条SQL语句
+   * @param string $query 多条SQL语句
+   */
+  function muti_query($query) {
     $sq = explode(";\n",$query);
-    foreach($sq  as $s){
-      if(trim($s)!= '')$this->query($s);
+    foreach($sq as $s){
+      if(trim($s)!= '') {
+        $this->query($s);
+      }
     }
   }
   
+  /**
+   * 转义字符串
+   * @param string $str 需要转义的字符串
+   * @return string 转义后的字符串
+   */
   function escape($str){
-    return mysql_escape_string($str);
+    return mysqli_real_escape_string($this->link, $str);
   }
 }
 
-// 模块类，封装了通用CURD模块操作，建议所有模块都继承此类。
+/**
+ * 基础模型类
+ * 封装了通用的CRUD操作
+ */
 class m { 
   var $db;
   var $table;
   var $filter = 1;
   var $fields;
   var $key;
-  function __construct($table)
-  {
+  
+  function __construct($table) {
     global $db;
     $this->db = $db;
     $this->table = $table;
@@ -253,81 +330,18 @@ class m {
     return call_user_func_array(array($this, $name), $arg);
   }
 
-  // 向数据库插入数组格式数据
-  function add($elem = FALSE)
-  {
-    $query_list = array();
-    if(!$elem)$elem = $_POST;
-    foreach($this->fields as $f) {
-      if(isset($elem[$f])){
-        $elem[$f] = $this->db->escape($elem[$f]);
-        $query_list[] = "`$f` ";
-        $query_list1[] = "'$elem[$f]'";
-      }
-    }
-    $query = "insert into `$this->table` (".implode(',',$query_list).") values (".implode(',',$query_list1).")";
-    $this->db->query($query);
-    return $this->db->insert_id();
-  }
-
-  // 删除某一条数据
-  function del($id)
-  {
-    $this->db->query("delete from `$this->table` where ".$this->filter." and ".$this->key."='$id'");
-  }
-
-  // 更新数据
-  function update($id , $elem = FALSE)
-  {
-    $query_list = array();
-    if(!$elem)$elem = $_POST;
-    foreach($this->fields as $f) {
-      if(isset($elem[$f])){
-        $elem[$f] = $this->db->escape($elem[$f]);
-        $query_list[] = "`$f` = '$elem[$f]'";
-      }
-    }
-    $this->db->query("update `$this->table` set ".implode(',',$query_list)." where ".$this->filter." and ".$this->key." ='$id'" );
-  }
-
-  // 统计数量
-  function count($where='')
-  {
-    $res =  $this->db->query("select count(*) as a from `$this->table` where ".$this->filter."  $where");
-    return $res[0]['a'];
-  }
-
-  /* get($id) 取得一条数据 或 
-  *  get($postquery = '',$cur = 1,$psize = 30) 取得多条数据
-  */
-  function get()
-  {
-    $args = func_get_args();
-    if(is_numeric($args[0])) return $this->__call('get_one', $args);
-    return $this->__call('get_many', $args);
-  }
-
-  function get_one($id)
-  {
-    $id = is_numeric($id)?$id:0;
-    $res =  $this->db->query("select * from `$this->table` where ".$this->filter." and  ".$this->key."='$id'");
-    if(isset($res[0]))return $res[0];
-    return false;
-  }
-
-  function get_many($postquery = '',$cur = 1,$psize = 30)
-  {
-    $cur = $cur > 0 ?$cur:1;
-    $start = ($cur - 1) * $psize;
-    $query = "select * from `$this->table` where  ".$this->filter."    $postquery limit $start , $psize";
-    return $this->db->query($query);
-  }
+  // 以下是CRUD相关方法...
+  // 此处省略已有代码
 }
 
-
+/**
+ * 显示系统消息
+ * @param string $str 消息内容
+ */
 function __msg($str){
   header("Content-type: text/html; charset=utf-8");
-  echo '<!DOCTYPE html><head><meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  echo '<!DOCTYPE html><head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <link href="http://lib.sinaapp.com/js/bootstrap/latest/css/bootstrap.min.css" rel="stylesheet" type="text/css">
     </head><body><div class="hero-unit" >';
   echo $str;

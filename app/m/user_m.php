@@ -1,11 +1,15 @@
 <?php
-class user_m extends m{
-	function __construct(){
-		parent::__construct();
-		$this->table = 'tb_user';
-	    $this->fields = array('email','username','password');
-	    $this->auth = 'auth';
-	    $this->login_err = '';
+class user_m extends m {
+	protected $table;
+	protected $fields;
+	protected $auth;
+	protected $login_err;
+
+	public function __construct() {
+		parent::__construct('tb_user');
+		$this->fields = array('email','username','password');
+		$this->auth = 'auth';
+		$this->login_err = '';
 	}
 	function register(){
 		$query_list = array();
