@@ -4,7 +4,13 @@
   <title><?=$page_title?></title>
   <meta name="keywords" content="<?=$meta_keywords?>"/>
   <meta name="description" content="<?=$meta_description?>"/>
-  <link href="http://lib.sinaapp.com/js/bootstrap/latest/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+  <link href="pure-min.css" rel="stylesheet" type="text/css">
+  <style>
+    body{background: #f9f9ff;line-height: 1.5;}
+    .container{padding: 20px;}
+    a{color: #000;}
+    .help-inline{color: #f00;}
+  </style>
 </head>
 <body>
   <div class="container">

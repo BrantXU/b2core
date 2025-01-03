@@ -3,9 +3,20 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+// 获取基础URL配置
+$protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+$host = $_SERVER['HTTP_HOST'];
+$scriptName = $_SERVER['SCRIPT_NAME'];
+$dirName = dirname($scriptName);
+$baseUrl = $protocol . '://' . $host . ($dirName === '/' ? '' : $dirName);
+$baseUrl = rtrim($baseUrl, '/');
+
 // 定义基础URL常量
-define('BASE', 'http://'.$_SERVER['SERVER_NAME'].'/b2core');
-define('HOST', 'http://'.$_SERVER['SERVER_NAME']);
+define('BASE', $baseUrl);
+define('HOST', $protocol . '://' . $host);
+
+// 安全相关配置
+define('SEED', 'b2core_secret_key'); // 用于加密的种子字符串
 
 // URL路由配置
 $route_config = array(

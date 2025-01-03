@@ -1,38 +1,36 @@
+<div>
+  <h2>用户注册</h2>
+  <form method="post" class="pure-form pure-form-stacked">
+    <div>
+      <label>用户名</label>
+      <input type="text" name="username" 
+        value="<?=isset($val['username']) ? htmlspecialchars($val['username']) : ''?>" />
+      <span><?=isset($err['username']) ? $err['username'] : ''?></span>
+    </div>
 
-      <div class="container">
-      <form class="form-horizontal" method="post">
-        <h2 class="signin-heading">注册用户</h2>
-         <div class="control-group">
-           <label class="control-label" for="username">用户名</label>
-           <div class="controls">
-           	  <input type="text" id="username" placeholder="用户名" name="username" value=<?=$val['username'] ?>>
-           	  <?=$err['username']?>
-           </div>
-        </div>
-        <div class="control-group">
-           <label class="control-label" for="password">密码</label>
-           <div class="controls">
-           	   <input type="password" id="passowrd" placeholder="密码" name="password" value=<?=$val['password'] ?>>
-           	   <?=$err['password'] ?>
-           </div>
-        </div>
-         <div class="control-group">
-           <label class="control-label" for="repassword">确认密码</label>
-           <div class="controls">
-           	   <input type="password" id="repassowrd" placeholder="密码" name="repassword" value=<?=$val['password'] ?>>
-           </div>
-        </div>
-        <div class="control-group">
-           <label class="control-label" for="email">电子邮箱</label>
-           <div class="controls">
-           	   <input type="text" id="email" placeholder="电子邮箱" name="email" value=<?=$val['email'] ?>>
-           	   <?=$err['email'] ?>
-           </div>
-        </div>
-        <div class="control-group">
-           <div class="controls">
-           	  <button class="btn btn-large btn-primary" type="submit">注册</button>
-           </div>
-        </div>
-      </form>
-      </div>
+    <div>
+      <label>密码</label>
+      <input type="password" name="password" 
+        value="<?=isset($val['password']) ? htmlspecialchars($val['password']) : ''?>" />
+      <span><?=isset($err['password']) ? $err['password'] : ''?></span>
+    </div>
+
+    <div>
+      <label>确认密码</label>
+      <input type="password" name="repassword" 
+        value="<?=isset($val['repassword']) ? htmlspecialchars($val['repassword']) : ''?>" />
+    </div>
+
+    <div>
+      <label>电子邮箱</label>
+      <input type="text" name="email" 
+        value="<?=isset($val['email']) ? htmlspecialchars($val['email']) : ''?>" />
+      <span><?=isset($err['email']) ? $err['email'] : ''?></span>
+    </div>
+
+    <div>
+      <button type="submit" class="pure-button pure-button-primary">注册</button>
+      <a href="<?=BASE?>" class="pure-button">返回</a>
+    </div>
+  </form>
+</div>

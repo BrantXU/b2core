@@ -1,26 +1,25 @@
+<div>
+  <h2>用户登录</h2>
+  <?php if(isset($info) && $info): ?>
+    <div class="pure-alert pure-alert-error"><?=$info?></div>
+  <?php endif; ?>
+  <form method="post" class="pure-form pure-form-stacked">
+    <div>
+      <label>用户名</label>
+      <input type="text" name="username" 
+        value="<?=isset($val['username']) ? htmlspecialchars($val['username']) : ''?>" />
+      <span><?=isset($err['username']) ? $err['username'] : ''?></span>
+    </div>
 
-<div class="container">
-	<form class="form-horizontal" method="post">
-  	<h2 class="signin-heading">登录</h2>
-    	<div class="control-group">
-           <label class="control-label" for="username">用户名</label>
-           <div class="controls">
-           	  <input type="text" id="username" placeholder="用户名" name="username">
-           	  <?=$err['username']?>
-           </div>
-      </div>
-      <div class="control-group">
-           <label class="control-label" for="password">密码</label>
-           <div class="controls">
-           	   <input type="password" id="passowrd" placeholder="密码" name="password">
-           	   <?=$err['password'] ?>
-           	   <?=$info ?>
-           </div>
-      </div>
-      <div class="control-group">
-           <div class="controls">
-           	  <button class="btn btn-large btn-primary" type="submit">登录</button>
-           </div>
-      </div>
-		</form>
+    <div>
+      <label>密码</label>
+      <input type="password" name="password" />
+      <span><?=isset($err['password']) ? $err['password'] : ''?></span>
+    </div>
+
+    <div>
+      <button type="submit" class="pure-button pure-button-primary">登录</button>
+      <a href="<?=BASE?>" class="pure-button">返回</a>
+    </div>
+  </form>
 </div>

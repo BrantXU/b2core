@@ -322,7 +322,11 @@ class db {
         throw new Exception("SQLite query failed: " . $this->link->lastErrorMsg());
       }
       if ($result->numColumns() == 0) return true;
+      $count = 0;
       while($row = $result->fetchArray(SQLITE3_ASSOC)) {
+        if($count++ > 1000) {
+          break;
+        }
         $ret[] = $row;
       }
     } else {
@@ -331,9 +335,14 @@ class db {
         throw new Exception("MySQL query failed: " . mysqli_error($this->link));
       }
       if ($result === TRUE) return TRUE;
+      $count = 0;
       while($record = mysqli_fetch_assoc($result)) {
+        if($count++ > 1000) {
+          break;
+        }
         $ret[] = $record;
       }
+      mysqli_free_result($result);
     }
     return $ret;
   }
@@ -378,8 +387,8 @@ class m {
   protected $db;
   protected $filter = 1;
   protected $key;
-  public $table;  // 保持 table 为 public
-  public $fields; // 保持 fields 为 public
+  public $table;
+  public $fields;
   
   function __construct($table) {
     global $db;
@@ -388,12 +397,93 @@ class m {
     $this->key = 'id';
   }
 
+  /**
+   * 分页获取数据
+   * @param int $page 页码
+   * @param int $limit 每页记录数
+   * @return array
+   */
+  protected function getPage($page = 1, $limit = 20) {
+    $offset = ($page - 1) * $limit;
+    $query = "SELECT * FROM {$this->table} LIMIT {$limit} OFFSET {$offset}";
+    return $this->db->query($query);
+  }
+
+  /**
+   * 获取单条记录
+   * @param int $id
+   * @return array|null
+   */
+  protected function getOne($id) {
+    $id = (int)$id;
+    $query = "SELECT * FROM {$this->table} WHERE {$this->key}={$id} LIMIT 1";
+    $result = $this->db->query($query);
+    return isset($result[0]) ? $result[0] : null;
+  }
+
+  /**
+   * 添加记录
+   * @param array $data
+   * @return int|bool
+   */
+  protected function add($data) {
+    if(empty($data)) return false;
+    
+    $fields = array();
+    $values = array();
+    foreach($data as $key => $val) {
+      if(in_array($key, $this->fields)) {
+        $fields[] = $key;
+        $values[] = "'".$this->db->escape($val)."'";
+      }
+    }
+    
+    if(empty($fields)) return false;
+    
+    $query = "INSERT INTO {$this->table} (".implode(',', $fields).") VALUES (".implode(',', $values).")";
+    if($this->db->query($query)) {
+      return $this->db->insert_id();
+    }
+    return false;
+  }
+
+  /**
+   * 更新记录
+   * @param int $id
+   * @param array $data
+   * @return bool
+   */
+  protected function update($id, $data) {
+    if(empty($data)) return false;
+    $id = (int)$id;
+    
+    $sets = array();
+    foreach($data as $key => $val) {
+      if(in_array($key, $this->fields)) {
+        $sets[] = $key."='".$this->db->escape($val)."'";
+      }
+    }
+    
+    if(empty($sets)) return false;
+    
+    $query = "UPDATE {$this->table} SET ".implode(',', $sets)." WHERE {$this->key}={$id}";
+    return $this->db->query($query);
+  }
+
+  /**
+   * 删除记录
+   * @param int $id
+   * @return bool
+   */
+  protected function del($id) {
+    $id = (int)$id;
+    $query = "DELETE FROM {$this->table} WHERE {$this->key}={$id}";
+    return $this->db->query($query);
+  }
+
   public function __call($name, $arg) {
     return call_user_func_array(array($this, $name), $arg);
   }
-
-  // 以下是CRUD相关方法...
-  // 此处省略已有代码
 }
 
 /**
@@ -404,8 +494,8 @@ function __msg($str){
   header("Content-type: text/html; charset=utf-8");
   echo '<!DOCTYPE html><head>
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-    <link href="http://lib.sinaapp.com/js/bootstrap/latest/css/bootstrap.min.css" rel="stylesheet" type="text/css">
-    </head><body><div class="hero-unit" >';
+    <link href="pure-min.css" rel="stylesheet" type="text/css">
+    </head><body><div style="padding: 20px;background: #f9f9ff;line-height: 1.5;margin: 20px;border-radius: 10px;border: 1px solid #ddd;margin: 100px auto;text-align: center;" >';
   echo $str;
   echo '</div></body></html>';
   exit(1);

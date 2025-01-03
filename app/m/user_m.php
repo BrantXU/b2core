@@ -11,6 +11,15 @@ class user_m extends m {
 		$this->auth = 'auth';
 		$this->login_err = '';
 	}
+
+	/**
+	 * 获取登录错误信息
+	 * @return string
+	 */
+	public function getLoginError() {
+		return $this->login_err;
+	}
+
 	function register(){
 		$query_list = array();
 	    if(!$elem)$elem = $_POST;
@@ -21,41 +30,54 @@ class user_m extends m {
 	}
 	
     function login($username,$password){
-	    $username = addslashes($username);
-	    $user = $this->db->query("select * from tb_user where LOWER(username)=lower('$username')");
+	    $username = $this->db->escape($username);
+	    // 先检查表结构
+	    $hasLevel = false;
+	    if($this->db->driver == 'sqlite') {
+	      $tableInfo = $this->db->query("PRAGMA table_info(tb_user)");
+	      foreach($tableInfo as $col) {
+	        if($col['name'] == 'level') {
+	          $hasLevel = true;
+	          break;
+	        }
+	      }
+	    }
+	    
+	    // 根据表结构构建查询
+	    $query = "SELECT id, username, email, password" . 
+	            ($hasLevel ? ", level" : "") . 
+	            " FROM tb_user WHERE LOWER(username)=lower('$username') LIMIT 1";
+	    $user = $this->db->query($query);
+	    
 	    if(!isset($user[0])){
 	      $this->login_err = '用户不存在！';
 	      return FALSE;
 	    }
 	    
-	    if($user[0]['password'] != $this->encode($password) )
-	    {
+	    if($user[0]['password'] != $this->encode($password)) {
 	      $this->login_err = '密码错误！';
 	      return FALSE;
 	    }
 	    
 	    $auth = array(
-      'id'    =>  $user[0]['id'],
-      'name'=>$user[0]['username'],
-      'email'=> $user[0]['email'],
-      'seed' => md5(SEED.$user[0]['id'].$user[0]['level'])
-       );
-       
+	      'id'    => $user[0]['id'],
+	      'name'  => $user[0]['username'],
+	      'email' => $user[0]['email'],
+	      'level' => isset($user[0]['level']) ? $user[0]['level'] : 0,
+	      'seed'  => md5(SEED.$user[0]['id'].(isset($user[0]['level']) ? $user[0]['level'] : 0))
+	    );
+	    
 	    $value = serialize($auth);
-	    
-	    
-      setcookie($this->auth, $value, time()+360000,"/");
+	    setcookie($this->auth, $value, time()+360000,"/");
 	    return TRUE;
     }
     function userlist(){
-     	$query="select * from ".$this->table;
-    	$elemt=$this->db->query($query);
-    	return $elemt;
+     	return $this->getPage(1, 20);
     }
 	function isexist($name){
-		$query="select * from ".$this->table." where username="."'".$name."'";
+		$query = "SELECT COUNT(*) as count FROM ".$this->table." WHERE username='".$this->db->escape($name)."'";
 		$res=$this->db->query($query);
-		if(count($res)>0){
+		if($res[0]['count'] > 0){
 			return '用户名已存在';
 		}else {
 			return true;
