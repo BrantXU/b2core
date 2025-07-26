@@ -221,15 +221,15 @@ class c {
  * 数据库操作类
  */
 class db {
-  var $link;
-  var $last_query;
-  var $driver;
+  private $link;
+  private string $last_query;
+  private string $driver;
   
   /**
    * 构造函数 - 建立数据库连接
    * @param array $conf 数据库配置
    */
-  function __construct($conf) {
+  public function __construct(array $conf) {
     try {
       // 检查数据库驱动类型
       if (!isset($conf['driver'])) {
@@ -240,10 +240,10 @@ class db {
       
       switch ($this->driver) {
         case 'sqlite':
-          $this->connect_sqlite($conf['sqlite']);
+          $this->connect_sqlite($conf['sqlite'] ?? []);
           break;
         case 'mysql':
-          $this->connect_mysql($conf['mysql']);
+          $this->connect_mysql($conf['mysql'] ?? []);
           break;
         default:
           throw new Exception("Unsupported database driver: {$this->driver}");
@@ -312,49 +312,63 @@ class db {
   /**
    * 执行SQL查询
    */
-  function query($query) {
+  function query(string $query, array $params = []): array {
     $ret = array();
     $this->last_query = $query;
     
     if ($this->driver == 'sqlite') {
-      $result = $this->link->query($query);
-      if (!$result) {
-        throw new Exception("SQLite query failed: " . $this->link->lastErrorMsg());
+      $stmt = $this->link->prepare($query);
+      if (!$stmt) {
+        throw new Exception("SQLite prepare failed: " . $this->link->lastErrorMsg());
       }
-      if ($result->numColumns() == 0) return true;
+      foreach ($params as $index => $param) {
+        $stmt->bindValue($index + 1, $param);
+      }
+      $success = $stmt->execute();
+      if (!$success) {
+        throw new Exception("SQLite execute failed: " . $this->link->lastErrorMsg());
+      }
+      $result = $stmt->getResult();
+      if (!$result) return [];
+      if ($result->numColumns() == 0) return [];
       $count = 0;
       while($row = $result->fetchArray(SQLITE3_ASSOC)) {
-        if($count++ > 1000) {
-          break;
-        }
+        if($count++ > 1000) break;
         $ret[] = $row;
       }
     } else {
-      $result = mysqli_query($this->link, $query);
-      if (!$result) {
-        throw new Exception("MySQL query failed: " . mysqli_error($this->link));
+      $stmt = mysqli_prepare($this->link, $query);
+      if (!$stmt) {
+        throw new Exception("MySQL prepare failed: " . mysqli_error($this->link));
       }
-      if ($result === TRUE) return TRUE;
+      if (!empty($params)) {
+        $types = str_repeat('s', count($params));
+        mysqli_stmt_bind_param($stmt, $types, ...$params);
+      }
+      mysqli_stmt_execute($stmt);
+      $result = mysqli_stmt_get_result($stmt);
+      if (!$result) return [];
+      if (mysqli_num_rows($result) == 0) return [];
       $count = 0;
       while($record = mysqli_fetch_assoc($result)) {
-        if($count++ > 1000) {
-          break;
-        }
+        if($count++ > 1000) break;
         $ret[] = $record;
       }
       mysqli_free_result($result);
+      mysqli_stmt_close($stmt);
     }
     return $ret;
   }
 
   /**
    * 获取最后插入的ID
+   * @return int
    */
-  function insert_id() {
+  public function insert_id(): int {
     return $this->driver == 'sqlite' ? 
       $this->link->lastInsertRowID() : 
       mysqli_insert_id($this->link);
-  }
+  
   
   /**
    * 执行多条SQL语句
@@ -371,12 +385,14 @@ class db {
   
   /**
    * 转义字符串
+   * @param string $str 待转义的字符串
+   * @return string 转义后的字符串
    */
-  function escape($str) {
+  public function escape(string $str): string {
     return $this->driver == 'sqlite' ?
       SQLite3::escapeString($str) :
       mysqli_real_escape_string($this->link, $str);
-  }
+  
 }
 
 /**
@@ -385,12 +401,12 @@ class db {
  */
 class m { 
   protected $db;
-  protected $filter = 1;
-  protected $key;
-  public $table;
-  public $fields;
+  protected int $filter = 1;
+  protected string $key;
+  public string $table;
+  public array $fields;
   
-  function __construct($table) {
+  public function __construct(string $table) {
     global $db;
     $this->db = $db;
     $this->table = $table;
@@ -403,7 +419,7 @@ class m {
    * @param int $limit 每页记录数
    * @return array
    */
-  protected function getPage($page = 1, $limit = 20) {
+  protected function getPage(int $page = 1, int $limit = 20): array {
     $offset = ($page - 1) * $limit;
     $query = "SELECT * FROM {$this->table} LIMIT {$limit} OFFSET {$offset}";
     return $this->db->query($query);
@@ -414,11 +430,10 @@ class m {
    * @param int $id
    * @return array|null
    */
-  protected function getOne($id) {
-    $id = (int)$id;
-    $query = "SELECT * FROM {$this->table} WHERE {$this->key}={$id} LIMIT 1";
-    $result = $this->db->query($query);
-    return isset($result[0]) ? $result[0] : null;
+  protected function getOne(int $id): ?array {
+    $query = "SELECT * FROM {$this->table} WHERE {$this->key}=? LIMIT 1";
+    $result = $this->db->query($query, [$id]);
+    return $result[0] ?? null;
   }
 
   /**
@@ -426,22 +441,24 @@ class m {
    * @param array $data
    * @return int|bool
    */
-  protected function add($data) {
+  protected function add(array $data): int|bool {
     if(empty($data)) return false;
     
-    $fields = array();
-    $values = array();
+    $fields = [];
+    $values = [];
+    $params = [];
     foreach($data as $key => $val) {
       if(in_array($key, $this->fields)) {
         $fields[] = $key;
-        $values[] = "'".$this->db->escape($val)."'";
+        $values[] = '?';
+        $params[] = $val;
       }
     }
     
     if(empty($fields)) return false;
     
     $query = "INSERT INTO {$this->table} (".implode(',', $fields).") VALUES (".implode(',', $values).")";
-    if($this->db->query($query)) {
+    if($this->db->query($query, $params)) {
       return $this->db->insert_id();
     }
     return false;
@@ -453,21 +470,23 @@ class m {
    * @param array $data
    * @return bool
    */
-  protected function update($id, $data) {
+  protected function update(int $id, array $data): bool {
     if(empty($data)) return false;
-    $id = (int)$id;
     
-    $sets = array();
+    $sets = [];
+    $params = [];
     foreach($data as $key => $val) {
       if(in_array($key, $this->fields)) {
-        $sets[] = $key."='".$this->db->escape($val)."'";
+        $sets[] = $key."=?";
+        $params[] = $val;
       }
     }
     
     if(empty($sets)) return false;
     
-    $query = "UPDATE {$this->table} SET ".implode(',', $sets)." WHERE {$this->key}={$id}";
-    return $this->db->query($query);
+    $params[] = $id;
+    $query = "UPDATE {$this->table} SET ".implode(',', $sets)." WHERE {$this->key}=?";
+    return (bool)$this->db->query($query, $params);
   }
 
   /**
@@ -475,14 +494,13 @@ class m {
    * @param int $id
    * @return bool
    */
-  protected function del($id) {
-    $id = (int)$id;
-    $query = "DELETE FROM {$this->table} WHERE {$this->key}={$id}";
-    return $this->db->query($query);
+  protected function del(int $id): bool {
+    $query = "DELETE FROM {$this->table} WHERE {$this->key}=?";
+    return (bool)$this->db->query($query, [$id]);
   }
 
-  public function __call($name, $arg) {
-    return call_user_func_array(array($this, $name), $arg);
+  public function __call(string $name, array $arg): mixed {
+    return call_user_func_array([$this, $name], $arg);
   }
 }
 

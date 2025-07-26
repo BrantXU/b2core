@@ -110,11 +110,16 @@ class user_m extends m {
 	  }
     
 	
-    private function encode($string){
- 			return md5($string);
+    /**
+     * 使用PHP内置函数加密密码
+     * @param string $string 原始密码
+     * @return string 加密后的密码
+     */
+    private function encode(string $string): string {
+        return password_hash($string, PASSWORD_DEFAULT);
     }
     
-    function logout(){
+    public function logout(): void {
     	setcookie($this->auth, '', time()-36000,"/"); 
     }
 }
