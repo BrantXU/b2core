@@ -1,5 +1,5 @@
 <div>
-  <h2>创建配置</h2>
+  <h2>创建实体</h2>
   
   <?php if(isset($err['general'])): ?>
     <div class="pure-alert pure-alert-error"><?=$err['general']?></div>
@@ -7,23 +7,28 @@
   
   <form method="post" class="pure-form pure-form-stacked">
     <div>
-      <label>键名</label>
-      <input type="text" name="key" 
-        value="<?=isset($val['key']) ? htmlspecialchars($val['key']) : ''?>" />
-      <span class="help-inline"><?=isset($err['key']) ? $err['key'] : ''?></span>
+      <label>实体名称</label>
+      <input type="text" name="name" 
+        value="<?=isset($val['name']) ? htmlspecialchars($val['name']) : ''?>" />
+      <span class="help-inline"><?=isset($err['name']) ? $err['name'] : ''?></span>
     </div>
 
     <div>
-      <label>值</label>
-      <textarea name="value" rows="5" cols="50"><?=isset($val['value']) ? htmlspecialchars($val['value']) : ''?></textarea>
-      <span class="help-inline"><?=isset($err['value']) ? $err['value'] : ''?></span>
+      <label>实体类型</label>
+      <input type="text" name="type" 
+        value="<?=isset($val['type']) ? htmlspecialchars($val['type']) : ''?>" />
+      <span class="help-inline"><?=isset($err['type']) ? $err['type'] : ''?></span>
+    </div>
+
+    <div>
+      <label>实体数据 (JSON格式)</label>
+      <textarea name="data" rows="5" cols="50"><?=isset($val['data']) ? htmlspecialchars($val['data']) : ''?></textarea>
     </div>
 
     <div>
       <label>描述</label>
       <input type="text" name="description" 
         value="<?=isset($val['description']) ? htmlspecialchars($val['description']) : ''?>" />
-      <span class="help-inline"><?=isset($err['description']) ? $err['description'] : ''?></span>
     </div>
 
     <div>
@@ -39,7 +44,7 @@
 
     <div>
       <button type="submit" class="pure-button pure-button-primary">创建</button>
-      <a href="<?=BASE?>/config/" class="pure-button">返回</a>
+      <a href="<?=BASE?>/entity/" class="pure-button">返回</a>
     </div>
   </form>
 </div>

@@ -45,7 +45,7 @@ class tenant extends base {
    * 编辑租户页面
    */
   public function edit(): void {
-    $id = (int)$_GET['id'];
+    $id = $_GET['id'];
     $tenant = $this->m->getTenant($id);
     
     if (!$tenant) {
@@ -75,7 +75,7 @@ class tenant extends base {
    * 删除租户
    */
   public function delete(): void {
-    $id = (int)$_GET['id'];
+    $id = $_GET['id'];
     $result = $this->m->deleteTenant($id);
     
     if ($result) {

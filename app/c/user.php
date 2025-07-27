@@ -115,6 +115,37 @@ class user extends base{
     redirect(BASE,'退出登录！');
   }
   
+  /**
+   * 用户注册页面
+   */
+  public function reg(): void {
+    $conf = array('email'=>'required|email','username'=>'required','password'=>'required');
+    $err = validate($conf);
+    
+    if(!empty($_POST) && (!isset($_POST['password']) || !isset($_POST['confirm_password']) || $_POST['password'] != $_POST['confirm_password'])) {
+      $err['confirm_password']='两次密码不一样';
+    } elseif(!empty($_POST) && $err === TRUE) {
+      // 检查用户名是否已存在
+      if($this->m->isUserExist($_POST['username'])) {
+        $err['username'] = '用户名已存在';
+      } else {
+        // 在控制器中生成ID并添加到数据中
+        $_POST['id'] = randstr(8);
+        $result = $this->m->createUser($_POST);
+        if ($result) {
+          redirect(BASE.'/user/login/', '注册成功，请登录。');
+        } else {
+          $err = array('error' => '注册失败');
+        }
+      }
+    }
+    
+    $param['val'] = $_POST;
+    $param['err'] = is_array($err) ? $err : array();
+    $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = '用户注册';
+    $this->display('v/user/register',$param);
+  }
+  
   function test(){
     
   }

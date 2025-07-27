@@ -104,8 +104,7 @@ function __time($then) // 格式化时间 例如 ： 10分钟钱
 // 生成任意字符串用于数据Id，不能重复
 function randstr($n = 6) // 生成随机字符串
 {
-  // 增加大写字母，扩大字符集，提高随机性和唯一性
-  $str = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  $str = '0123456789abcdefghijklmnopqrstuvwxyz';
   $s = '';
   $len = strlen($str);
   

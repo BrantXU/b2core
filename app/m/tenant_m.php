@@ -5,7 +5,7 @@ class tenant_m extends m {
   
   public function __construct() {
     parent::__construct('tb_tenant');
-    $this->fields = array('name', 'status');
+    $this->fields = array('id', 'name', 'status');
   }
 
   /**

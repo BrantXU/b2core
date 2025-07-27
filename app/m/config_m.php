@@ -5,7 +5,7 @@ class config_m extends m {
   
   public function __construct() {
     parent::__construct('tb_config');
-    $this->fields = array('key', 'value', 'description');
+    $this->fields = array('id', 'key', 'value', 'description', 'tenant_id', 'created_at', 'updated_at');
   }
 
   /**
@@ -33,8 +33,9 @@ class config_m extends m {
    * @return array|null
    */
   public function getConfigByKey($key) {
-    $sql = "SELECT * FROM {$this->table} WHERE key = ?";
-    return $this->db->getRow($sql, [$key]);
+    $sql = "SELECT * FROM {$this->table} WHERE key = '" . $this->db->escape($key) . "'";
+    $result = $this->db->query($sql);
+    return isset($result[0]) ? $result[0] : null;
   }
 
   /**
@@ -43,6 +44,16 @@ class config_m extends m {
    * @return bool
    */
   public function createConfig($data) {
+    // 检查是否已存在相同key的配置
+    if (isset($data['key']) && $this->getConfigByKey($data['key'])) {
+      // 如果已存在，可以选择更新现有配置或返回false
+      // 这里我们选择返回false表示创建失败
+      return false;
+    }
+    // 确保tenant_id始终有默认值
+    if (!isset($data['tenant_id'])) {
+      $data['tenant_id'] = 'default';
+    }
     return $this->add($data);
   }
 
@@ -53,6 +64,15 @@ class config_m extends m {
    * @return bool
    */
   public function updateConfig($id, $data) {
+    // 获取现有配置以保留tenant_id（如果未提供）
+    if (!isset($data['tenant_id'])) {
+      $existingConfig = $this->getConfig($id);
+      if ($existingConfig && isset($existingConfig['tenant_id'])) {
+        $data['tenant_id'] = $existingConfig['tenant_id'];
+      } else {
+        $data['tenant_id'] = 'default';
+      }
+    }
     return $this->update($id, $data);
   }
 

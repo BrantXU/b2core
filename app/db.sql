@@ -20,11 +20,25 @@ CREATE TABLE IF NOT EXISTS `tb_config` (
   `key` VARCHAR(100) NOT NULL UNIQUE,
   `value` TEXT NOT NULL,
   `description` VARCHAR(255),
+  `tenant_id` VARCHAR(8) DEFAULT 'default',
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 插入默认配置
-INSERT INTO `tb_config` (`id`, `key`, `value`, `description`) 
-VALUES ('12345678', 'site_name', 'B2Core系统', '网站名称');
+INSERT INTO `tb_config` (`id`, `key`, `value`, `description`, `tenant_id`) 
+VALUES ('12345678', 'site_name', 'B2Core系统', '网站名称', 'default');
+
+-- 创建实体表
+DROP TABLE IF EXISTS `tb_entity`;
+CREATE TABLE IF NOT EXISTS `tb_entity` (
+  `id` VARCHAR(8) PRIMARY KEY,
+  `tenant_id` VARCHAR(8) NOT NULL,
+  `name` VARCHAR(100) NOT NULL,
+  `type` VARCHAR(50) NOT NULL,
+  `data` TEXT,
+  `description` VARCHAR(255),
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 

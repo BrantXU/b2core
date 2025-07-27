@@ -15,10 +15,36 @@ CREATE TABLE IF NOT EXISTS tb_config (
   key TEXT NOT NULL UNIQUE,
   value TEXT NOT NULL,
   description TEXT,
+  tenant_id TEXT DEFAULT 'default',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 插入默认配置
-INSERT INTO tb_config (id, key, value, description) 
-VALUES ('12345678', 'site_name', 'B2Core系统', '网站名称');
+INSERT OR IGNORE INTO tb_config (id, key, value, description, tenant_id) 
+VALUES ('12345678', 'site_name', 'B2Core系统', '网站名称', 'default');
+
+-- 创建租户表
+CREATE TABLE IF NOT EXISTS tb_tenant (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  status INTEGER DEFAULT 1,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 插入默认租户
+INSERT OR IGNORE INTO tb_tenant (id, name, status) 
+VALUES ('default', '默认租户', 1);
+
+-- 创建实体表
+CREATE TABLE IF NOT EXISTS tb_entity (
+  id TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  type TEXT NOT NULL,
+  data TEXT,
+  description TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);

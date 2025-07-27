@@ -1,6 +1,5 @@
-
-<div class="container">
-<h2>用户管理</h2>
+<div>
+  <h2>用户管理</h2>
 <a href="/user/create" class="pure-button pure-button-primary">创建用户</a>
 <table class="pure-table pure-table-horizontal" style="width: 100%;">
     <thead>

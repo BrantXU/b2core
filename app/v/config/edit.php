@@ -26,6 +26,17 @@
       <span class="help-inline"><?=isset($err['description']) ? $err['description'] : ''?></span>
     </div>
     
+    <div>
+      <label>租户</label>
+      <select name="tenant_id">
+        <?php if(isset($tenants) && !empty($tenants)): ?>
+          <?php foreach ($tenants as $tenant): ?>
+            <option value="<?=$tenant['id']?>" <?=isset($val['tenant_id']) && $val['tenant_id'] == $tenant['id'] ? 'selected' : (isset($config['tenant_id']) && $config['tenant_id'] == $tenant['id'] ? 'selected' : '')?>><?=$tenant['name']?></option>
+          <?php endforeach; ?>
+        <?php endif; ?>
+      </select>
+    </div>
+    
     <input type="hidden" name="id" value="<?=isset($config['id']) ? $config['id'] : ''?>" />
 
     <div>

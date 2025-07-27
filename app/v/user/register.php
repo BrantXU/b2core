@@ -1,5 +1,5 @@
 <div class="container">
-<h2>创建用户</h2>
+<h2>用户注册</h2>
 <?php if(!empty($err['error'])): ?>
 <div class="pure-alert pure-alert-error"><?php echo $err['error']; ?></div>
 <?php endif; ?>
@@ -21,7 +21,7 @@
         <input type="email" id="email" name="email" value="<?php echo isset($val['email']) ? htmlspecialchars($val['email']) : ''; ?>" class="pure-input-1">
         <?php if(!empty($err['email'])): ?><span class="pure-form-message-inline pure-alert pure-alert-error"><?php echo $err['email']; ?></span><?php endif; ?>
         
-        <button type="submit" class="pure-button pure-button-primary">创建</button>
+        <button type="submit" class="pure-button pure-button-primary">注册</button>
         <a href="/user" class="pure-button">返回</a>
     </fieldset>
 </form>

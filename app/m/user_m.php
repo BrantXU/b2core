@@ -7,7 +7,7 @@ class user_m extends m {
 
 	public function __construct() {
 		parent::__construct('tb_user');
-		$this->fields = array('email','username','password');
+		$this->fields = array('id', 'email','username','password');
 		$this->auth = 'auth';
 		$this->login_err = '';
 	}
