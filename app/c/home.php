@@ -4,9 +4,9 @@ class home extends base{
     {
     	parent::__construct();
     }
-	function index(){
-		$param['u']=$this->check();
-		$param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = 'welcome';
-		$this->display('v/index',$param);
-	}
+    public function index():void {
+        $param['u'] = $this->check();
+        $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = 'welcome';
+        $this->display('v/index', $param);
+    }
 }

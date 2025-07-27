@@ -20,11 +20,30 @@
 
 ```
 app/
-├── v/          # 视图文件
-│   └── user/   # 用户相关视图
-├── m/          # 模型
-└── c/          # 控制器
-db/             # 数据库文件
+├── c/                  # 控制器
+│   ├── __construct.php
+│   ├── home.php
+│   ├── page.php
+│   └── user.php
+├── config.php
+├── db/                 # 数据库文件
+│   └── sqlite.sql
+├── db.sql
+├── lib/                # 核心库文件
+│   ├── b2core.php
+│   ├── db.php
+│   ├── m.php
+│   └── utility.php
+├── m/                  # 模型
+│   └── user_m.php
+└── v/                  # 视图文件
+    ├── index.php
+    ├── redirect.php
+    ├── template.php
+    └── user/
+www/                    # Web 根目录
+├── index.php
+└── pure-min.css
 ```
 
 ## 开发规范

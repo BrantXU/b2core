@@ -1,0 +1,108 @@
+<?php 
+/**
+ * 基础模型类
+ * 封装了通用的CRUD操作
+ */
+
+class m { 
+  protected $db;
+  protected $filter = 1;
+  protected $key;
+  public $table;
+  public $fields;
+  
+  function __construct($table) {
+    global $db;
+    $this->db = $db;
+    $this->table = $table;
+    $this->key = 'id';
+  }
+
+  /**
+   * 分页获取数据
+   * @param int $page 页码
+   * @param int $limit 每页记录数
+   * @return array
+   */
+  protected function getPage($page = 1, $limit = 20) {
+    $offset = ($page - 1) * $limit;
+    $query = "SELECT * FROM {$this->table} LIMIT {$limit} OFFSET {$offset}";
+    return $this->db->query($query);
+  }
+
+  /**
+   * 获取单条记录
+   * @param int $id
+   * @return array|null
+   */
+  protected function getOne($id) {
+    $id = (int)$id;
+    $query = "SELECT * FROM {$this->table} WHERE {$this->key}={$id} LIMIT 1";
+    $result = $this->db->query($query);
+    return isset($result[0]) ? $result[0] : null;
+  }
+
+  /**
+   * 添加记录
+   * @param array $data
+   * @return int|bool
+   */
+  protected function add($data) {
+    if(empty($data)) return false;
+    
+    $fields = array();
+    $values = array();
+    foreach($data as $key => $val) {
+      if(in_array($key, $this->fields)) {
+        $fields[] = $key;
+        $values[] = "'".$this->db->escape($val)."'";
+      }
+    }
+    
+    if(empty($fields)) return false;
+    
+    $query = "INSERT INTO {$this->table} (".implode(',', $fields).") VALUES (".implode(',', $values).")";
+    if($this->db->query($query)) {
+      return $this->db->insert_id();
+    }
+    return false;
+  }
+
+  /**
+   * 更新记录
+   * @param int $id
+   * @param array $data
+   * @return bool
+   */
+  protected function update($id, $data) {
+    if(empty($data)) return false;
+    $id = (int)$id;
+    
+    $sets = array();
+    foreach($data as $key => $val) {
+      if(in_array($key, $this->fields)) {
+        $sets[] = $key."='".$this->db->escape($val)."'";
+      }
+    }
+    
+    if(empty($sets)) return false;
+    
+    $query = "UPDATE {$this->table} SET ".implode(',', $sets)." WHERE {$this->key}={$id}";
+    return $this->db->query($query);
+  }
+
+  /**
+   * 删除记录
+   * @param int $id
+   * @return bool
+   */
+  protected function del($id) {
+    $id = (int)$id;
+    $query = "DELETE FROM {$this->table} WHERE {$this->key}={$id}";
+    return $this->db->query($query);
+  }
+
+  public function __call($name, $arg) {
+    return call_user_func_array(array($this, $name), $arg);
+  }
+}
