@@ -20,15 +20,57 @@ class user_m extends m {
 		return $this->login_err;
 	}
 
-	function register(){
-		$query_list = array();
-	    if(!$elem)$elem = $_POST;
-	    // 验证重复
-	    // 加密
-	    $elem['password'] = $this->encode($elem['password']);
-	    $this->add($elem);
-	}
-	
+    /**
+     * 获取用户列表
+     * @param int $page 页码
+     * @param int $limit 每页记录数
+     * @return array
+     */
+    public function userlist($page = 1, $limit = 20) {
+        return $this->getPage($page, $limit);
+    }
+    
+    /**
+     * 根据ID获取用户信息
+     * @param string $id 用户ID
+     * @return array|null
+     */
+    public function getUser($id) {
+        return $this->getOne($id);
+    }
+
+    /**
+     * 创建用户
+     * @param array $data 用户数据
+     * @return bool
+     */
+    public function createUser($data) {
+        // 加密密码
+        $data['password'] = $this->encode($data['password']);
+        return $this->add($data);
+    }
+    
+    /**
+     * 更新用户
+     * @param string $id 用户ID
+     * @param array $data 用户数据
+     * @return bool
+     */
+    public function updateUser($id, $data) {
+        // 加密密码
+        $data['password'] = $this->encode($data['password']);
+        return $this->update($id, $data);
+    }
+    
+    /**
+     * 删除用户
+     * @param string $id 用户ID
+     * @return bool
+     */
+    public function deleteUser($id) {
+        return $this->del($id);
+    }
+
     function login($username,$password){
 	    $username = $this->db->escape($username);
 	    // 先检查表结构
@@ -71,10 +113,8 @@ class user_m extends m {
 	    setcookie($this->auth, $value, time()+360000,"/");
 	    return TRUE;
     }
-    function userlist(){
-     	return $this->getPage(1, 20);
-    }
-	function isexist($name){
+    
+    function isexist($name){
 		$query = "SELECT COUNT(*) as count FROM ".$this->table." WHERE username='".$this->db->escape($name)."'";
 		$res=$this->db->query($query);
 		if($res[0]['count'] > 0){
@@ -83,14 +123,6 @@ class user_m extends m {
 			return true;
 		}
 	}
-	
-    function userdelete($id){
-    	$this->del($id);
-    }
-    function userupdate($id,$user){
-    	$user['password']=$this->encode($user['password']);
-    	$this->update($id,$user);
-    }
     
 	  function check()
 	  {

@@ -32,12 +32,18 @@ class m {
 
   /**
    * 获取单条记录
-   * @param int $id
+   * @param string|int $id
    * @return array|null
    */
   protected function getOne($id) {
-    $id = (int)$id;
-    $query = "SELECT * FROM {$this->table} WHERE {$this->key}={$id} LIMIT 1";
+    // 根据ID类型进行不同的处理
+    if (is_numeric($id)) {
+      $id = (int)$id;
+      $query = "SELECT * FROM {$this->table} WHERE {$this->key}={$id} LIMIT 1";
+    } else {
+      $id = "'".$this->db->escape($id)."'";
+      $query = "SELECT * FROM {$this->table} WHERE {$this->key}={$id} LIMIT 1";
+    }
     $result = $this->db->query($query);
     return isset($result[0]) ? $result[0] : null;
   }
@@ -70,13 +76,21 @@ class m {
 
   /**
    * 更新记录
-   * @param int $id
+   * @param string|int $id
    * @param array $data
    * @return bool
    */
   protected function update($id, $data) {
     if(empty($data)) return false;
-    $id = (int)$id;
+    
+    // 根据ID类型进行不同的处理
+    if (is_numeric($id)) {
+      $id = (int)$id;
+      $where = "{$this->key}={$id}";
+    } else {
+      $id = "'".$this->db->escape($id)."'";
+      $where = "{$this->key}={$id}";
+    }
     
     $sets = array();
     foreach($data as $key => $val) {
@@ -87,18 +101,24 @@ class m {
     
     if(empty($sets)) return false;
     
-    $query = "UPDATE {$this->table} SET ".implode(',', $sets)." WHERE {$this->key}={$id}";
+    $query = "UPDATE {$this->table} SET ".implode(',', $sets)." WHERE {$where}";
     return $this->db->query($query);
   }
 
   /**
    * 删除记录
-   * @param int $id
+   * @param string|int $id
    * @return bool
    */
   protected function del($id) {
-    $id = (int)$id;
-    $query = "DELETE FROM {$this->table} WHERE {$this->key}={$id}";
+    // 根据ID类型进行不同的处理
+    if (is_numeric($id)) {
+      $id = (int)$id;
+      $query = "DELETE FROM {$this->table} WHERE {$this->key}={$id}";
+    } else {
+      $id = "'".$this->db->escape($id)."'";
+      $query = "DELETE FROM {$this->table} WHERE {$this->key}={$id}";
+    }
     return $this->db->query($query);
   }
 

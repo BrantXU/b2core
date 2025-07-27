@@ -101,18 +101,21 @@ function __time($then) // 格式化时间 例如 ： 10分钟钱
   return date('Y-m-d',$then);
 }
 
-// 生成任意字符串
-function randstr($n = 8) // 生成随机字符串
+// 生成任意字符串用于数据Id，不能重复
+function randstr($n = 6) // 生成随机字符串
 {
-  $str = '0123456789abcdefghijklmnopqrstuvwxyz';
+  // 增加大写字母，扩大字符集，提高随机性和唯一性
+  $str = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
   $s = '';
-  $len = strlen($str)-1;
-  for($i=0 ; $i < $n; $i++){
-    $s.=$str[rand(0,$len)];
+  $len = strlen($str);
+  
+  // 使用更安全的随机数生成函数 random_int 替代 rand
+  for($i = 0; $i < $n; $i++){
+    $s .= $str[random_int(0, $len - 1)];
   }
+  
   return $s;
 }
-
 // 切断 utf8 代码辅助
 function utf8_trim($str) // 用于 substr utf8 时截去最后的乱码 
 {

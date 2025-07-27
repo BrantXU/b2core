@@ -13,3 +13,18 @@ CREATE TABLE IF NOT EXISTS `tb_user` (
 INSERT INTO `tb_user` (`id`, `username`, `password`, `email`) VALUES
 (1, 'admin', '21232f297a57a5a743894a0e4a801fc3', 'admin@b24.cn');
 
+-- 创建配置表
+DROP TABLE IF EXISTS `tb_config`;
+CREATE TABLE IF NOT EXISTS `tb_config` (
+  `id` VARCHAR(8) PRIMARY KEY,
+  `key` VARCHAR(100) NOT NULL UNIQUE,
+  `value` TEXT NOT NULL,
+  `description` VARCHAR(255),
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 插入默认配置
+INSERT INTO `tb_config` (`id`, `key`, `value`, `description`) 
+VALUES ('12345678', 'site_name', 'B2Core系统', '网站名称');
+

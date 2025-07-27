@@ -1,20 +1,44 @@
-# B2Core 用户系统
+# HumDB aPaaS 平台
 
-一个简洁的用户管理系统，使用 PHP 开发。
+一个简洁的应用平台即服务（aPaaS）平台，使用 PHP 开发，旨在提供快速应用开发和部署能力。
 
-## 功能特性
+## 核心功能
 
-- 用户注册
+### 多租户架构
+- 租户管理（增删改查）
+- 租户隔离的数据存储
+
+### 用户管理系统
+- 用户注册与身份验证
   - 用户名验证
   - 密码设置及确认
   - 电子邮箱验证
+- 用户登录/登出
+- 用户权限管理
 
-## 技术栈
+### 配置管理中心
+- 系统配置项管理
+- 支持配置项的键值对存储
+- 配置项描述信息
 
-- PHP
-- Pure.css - 用于表单样式
-- jQuery - 用于前端交互
-- Bootstrap - 用于UI组件（按钮样式等）
+### 应用开发支持
+- 响应式界面设计
+- 统一的错误处理和表单验证
+- 可扩展的模块化架构
+
+## 技术架构
+
+### 后端技术
+- PHP - 核心编程语言
+- SQLite/MySQL - 数据存储
+
+### 前端技术
+- Pure.css - 轻量级CSS框架
+- jQuery - 前端交互处理
+
+### 开发工具
+- PSR-12 编码规范
+- 原生PHP模板引擎
 
 ## 目录结构
 
@@ -22,12 +46,16 @@
 app/
 ├── c/                  # 控制器
 │   ├── __construct.php
+│   ├── config.php
 │   ├── home.php
 │   ├── page.php
+│   ├── tenant.php
 │   └── user.php
 ├── config.php
 ├── db/                 # 数据库文件
-│   └── sqlite.sql
+│   ├── config.sql
+│   ├── sqlite.sql
+│   └── tenant.sql
 ├── db.sql
 ├── lib/                # 核心库文件
 │   ├── b2core.php
@@ -35,32 +63,41 @@ app/
 │   ├── m.php
 │   └── utility.php
 ├── m/                  # 模型
+│   ├── config_m.php
+│   ├── tenant_m.php
 │   └── user_m.php
 └── v/                  # 视图文件
     ├── index.php
     ├── redirect.php
     ├── template.php
+    ├── config/
+    ├── tenant/
     └── user/
 www/                    # Web 根目录
 ├── index.php
 └── pure-min.css
 ```
 
-## 开发规范
+## 平台特性
 
-- 遵循 PSR-12 编码规范
-- 使用 PDO 进行数据库操作
-- 所有用户输入都经过 HTML 转义处理
+- 轻量级架构设计
+- 模块化开发模式
+- 多数据库支持（SQLite/MySQL）
+- 响应式Web界面
+- 统一的错误处理机制
+- 安全的用户身份验证
 
-## 安装使用
+## 快速开始
 
 1. 克隆项目到本地
-2. 配置 Web 服务器（Apache/Nginx）
-3. 导入 db 目录下的数据库文件
-4. 访问项目首页即可使用
+2. 配置 Web 服务器（Apache/Nginx）或使用PHP内置服务器
+3. 初始化数据库（支持SQLite和MySQL）
+4. 访问管理后台开始构建您的应用
 
-## 安全特性
+## 安全保障
 
-- 密码加密存储
+- 密码加密存储（MD5）
 - 防止 XSS 攻击（使用 htmlspecialchars）
-- 表单验证
+- 表单验证与数据过滤
+- 安全的用户会话管理
+- 租户数据隔离

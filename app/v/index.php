@@ -5,8 +5,11 @@
   }
   else {?>
   <ul class="nav nav-pills">
-    <li><a href="?/user/reg/">注册</a></li>
-    <li><a href="?/user/login/">请登录</a></li>
+    <li><a href="/user/reg/">注册</a></li>
+    <li><a href="/user/login/">请登录</a></li>
+    <li><a href="/user/login/">请登录</a></li>
+    <li><a href="/tenant/">租户管理</a></li>
+    <li><a href="/user/">用户管理</a></li>
   </ul>
   <?}?>  
-</div>  
+</div>

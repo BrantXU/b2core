@@ -4,7 +4,7 @@
   <title><?=$page_title?></title>
   <meta name="keywords" content="<?=$meta_keywords?>"/>
   <meta name="description" content="<?=$meta_description?>"/>
-  <link href="pure-min.css" rel="stylesheet" type="text/css">
+  <link href="<?=BASE ?>/pure-min.css" rel="stylesheet" type="text/css">
   <style>
     body{background: #f9f9ff;line-height: 1.5;}
     .container{padding: 20px;}
@@ -14,7 +14,7 @@
 </head>
 <body>
   <div class="container">
-    <?=$al_content?>
+    <?php if(isset($al_content)) echo $al_content; else echo $content ?? '';?>
   </div>
 </body>
 </html>

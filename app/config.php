@@ -23,13 +23,17 @@ $route_config = array(
     '/login/'=>'/user/login/',    // 登录页面路由
     '/reg/'=>'/user/reg/',        // 注册页面路由
     '/logout/'=>'/user/logout/',   // 登出路由
+    '/tenants/'=>'/tenant/',       // 租户列表路由
+    '/tenant/create/'=>'/tenant/create/', // 创建租户路由
+    '/tenant/edit/'=>'/tenant/edit/',     // 编辑租户路由
+    '/tenant/delete/'=>'/tenant/delete/', // 删除租户路由
 );
 
 // 数据库配置信息
 $db_config = array(
     'driver' => 'sqlite',        // 数据库类型：mysql 或 sqlite
     'sqlite' => array(
-        'database' => APP.'db/b2core.db',  // SQLite数据库文件路径
+        'database' => APP.'db.sqlite',  // SQLite数据库文件路径
     ),
     'mysql' => array(
         'host' => 'localhost',     // MySQL主机
@@ -39,6 +43,6 @@ $db_config = array(
         'port' => 3306,          // MySQL端口号
         'charset' => 'utf8mb4'   // 字符集
     )
-);      
+);
  
 

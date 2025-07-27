@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS tb_tenant (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  status INTEGER DEFAULT 1,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 插入默认租户
+INSERT INTO tb_tenant (name, status) 
+VALUES ('默认租户', 1);

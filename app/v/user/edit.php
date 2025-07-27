@@ -1,5 +1,3 @@
-
-<?php include dirname(__FILE__).'/../template.php'; ?>
 <div class="container">
 <h2>编辑用户</h2>
 <?php if(!empty($err['error'])): ?>
