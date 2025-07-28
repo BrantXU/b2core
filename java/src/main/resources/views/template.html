@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{pageTitle}}</title>
+    <meta name="keywords" content="{{metaKeywords}}"/>
+    <meta name="description" content="{{metaDescription}}"/>
+    <link href="/pure-min.css" rel="stylesheet" type="text/css">
+    <style>
+        body{background: #f9f9ff;line-height: 1.5;}
+        .container{padding: 20px;}
+        a{color: #000;}
+        .help-inline{color: #f00;}
+        .nav li{display: inline-block;} 
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div> 
+            <!-- 导航栏 -->
+            <ul class="nav nav-pills">
+                <li><a href="/tenant/">租户管理</a></li>
+                <li><a href="/config/">配置管理</a></li>
+                <li><a href="/entity/">实体管理</a></li>
+            </ul>
+        </div>
+
+        <!-- 页面内容 -->
+        {{content}}
+    </div>
+</body>
+</html>
