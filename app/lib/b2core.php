@@ -70,29 +70,61 @@ $uri = rtrim($uri,'/');
 $seg = explode('/',$uri);
 $des_dir = $dir = '';
 
-/**
- * 载入控制器目录结构
- * 依次载入控制器上级所有目录的__construct.php文件
- */
-foreach($seg as $cur_dir) {
-  $des_dir.=$cur_dir."/";
-  if(is_file(APP.'c'.$des_dir.'__construct.php')) {
-    require(APP.'c'.$des_dir.'__construct.php'); 
-    $dir .=array_shift($seg).'/';
-  }
-  else {
+// 检查是否为明确指定的路由
+$is_specific_route = false;
+foreach ($route_config as $key => $val) { 
+  $key = str_replace(':any', '([^/.]+)', str_replace(':num', '([0-9]+)', $key));
+  if (preg_match('#^'.$key.'#', $uri)) {
+    $is_specific_route = true;
     break;
   }
 }
 
-/**
- * 根据URL调用对应的控制器方法
- * 默认调用 home 控制器的 index 方法
- */
-$dir = $dir ? $dir:'/';
-array_unshift($seg,NULL);
-$class  = isset($seg[1])?$seg[1]:'home';    // 控制器名
-$method = isset($seg[2])?$seg[2]:'index';   // 方法名
+// 如果不是明确指定的路由，则按租户ID/模块名/方法名的格式处理
+if (!$is_specific_route && count($seg) >= 3) {
+  // 第一段作为租户ID
+  $tenant_id = array_shift($seg);
+  
+  // 将租户ID存储到全局变量或session中
+  if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+  }
+  $_SESSION['route_tenant_id'] = $tenant_id;
+  
+  // 第二段作为模块名称（控制器名）
+  $class = isset($seg[0]) ? $seg[0] : 'home';
+  
+  // 第三段作为方法名称
+  $method = isset($seg[1]) ? $seg[1] : 'index';
+  
+  // 移除已处理的段落
+  array_shift($seg);
+  array_shift($seg);
+} else {
+  /**
+   * 载入控制器目录结构
+   * 依次载入控制器上级所有目录的__construct.php文件
+   */
+  foreach($seg as $cur_dir) {
+    $des_dir.=$cur_dir."/";
+    if(is_file(APP.'c'.$des_dir.'__construct.php')) {
+      require(APP.'c'.$des_dir.'__construct.php'); 
+      $dir .=array_shift($seg).'/';
+    }
+    else {
+      break;
+    }
+  }
+  
+  /**
+   * 根据URL调用对应的控制器方法
+   * 默认调用 home 控制器的 index 方法
+   */
+  $dir = $dir ? $dir:'/';
+  array_unshift($seg,NULL);
+  $class  = isset($seg[1])?$seg[1]:'home';    // 控制器名
+  $method = isset($seg[2])?$seg[2]:'index';   // 方法名
+}
 
 // 检查控制器文件是否存在
 if(!is_file(APP.'c'.$dir.$class.'.php')) {

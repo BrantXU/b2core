@@ -84,4 +84,56 @@ class tenant extends base {
       redirect(BASE . '/tenant/', '删除租户失败。');
     }
   }
+  
+  /**
+   * 进入租户
+   */
+  public function enter(): void {
+    // 从URL段落中获取租户ID
+    $id = seg(3);
+    
+    // 如果URL段落中没有租户ID，则检查是否为默认租户
+    if (empty($id)) {
+      // 检查是否为默认租户
+      if (seg(3) == 'default') {
+        $id = 'default';
+      } else {
+        redirect(BASE . '/tenant/', '无效的租户ID。');
+        return;
+      }
+    }
+    
+    // 检查用户是否有权访问该租户
+    $user = $this->check();
+    if ($user['id'] > 0) {
+      // 对于default租户，允许所有用户访问
+      if ($id == 'default') {
+        $hasAccess = true;
+      } else {
+        $userTenants = $this->m->getUserTenants($user['id']);
+        $hasAccess = false;
+        
+        foreach ($userTenants as $tenant) {
+          if (isset($tenant['id']) && $tenant['id'] == $id) {
+            $hasAccess = true;
+            break;
+          }
+        }
+      }
+      
+      if ($hasAccess) {
+        $result = $this->m->enter($id);
+        
+        if ($result) {
+          redirect(BASE . '/tenant/', '已进入租户。');
+        } else {
+          redirect(BASE . '/tenant/', '进入租户失败。');
+        }
+      } else {
+        redirect(BASE . '/tenant/', '您无权访问该租户。');
+      }
+    } else {
+      redirect(BASE . '/user/login/', '请先登录。');
+    }
+  }
 }

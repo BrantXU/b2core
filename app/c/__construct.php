@@ -21,6 +21,30 @@ class base extends c {
 
 	// 显示视图的统一方法
 	function display($view='v/index',$param = array()){
+        $param['u'] = $this->check();
+        
+        // 获取当前租户信息
+        // 首先检查路由中指定的租户ID
+        if(isset($_SESSION['route_tenant_id'])) {
+            $tenant_m = load('m/tenant_m');
+            $current_tenant = $tenant_m->getTenant($_SESSION['route_tenant_id']);
+            $param['current_tenant'] = $current_tenant;
+            
+            // 将路由租户ID设置为当前租户
+            $_SESSION['current_tenant'] = $_SESSION['route_tenant_id'];
+        } elseif(isset($_SESSION['current_tenant'])) {
+            $tenant_m = load('m/tenant_m');
+            $current_tenant = $tenant_m->getTenant($_SESSION['current_tenant']);
+            $param['current_tenant'] = $current_tenant;
+        } else {
+            // 如果用户已登录但未选择租户，则默认属于 default 租户
+            if($param['u']['id'] > 0) {
+                redirect(BASE . '/tenant/enter/default', '请选择一个租户');
+                return;
+            }
+            $param['current_tenant'] = null;
+        }
+		
 		$param['al_content'] = view($view,$param,TRUE);
 		header("Content-type: text/html; charset=utf-8");
 		view('v/template',$param);
