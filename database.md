@@ -139,6 +139,24 @@ fields:
     description: 更新时间
 ```
 
+### 用户租户关联表 (tb_user_tenant)
+
+用户租户关联表用于存储用户和租户之间的多对多关系。
+
+```yaml
+table_name: tb_user_tenant
+description: 存储用户和租户之间的关联关系
+fields:
+  - name: user_id
+    type: TEXT (SQLite) / VARCHAR(8)
+    constraint: 非空
+    description: 用户ID
+  - name: tenant_id
+    type: TEXT / VARCHAR(8)
+    constraint: 非空
+    description: 租户ID
+```
+
 ## 数据库特性
 
 1. **ID 生成策略**：

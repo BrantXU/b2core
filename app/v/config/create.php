@@ -15,7 +15,18 @@
 
     <div>
       <label>值</label>
-      <textarea name="value" rows="5" cols="50"><?=isset($val['value']) ? htmlspecialchars($val['value']) : ''?></textarea>
+      <textarea name="value" rows="10" cols="50"><?=isset($val['value']) ? htmlspecialchars($val['value']) : ''?></textarea>
+      <div class="help-block">可以使用YAML格式输入，系统会自动转换为JSON格式保存。例如：
+<pre>
+name: 示例配置
+items:
+  - item1
+  - item2
+settings:
+  debug: true
+  timeout: 30
+</pre>
+</div>
       <span class="help-inline"><?=isset($err['value']) ? $err['value'] : ''?></span>
     </div>
 

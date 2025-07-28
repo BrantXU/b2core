@@ -16,12 +16,14 @@
 <body>
   <div class="container">
     <div> 
-  <?if($u['id']!=0){?>
+  <?if(!empty($u) && is_array($u) && array_key_exists('id', $u) && $u['id']!=0){?>
    当前登录 <?=isset($u['name']) ? $u['name'] : (isset($u['email']) ? $u['email'] : '用户')?> ，
-   <a href="?/user/logout">退出登录</a><?
+   <?if(!empty($current_tenant) && is_array($current_tenant) && array_key_exists('name', $current_tenant) && isset($current_tenant['name'])){?>
+   访问租户 <?=htmlspecialchars($current_tenant['name'] ?? '未知租户')?> ，
+   <?}?>
+   <a href="/user/logout">退出登录</a><?
   }
-  else {?>
-  <ul class="nav nav-pills">
+  else {?><ul class="nav nav-pills">
     <li><a href="/user/reg/">注册</a></li>
     <li><a href="/user/login/">请登录</a></li>
     <li><a href="/tenant/">租户管理</a></li>

@@ -126,8 +126,9 @@ class user extends base{
       $err['confirm_password']='两次密码不一样';
     } elseif(!empty($_POST) && $err === TRUE) {
       // 检查用户名是否已存在
-      if($this->m->isUserExist($_POST['username'])) {
-        $err['username'] = '用户名已存在';
+      $existResult = $this->m->isexist($_POST['username']);
+      if($existResult !== true) {
+        $err['username'] = $existResult;
       } else {
         // 在控制器中生成ID并添加到数据中
         $_POST['id'] = randstr(8);

@@ -47,7 +47,16 @@ class user_m extends m {
     public function createUser($data) {
         // 加密密码
         $data['password'] = $this->encode($data['password']);
-        return $this->add($data);
+        $userId = $this->add($data);
+        
+        // 将新用户添加到default租户
+        if ($userId) {
+            // 获取default租户
+            $tenantModel = load('m/tenant_m');
+            $this->addUserToTenant($userId, 'default');
+        }
+        
+        return $userId;
     }
     
     /**
@@ -109,8 +118,9 @@ class user_m extends m {
 	      'seed'  => md5(SEED.$user[0]['id'].(isset($user[0]['level']) ? $user[0]['level'] : 0))
 	    );
 	    
-	    $value = serialize($auth);
-	    setcookie($this->auth, $value, time()+360000,"/");
+	    // 使用session存储认证信息
+	    session_start();
+	    $_SESSION[$this->auth] = $auth;
 	    return TRUE;
     }
     
@@ -126,8 +136,10 @@ class user_m extends m {
     
 	  function check()
 	  {
-	    if(isset($_COOKIE[$this->auth])){
-	      $u = unserialize($_COOKIE[$this->auth]);
+	    // 从session读取认证信息
+	    session_start();
+	    if(isset($_SESSION[$this->auth])){
+	      $u = $_SESSION[$this->auth];
 	      if(isset($u)){
 	        return $u;
 	      }
@@ -147,7 +159,58 @@ class user_m extends m {
     }
     
     function logout(){
-    	setcookie($this->auth, '', time()-36000,"/"); 
+    	// 清除session中的认证信息
+    	session_start();
+    	unset($_SESSION[$this->auth]);
+    	session_destroy();
+    }
+    
+    /**
+     * 添加用户到租户
+     * @param string $userId 用户ID
+     * @param string $tenantId 租户ID
+     * @return bool
+     */
+    public function addUserToTenant($userId, $tenantId) {
+        $userId = $this->db->escape($userId);
+        $tenantId = $this->db->escape($tenantId);
+        $query = "INSERT INTO tb_user_tenant (user_id, tenant_id) VALUES ('$userId', '$tenantId')";
+        return $this->db->query($query);
+    }
+    
+    /**
+     * 从租户移除用户
+     * @param string $userId 用户ID
+     * @param string $tenantId 租户ID
+     * @return bool
+     */
+    public function removeUserFromTenant($userId, $tenantId) {
+        $query = "DELETE FROM tb_user_tenant WHERE user_id = ? AND tenant_id = ?";
+        return $this->db->query($query, array($userId, $tenantId));
+    }
+    
+    /**
+     * 获取用户所属的所有租户
+     * @param string $userId 用户ID
+     * @return array
+     */
+    public function getUserTenants($userId) {
+        $query = "SELECT t.* FROM tb_tenant t 
+                  JOIN tb_user_tenant ut ON t.id = ut.tenant_id 
+                  WHERE ut.user_id = ?";
+        return $this->db->query($query, array($userId));
+    }
+    
+    /**
+     * 获取租户下的所有用户
+     * @param string $tenantId 租户ID
+     * @return array
+     */
+    public function getTenantUsers($tenantId) {
+        $query = "SELECT u.* FROM tb_user u 
+                  JOIN tb_user_tenant ut ON u.id = ut.user_id 
+                  WHERE ut.tenant_id = ?";
+        return $this->db->query($query, array($tenantId));
     }
 }
 /* validate functions */

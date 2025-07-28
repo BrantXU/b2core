@@ -120,7 +120,7 @@ if (!$is_specific_route && count($seg) >= 3) {
    * 根据URL调用对应的控制器方法
    * 默认调用 home 控制器的 index 方法
    */
-  $dir = $dir ? $dir:'/';
+  $dir = $dir ? $dir:'';
   array_unshift($seg,NULL);
   $class  = isset($seg[1])?$seg[1]:'home';    // 控制器名
   $method = isset($seg[2])?$seg[2]:'index';   // 方法名

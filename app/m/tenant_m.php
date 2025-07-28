@@ -72,4 +72,67 @@ class tenant_m extends m {
   public function isSubdomainExist($subdomain) {
     return false;
   }
+  
+  /**
+   * 添加用户到租户
+   * @param string $userId 用户ID
+   * @param string $tenantId 租户ID
+   * @return bool
+   */
+  public function addUserToTenant($userId, $tenantId) {
+    $userId = $this->db->escape($userId);
+    $tenantId = $this->db->escape($tenantId);
+    $query = "INSERT INTO tb_user_tenant (user_id, tenant_id) VALUES ('$userId', '$tenantId')";
+    return $this->db->query($query);
+  }
+  
+  /**
+   * 从租户移除用户
+   * @param string $userId 用户ID
+   * @param string $tenantId 租户ID
+   * @return bool
+   */
+  public function removeUserFromTenant($userId, $tenantId) {
+    $query = "DELETE FROM tb_user_tenant WHERE user_id = ? AND tenant_id = ?";
+    return $this->db->query($query, array($userId, $tenantId));
+  }
+  
+  /**
+   * 获取租户下的所有用户
+   * @param string $tenantId 租户ID
+   * @return array
+   */
+  public function getTenantUsers($tenantId) {
+    $query = "SELECT u.* FROM tb_user u 
+              JOIN tb_user_tenant ut ON u.id = ut.user_id 
+              WHERE ut.tenant_id = ?";
+    return $this->db->query($query, array($tenantId));
+  }
+  
+  /**
+   * 获取用户所属的所有租户
+   * @param string $userId 用户ID
+   * @return array
+   */
+  public function getUserTenants($userId) {
+    $userId = $this->db->escape($userId);
+    $query = "SELECT t.* FROM tb_tenant t 
+              JOIN tb_user_tenant ut ON t.id = ut.tenant_id 
+              WHERE ut.user_id = '$userId'";
+    return $this->db->query($query);
+  }
+  
+  /**
+   * 进入租户
+   * @param string $tenantId 租户ID
+   * @return bool
+   */
+  public function enter($tenantId) {
+    // 将租户ID存储到session中
+    if (session_status() == PHP_SESSION_NONE) {
+        session_start();
+    }
+    $_SESSION['current_tenant'] = $tenantId;
+    return true;
+  }
 }

@@ -48,3 +48,9 @@ CREATE TABLE IF NOT EXISTS tb_entity (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 创建用户租户关联表
+CREATE TABLE IF NOT EXISTS tb_user_tenant (
+  user_id TEXT NOT NULL,
+  tenant_id TEXT NOT NULL
+);

@@ -42,3 +42,10 @@ CREATE TABLE IF NOT EXISTS `tb_entity` (
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 创建用户租户关联表
+DROP TABLE IF EXISTS `tb_user_tenant`;
+CREATE TABLE IF NOT EXISTS `tb_user_tenant` (
+  `user_id` VARCHAR(8) NOT NULL,
+  `tenant_id` VARCHAR(8) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+

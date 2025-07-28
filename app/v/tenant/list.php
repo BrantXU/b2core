@@ -24,6 +24,7 @@
             <td><?=($tenant['status'] == 1) ? '启用' : '禁用'?></td>
             <td><?=$tenant['created_at']?></td>
             <td>
+              <a href="<?=BASE?>/tenant/enter?id=<?=$tenant['id']?>" class="pure-button pure-button-small">进入</a>
               <a href="<?=BASE?>/tenant/edit?id=<?=$tenant['id']?>" class="pure-button pure-button-small">编辑</a>
               <a href="<?=BASE?>/tenant/delete?id=<?=$tenant['id']?>" class="pure-button pure-button-small button-error" onclick="return confirm('确定要删除此租户吗？')">删除</a>
             </td>
