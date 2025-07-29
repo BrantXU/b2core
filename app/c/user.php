@@ -30,7 +30,7 @@ class user extends base{
       $_POST['id'] = randstr(8);
       $result = $this->m->createUser($_POST);
       if ($result) {
-        redirect(BASE.'/user/', '用户创建成功。');
+        redirect(tenant_url('user/'), '用户创建成功。');
       } else {
         $err = array('error' => '创建用户失败');
       }
@@ -61,7 +61,7 @@ class user extends base{
     } elseif(!empty($_POST) && $err === TRUE) {
       $result = $this->m->updateUser($id, $_POST);
       if ($result) {
-        redirect(BASE.'/user/', '用户更新成功。');
+        redirect(tenant_url('user/'), '用户更新成功。');
       } else {
         $err = array('error' => '更新用户失败');
       }
@@ -82,9 +82,9 @@ class user extends base{
     $result = $this->m->deleteUser($id);
     
     if ($result) {
-      redirect(BASE.'/user/', '用户删除成功。');
+      redirect(tenant_url('user/'), '用户删除成功。');
     } else {
-      redirect(BASE.'/user/', '删除用户失败。');
+      redirect(tenant_url('user/'), '删除用户失败。');
     }
   }
   
@@ -101,7 +101,7 @@ class user extends base{
       );
 
       if(!is_array($err) && $this->m->login($_POST['username'], $_POST['password'])) {
-        redirect(BASE,'登录成功。');
+        redirect(tenant_url(''), '登录成功。');
         exit;
       } else {
         $param['info'] = $this->m->getLoginError();
@@ -134,7 +134,7 @@ class user extends base{
         $_POST['id'] = randstr(8);
         $result = $this->m->createUser($_POST);
         if ($result) {
-          redirect(BASE.'/user/login/', '注册成功，请登录。');
+          redirect(tenant_url('user/login/'), '注册成功，请登录。');
         } else {
           $err = array('error' => '注册失败');
         }

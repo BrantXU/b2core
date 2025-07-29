@@ -2,7 +2,7 @@
   <h2>租户列表</h2>
   
   <div style="margin-bottom: 20px;">
-    <a href="<?=BASE?>/tenant/create/" class="pure-button pure-button-primary">创建租户</a>
+    <a href="<?=tenant_url('tenant/create/')?>" class="pure-button pure-button-primary">创建租户</a>
   </div>
   
   <?php if(isset($tenants) && !empty($tenants)): ?>
@@ -24,9 +24,9 @@
             <td><?=($tenant['status'] == 1) ? '启用' : '禁用'?></td>
             <td><?=$tenant['created_at']?></td>
             <td>
-              <a href="<?=BASE?>/tenant/enter?id=<?=$tenant['id']?>" class="pure-button pure-button-small">进入</a>
-              <a href="<?=BASE?>/tenant/edit?id=<?=$tenant['id']?>" class="pure-button pure-button-small">编辑</a>
-              <a href="<?=BASE?>/tenant/delete?id=<?=$tenant['id']?>" class="pure-button pure-button-small button-error" onclick="return confirm('确定要删除此租户吗？')">删除</a>
+              <a href="<?=tenant_url('tenant/enter')?>?id=<?=$tenant['id']?>" class="pure-button pure-button-small">进入</a>
+              <a href="<?=tenant_url('tenant/edit')?>?id=<?=$tenant['id']?>" class="pure-button pure-button-small">编辑</a>
+              <a href="<?=tenant_url('tenant/delete')?>?id=<?=$tenant['id']?>" class="pure-button pure-button-small button-error" onclick="return confirm('确定要删除此租户吗？')">删除</a>
             </td>
           </tr>
         <?php endforeach; ?>

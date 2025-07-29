@@ -22,11 +22,23 @@ class m {
    * 分页获取数据
    * @param int $page 页码
    * @param int $limit 每页记录数
+   * @param array $conditions 条件
    * @return array
    */
-  protected function getPage($page = 1, $limit = 20) {
+  protected function getPage($page = 1, $limit = 20, $conditions = []) {
     $offset = ($page - 1) * $limit;
-    $query = "SELECT * FROM {$this->table} LIMIT {$limit} OFFSET {$offset}";
+    $where = $this->filter;
+    
+    if (!empty($conditions)) {
+      $conditionParts = [];
+      foreach ($conditions as $column => $value) {
+        $escapedValue = $this->db->escape($value);
+        $conditionParts[] = "`{$column}` = '{$escapedValue}'";
+      }
+      $where .= " AND " . implode(" AND ", $conditionParts);
+    }
+    
+    $query = "SELECT * FROM {$this->table} WHERE {$where} LIMIT {$limit} OFFSET {$offset}";
     return $this->db->query($query);
   }
 

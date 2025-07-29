@@ -38,6 +38,17 @@ settings:
     </div>
 
     <div>
+      <label>类别</label>
+      <select name="config_type">
+        <option value="mod" <?=isset($val['config_type']) && $val['config_type'] == 'mod' ? 'selected' : ''?>>模型(mod)</option>
+        <option value="flow" <?=isset($val['config_type']) && $val['config_type'] == 'flow' ? 'selected' : ''?>>流程(flow)</option>
+        <option value="men" <?=isset($val['config_type']) && $val['config_type'] == 'men' ? 'selected' : ''?>>菜单(men)</option>
+        <option value="layout" <?=isset($val['config_type']) && $val['config_type'] == 'layout' ? 'selected' : ''?>>排版(layout)</option>
+        <option value="doc" <?=isset($val['config_type']) && $val['config_type'] == 'doc' ? 'selected' : ''?>>文档(doc)</option>
+      </select>
+    </div>
+
+    <div>
       <label>租户</label>
       <select name="tenant_id">
         <?php if(isset($tenants) && !empty($tenants)): ?>
@@ -50,7 +61,7 @@ settings:
 
     <div>
       <button type="submit" class="pure-button pure-button-primary">创建</button>
-      <a href="<?=BASE?>/config/" class="pure-button">返回</a>
+      <a href="<?=tenant_url('config/')?>" class="pure-button">返回</a>
     </div>
   </form>
 </div>

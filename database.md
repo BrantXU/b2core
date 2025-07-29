@@ -124,7 +124,11 @@ fields:
   - name: value
     type: TEXT
     constraint: 非空
-    description: 配置值
+    description: 配置值  
+  - name: config_type
+    type: TEXT
+    constraint: 非空
+    description: 类别
   - name: description
     type: TEXT / VARCHAR(255)
     constraint: 可空

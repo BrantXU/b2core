@@ -1,4 +1,9 @@
 <?php
+// 定义应用根目录常量
+if (!defined('APP')) {
+    define('APP', dirname(__FILE__) . '/');
+}
+
 // 错误报告级别设置
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -23,17 +28,17 @@ $route_config = array(
     '/login/'=>'/user/login/',    // 登录页面路由
     '/reg/'=>'/user/reg/',        // 注册页面路由
     '/logout/'=>'/user/logout/',   // 登出路由
-    '/tenants/'=>'/tenant/',       // 租户列表路由
-    '/tenant/create/'=>'/tenant/create/', // 创建租户路由
-    '/tenant/edit/'=>'/tenant/edit/',     // 编辑租户路由
-    '/tenant/delete/'=>'/tenant/delete/', // 删除租户路由
+    '/tenant/'=>'/tenant/', // 创建租户路由
 );
 
 // 数据库配置信息
 $db_config = array(
     'driver' => 'sqlite',        // 数据库类型：mysql 或 sqlite
     'sqlite' => array(
-        'database' => APP.'db.sqlite',  // SQLite数据库文件路径
+        'database' => APP.'db.sqlite',  // 通用SQLite数据库文件路径
+    ),
+    'tenant_sqlite' => array(
+        'database' => APP.'../data/{tenant_id}/db.sqlite',  // 租户SQLite数据库文件路径模板
     ),
     'mysql' => array(
         'host' => 'localhost',     // MySQL主机

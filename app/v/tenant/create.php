@@ -23,7 +23,7 @@
 
     <div>
       <button type="submit" class="pure-button pure-button-primary">创建</button>
-      <a href="<?=BASE?>/tenant/" class="pure-button">返回</a>
+      <a href="<?=tenant_url('tenant/')?>" class="pure-button">返回</a>
     </div>
   </form>
 </div>

@@ -24,7 +24,7 @@ class config extends base {
     // 载入YAML处理类
     require_once(APP . 'lib/yaml.php');
     
-    $conf = array('key' => 'required', 'value' => 'required');
+    $conf = array('key' => 'required', 'value' => 'required', 'config_type' => 'required');
     $err = validate($conf);
     
     if (!empty($_POST) && $err === TRUE) {
@@ -40,6 +40,7 @@ class config extends base {
       
       // 在控制器中生成ID并添加到数据中
       $_POST['id'] = randstr(8);
+      $_POST['config_type'] = $_POST['config_type'] ?? '';
       // 设置租户ID（这里假设为固定值，实际应用中应从会话或上下文中获取）
       $_POST['tenant_id'] = 'default';
       // 设置时间戳
@@ -52,7 +53,7 @@ class config extends base {
       } else {
         $result = $this->m->createConfig($_POST);
         if ($result) {
-          redirect(BASE . '/config/', '配置创建成功。');
+          redirect(tenant_url('config/'), '配置创建成功。');
         } else {
           $err = array('general' => '创建配置失败');
         }
@@ -110,7 +111,7 @@ class config extends base {
       $_POST['updated_at'] = date('Y-m-d H:i:s');
       $result = $this->m->updateConfig($id, $_POST);
       if ($result) {
-        redirect(BASE . '/config/', '配置更新成功。');
+        redirect(tenant_url('config/'), '配置更新成功。');
       } else {
         $err = array('general' => '更新配置失败');
       }
@@ -134,9 +135,9 @@ class config extends base {
     $result = $this->m->deleteConfig($id);
     
     if ($result) {
-      redirect(BASE . '/config/', '配置删除成功。');
+      redirect(tenant_url('config/'), '配置删除成功。');
     } else {
-      redirect(BASE . '/config/', '删除配置失败。');
+      redirect(tenant_url('config/'), '删除配置失败。');
     }
   }
 }

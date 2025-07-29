@@ -40,12 +40,17 @@ class db {
    * 连接SQLite数据库
    */
   private function connect_sqlite($conf) {
-    if (!isset($conf['database'])) {
+    // 检查是否为租户数据库并替换路径中的占位符
+    $db_path = isset($conf['tenant_id']) ? 
+      str_replace('{tenant_id}', $conf['tenant_id'], $conf['database']) : 
+      $conf['database'];
+    
+    if (!$db_path) {
       throw new Exception("Missing SQLite database path configuration");
     }
     
     // 确保数据库目录存在
-    $db_dir = dirname($conf['database']);
+    $db_dir = dirname($db_path);
     if (!is_dir($db_dir)) {
       if (!mkdir($db_dir, 0777, true)) {
         throw new Exception("Failed to create database directory: {$db_dir}");
@@ -53,7 +58,7 @@ class db {
     }
     
     try {
-      $this->link = new SQLite3($conf['database']);
+      $this->link = new SQLite3($db_path);
     } catch (Exception $e) {
       throw new Exception("SQLite connection failed: " . $e->getMessage());
     }

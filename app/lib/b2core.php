@@ -14,15 +14,13 @@
 // 定义框架版本号
 define('B2CORE_VERSION','3.0');
 
+// 统一开启session
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
 // 载入配置文件：数据库、url路由等配置
 // require(APP.'config.php');
-
-// 初始化数据库连接(如果配置了数据库)
-if(isset($db_config)){
-  // 载入数据库操作类
-  require(APP.'lib/db.php');
-  $db = new db($db_config);
-}
 
 /**
  * 获取请求的URL路径
@@ -72,41 +70,41 @@ $des_dir = $dir = '';
 
 // 检查是否为明确指定的路由
 $is_specific_route = false;
-foreach ($route_config as $key => $val) { 
-  $key = str_replace(':any', '([^/.]+)', str_replace(':num', '([0-9]+)', $key));
-  if (preg_match('#^'.$key.'#', $uri)) {
-    $is_specific_route = true;
-    break;
-  }
+if (!empty($seg)) {
+    $seg_tenant = isset($seg[1])?$seg[1]:'default';
+    error_log("seg_tenant = " . $seg_tenant);
+    foreach ($route_config as $key => $val) {
+        $key_segments = explode('/', trim($key, '/'));
+        error_log("key_segment[0] = " . $key_segments[0]);
+        if (!empty($key_segments) && $key_segments[0] === $seg_tenant) {
+            $is_specific_route = true;
+            error_log("is_specific_route = TRUE");
+            break;
+        }
+    }
 }
+error_log("is_specific_route = ".($is_specific_route?"TRUE":"FALSE"));
 
 // 如果不是明确指定的路由，则按租户ID/模块名/方法名的格式处理
-if (!$is_specific_route && count($seg) >= 3) {
+
+if (!$is_specific_route && count($seg) >= 2) {
   // 第一段作为租户ID
-  $tenant_id = array_shift($seg);
-  
+  $tenant_id = $seg_tenant;
+  array_shift($seg); 
+  array_shift($seg);
+  array_unshift($seg,'');
   // 将租户ID存储到全局变量或session中
-  if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-  }
   $_SESSION['route_tenant_id'] = $tenant_id;
-  
-  // 第二段作为模块名称（控制器名）
-  $class = isset($seg[0]) ? $seg[0] : 'home';
-  
-  // 第三段作为方法名称
-  $method = isset($seg[1]) ? $seg[1] : 'index';
-  
-  // 移除已处理的段落
-  array_shift($seg);
-  array_shift($seg);
-} else {
+} 
+
   /**
    * 载入控制器目录结构
    * 依次载入控制器上级所有目录的__construct.php文件
    */
+   
   foreach($seg as $cur_dir) {
     $des_dir.=$cur_dir."/";
+    //echo APP.'c'.$des_dir.'__construct.php';
     if(is_file(APP.'c'.$des_dir.'__construct.php')) {
       require(APP.'c'.$des_dir.'__construct.php'); 
       $dir .=array_shift($seg).'/';
@@ -124,11 +122,13 @@ if (!$is_specific_route && count($seg) >= 3) {
   array_unshift($seg,NULL);
   $class  = isset($seg[1])?$seg[1]:'home';    // 控制器名
   $method = isset($seg[2])?$seg[2]:'index';   // 方法名
-}
 
 // 检查控制器文件是否存在
 if(!is_file(APP.'c'.$dir.$class.'.php')) {
-  show_404('file:'.APP.'c'.$dir.$class.'.php');
+  //show_404('file:'.APP.'c'.$dir.$class.'.php');
+  // 当控制器文件不存在时，默认使用entity控制器
+  $entity_type = $class;
+  $class='entity';
 }
 
 // 载入控制器文件并检查类和方法是否存在
@@ -141,7 +141,8 @@ if(!method_exists($class,$method)) {
 }
 
 // 实例化控制器并调用方法
-$B2 = new $class();
+if($class=='entity') $B2 = new $class($entity_type);
+else $B2 = new $class();
 call_user_func_array(array(&$B2, $method), array_slice($seg, 3));
 
 /**

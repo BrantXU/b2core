@@ -36,7 +36,18 @@ settings:
         value="<?=isset($val['description']) ? htmlspecialchars($val['description']) : (isset($config['description']) ? htmlspecialchars($config['description']) : '')?>" />
       <span class="help-inline"><?=isset($err['description']) ? $err['description'] : ''?></span>
     </div>
-    
+
+    <div>
+      <label>类别</label>
+      <select name="config_type">
+        <option value="mod" <?=isset($config['config_type']) && $config['config_type'] == 'mod' ? 'selected' : ''?>>模型(mod)</option>
+        <option value="flow" <?=isset($config['config_type']) && $config['config_type'] == 'flow' ? 'selected' : ''?>>流程(flow)</option>
+        <option value="men" <?=isset($config['config_type']) && $config['config_type'] == 'men' ? 'selected' : ''?>>菜单(men)</option>
+        <option value="layout" <?=isset($config['config_type']) && $config['config_type'] == 'layout' ? 'selected' : ''?>>排版(layout)</option>
+        <option value="doc" <?=isset($config['config_type']) && $config['config_type'] == 'doc' ? 'selected' : ''?>>文档(doc)</option>
+      </select>
+    </div>
+
     <div>
       <label>租户</label>
       <select name="tenant_id">

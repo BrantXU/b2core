@@ -1,35 +1,22 @@
 <div>
-  <h2>编辑实体</h2>
-  
+  <h2><?=$page_title?></h2>
   <?php if(isset($err['general'])): ?>
     <div class="pure-alert pure-alert-error"><?=$err['general']?></div>
   <?php endif; ?>
-  
-  <form method="post" class="pure-form pure-form-stacked">
-    <div>
-      <label>实体名称</label>
-      <input type="text" name="name" 
-        value="<?=isset($val['name']) ? htmlspecialchars($val['name']) : (isset($entity['name']) ? htmlspecialchars($entity['name']) : '')?>" />
-      <span class="help-inline"><?=isset($err['name']) ? $err['name'] : ''?></span>
-    </div>
-
-    <div>
-      <label>实体类型</label>
-      <input type="text" name="type" 
-        value="<?=isset($val['type']) ? htmlspecialchars($val['type']) : (isset($entity['type']) ? htmlspecialchars($entity['type']) : '')?>" />
-      <span class="help-inline"><?=isset($err['type']) ? $err['type'] : ''?></span>
-    </div>
-
-    <div>
-      <label>实体数据 (JSON格式)</label>
-      <textarea name="data" rows="5" cols="50"><?=isset($val['data']) ? htmlspecialchars($val['data']) : (isset($entity['data']) ? htmlspecialchars($entity['data']) : '')?></textarea>
-    </div>
-
-    <div>
-      <label>描述</label>
-      <input type="text" name="description" 
-        value="<?=isset($val['description']) ? htmlspecialchars($val['description']) : (isset($entity['description']) ? htmlspecialchars($entity['description']) : '')?>" />
-    </div>
+  <?php 
+  require_once APP . 'lib/form_render.php';
+  $entityData = [];
+  if (isset($entity['data'])) {
+    $entityData = json_decode($entity['data'], true);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+      $entityData = [];
+    }
+  }
+  ?>
+  <form method="post" class="pure-form pure-form-stacked" enctype="multipart/form-data">
+    <input type="hidden" name="name" value="<?= isset($entityData['name']) ? htmlspecialchars($entityData['name']) : (isset($val['data']['name']) ? htmlspecialchars($val['data']['name']) : '') ?>">
+    <input type="hidden" name="type" value="<?= htmlspecialchars($entity_type) ?>">
+    <?php echo FormRenderer::renderFormFields($item, $entityData, $val, $err); ?>
     
     <div>
       <label>租户</label>
@@ -45,7 +32,7 @@
     <input type="hidden" name="id" value="<?=isset($entity['id']) ? $entity['id'] : ''?>" />
 
     <div>
-      <button type="submit" class="pure-button pure-button-primary">更新</button>
+      <button type="submit" class="pure-button pure-button-primary"><?=isset($entity['id']) ? '更新' : '创建'?></button>
       <a href="<?=BASE?>/entity/" class="pure-button">返回</a>
     </div>
   </form>

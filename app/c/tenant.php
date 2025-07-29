@@ -29,7 +29,7 @@ class tenant extends base {
       $_POST['id'] = randstr(8);
       $result = $this->m->createTenant($_POST);
       if ($result) {
-        redirect(BASE . '/tenant/', '租户创建成功。');
+        redirect(tenant_url('tenant/'), '租户创建成功。');
       } else {
         $err = array('general' => '创建租户失败');
       }
@@ -58,7 +58,7 @@ class tenant extends base {
     if (!empty($_POST) && $err === TRUE) {
       $result = $this->m->updateTenant($id, $_POST);
       if ($result) {
-        redirect(BASE . '/tenant/', '租户更新成功。');
+        redirect(tenant_url('tenant/'), '租户更新成功。');
       } else {
         $err = array('general' => '更新租户失败');
       }
@@ -79,9 +79,9 @@ class tenant extends base {
     $result = $this->m->deleteTenant($id);
     
     if ($result) {
-      redirect(BASE . '/tenant/', '租户删除成功。');
+      redirect(tenant_url('tenant/'), '租户删除成功。');
     } else {
-      redirect(BASE . '/tenant/', '删除租户失败。');
+      redirect(tenant_url('tenant/'), '删除租户失败。');
     }
   }
   
@@ -90,19 +90,13 @@ class tenant extends base {
    */
   public function enter(): void {
     // 从URL段落中获取租户ID
-    $id = seg(3);
+    $id = $_GET['id'];//seg(3);
     
     // 如果URL段落中没有租户ID，则检查是否为默认租户
     if (empty($id)) {
-      // 检查是否为默认租户
-      if (seg(3) == 'default') {
         $id = 'default';
-      } else {
-        redirect(BASE . '/tenant/', '无效的租户ID。');
-        return;
-      }
     }
-    
+  
     // 检查用户是否有权访问该租户
     $user = $this->check();
     if ($user['id'] > 0) {
@@ -125,15 +119,17 @@ class tenant extends base {
         $result = $this->m->enter($id);
         
         if ($result) {
-          redirect(BASE . '/tenant/', '已进入租户。');
+          // 进入租户成功后，跳转到包含租户ID的URL
+          //redirect(tenant_url('dashboard/') . '?tenant_id=' . $id, '已进入租户。');
+          redirect( '/'.$id.'/', '已进入租户。');
         } else {
           redirect(BASE . '/tenant/', '进入租户失败。');
         }
       } else {
-        redirect(BASE . '/tenant/', '您无权访问该租户。');
+        redirect(tenant_url('tenant/'), '您无权访问该租户。');
+        }
+      } else {
+        redirect(tenant_url('user/login/'), '请先登录。');
       }
-    } else {
-      redirect(BASE . '/user/login/', '请先登录。');
-    }
   }
 }

@@ -24,7 +24,7 @@
         <?php if(!empty($err['email'])): ?><span class="pure-form-message-inline pure-alert pure-alert-error"><?php echo $err['email']; ?></span><?php endif; ?>
         
         <button type="submit" class="pure-button pure-button-primary">更新</button>
-        <a href="/user" class="pure-button">返回</a>
+        <a href="<?=tenant_url('user')?>" class="pure-button">返回</a>
     </fieldset>
 </form>
 </div>

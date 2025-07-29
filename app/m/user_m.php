@@ -119,7 +119,6 @@ class user_m extends m {
 	    );
 	    
 	    // 使用session存储认证信息
-	    session_start();
 	    $_SESSION[$this->auth] = $auth;
 	    return TRUE;
     }
@@ -135,23 +134,22 @@ class user_m extends m {
 	}
     
 	  function check()
-	  {
-	    // 从session读取认证信息
-	    session_start();
-	    if(isset($_SESSION[$this->auth])){
-	      $u = $_SESSION[$this->auth];
-	      if(isset($u)){
-	        return $u;
-	      }
-	    }
-	    return array(
-	      'id' => 0,
-	      'level' => 0,
-	      'name' => '',
-	      'email' => '',
-	      'seed' => ''
-	    );
-	  }
+  {
+    // 从session读取认证信息
+    if(isset($_SESSION[$this->auth])){
+      $u = $_SESSION[$this->auth];
+      if(isset($u)){
+        return $u;
+      }
+    }
+    return array(
+      'id' => 0,
+      'level' => 0,
+      'name' => '',
+      'email' => '',
+      'seed' => ''
+    );
+  }
     
 	
     private function encode($string){
@@ -160,7 +158,6 @@ class user_m extends m {
     
     function logout(){
     	// 清除session中的认证信息
-    	session_start();
     	unset($_SESSION[$this->auth]);
     	session_destroy();
     }

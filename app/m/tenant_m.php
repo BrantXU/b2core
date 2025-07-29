@@ -42,7 +42,17 @@ class tenant_m extends m {
    * @return int|bool
    */
   public function createTenant($data) {
-    return $this->add($data);
+    $result = $this->add($data);
+    
+    // 如果租户创建成功，创建以租户ID命名的文件夹
+    if ($result && isset($data['id'])) {
+      $tenantDir = APP . '../data/' . $data['id'];
+      if (!is_dir($tenantDir)) {
+        mkdir($tenantDir, 0777, true);
+      }
+    }
+    
+    return $result;
   }
 
   /**
@@ -129,9 +139,6 @@ class tenant_m extends m {
    */
   public function enter($tenantId) {
     // 将租户ID存储到session中
-    if (session_status() == PHP_SESSION_NONE) {
-        session_start();
-    }
     $_SESSION['current_tenant'] = $tenantId;
     return true;
   }

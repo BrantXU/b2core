@@ -19,7 +19,7 @@
 
     <div>
       <button type="submit" class="pure-button pure-button-primary">登录</button>
-      <a href="<?=BASE?>" class="pure-button">返回</a>
+      <a href="<?=tenant_url('')?>" class="pure-button">返回</a>
     </div>
   </form>
 </div>

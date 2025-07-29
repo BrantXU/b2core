@@ -2,9 +2,14 @@
 class entity_m extends m {
   public $table;
   public $fields;
-  
-  public function __construct() {
-    parent::__construct('tb_entity');
+  public $type;
+
+  public function __construct($table = null) 
+  {
+    global $db_tenant;
+    $this->db = $db_tenant; 
+    $this->table = 'tb_entity';
+    $this->key = 'id';    
     $this->fields = array('id', 'tenant_id', 'name', 'type', 'data', 'description', 'created_at', 'updated_at');
   }
 
@@ -15,7 +20,11 @@ class entity_m extends m {
    * @return array
    */
   public function entitylist($page = 1, $limit = 20) {
-    return $this->getPage($page, $limit);
+    $conditions = [];
+    if (!empty($this->type)) {
+      $conditions['type'] = $this->type;
+    }
+    return $this->getPage($page, $limit, $conditions);
   }
 
   /**

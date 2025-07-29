@@ -1,0 +1,1 @@
+ALTER TABLE tb_config ADD COLUMN config_type TEXT NOT NULL DEFAULT '';
