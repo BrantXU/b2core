@@ -190,7 +190,7 @@ function _decode($str)
  * @param int $level 菜单层级
  * @return string HTML代码
  */
-function render_menu($menu_data, $level = 0) {
+function render_menu($menu_data, $level = 0, $current_path = '') {
     $html = '';
     
     // 根据层级设置不同的CSS类
@@ -200,17 +200,23 @@ function render_menu($menu_data, $level = 0) {
     $html .= '<ul class="' . $ul_class . '">';
     
     foreach ($menu_data as $key => $item) {
+        // 跳过隐藏菜单项
+        if (isset($item['Hidden']) && $item['Hidden'] === true) {
+            continue;
+        }
         // 检查是否有子菜单
         $has_children = isset($item['children']) && is_array($item['children']) && !empty($item['children']);
         // 为有子菜单的项添加特殊类
         $item_class = $has_children ? 'has-children' : '';
         $html .= '<li class="' . $li_class . ' ' . $item_class . '">';
-        $url =  tenant_url(isset($item['mod']) ? $item['mod'] : $key);
+        $item_path = isset($item['mod']) ? $item['mod'] : $key;
+        $full_path = $current_path ? rtrim($current_path, '/') . '/' . ltrim($item_path, '/') : $item_path;
+        $url = tenant_url($full_path);
         $html .= '<a href="' .$url . '">' . htmlspecialchars($item['title'] ?? '') . '</a>';
         
         // 如果有子菜单，递归渲染
         if ($has_children) {
-            $html .= render_menu($item['children'], $level + 1);
+            $html .= render_menu($item['children'], $level + 1, $full_path);
         }
         
         $html .= '</li>';
@@ -257,6 +263,7 @@ function convert_menu_data($menu_data) {
  * @return string 完整URL
  */
 function tenant_url($path = '') {
+  $path = (string)$path;
   // 确保路径以/开头
   if ($path && $path[0] !== '/') {
     $path = '/' . $path;

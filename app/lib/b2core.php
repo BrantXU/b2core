@@ -27,12 +27,13 @@ if (session_status() == PHP_SESSION_NONE) {
  * 兼容多种服务器环境(包括SAE)的URL解析
  */
 $uri = '';
+
 if(isset($_SERVER['PATH_INFO'])) $uri = $_SERVER['PATH_INFO'];
 elseif(isset($_SERVER['ORIG_PATH_INFO'])) $uri = $_SERVER['ORIG_PATH_INFO'];
-elseif(isset($_SERVER['QUERY_STRING'])){ 
-  $ss = explode('&',$_SERVER['QUERY_STRING']);
-  $uri = $ss[0];
-}
+// elseif(isset($_SERVER['QUERY_STRING'])){ 
+//   $ss = explode('&',$_SERVER['QUERY_STRING']);
+//   $uri = $ss[0];
+// }
 
 /**
  * URL重写处理函数
@@ -64,7 +65,7 @@ foreach ($route_config as $key => $val) {
 }
 
 // 解析URL段落
-$uri = rtrim($uri,'/');
+$uri = rtrim($uri,'/'); 
 $seg = explode('/',$uri);
 $des_dir = $dir = '';
 
@@ -118,11 +119,11 @@ if (!$is_specific_route && count($seg) >= 2) {
    * 根据URL调用对应的控制器方法
    * 默认调用 home 控制器的 index 方法
    */
+
   $dir = $dir ? $dir:'';
   array_unshift($seg,NULL);
   $class  = isset($seg[1])?$seg[1]:'home';    // 控制器名
   $method = isset($seg[2])?$seg[2]:'index';   // 方法名
-
 // 检查控制器文件是否存在
 if(!is_file(APP.'c'.$dir.$class.'.php')) {
   //show_404('file:'.APP.'c'.$dir.$class.'.php');
@@ -132,7 +133,7 @@ if(!is_file(APP.'c'.$dir.$class.'.php')) {
 }
 
 // 载入控制器文件并检查类和方法是否存在
-require(APP.'c'.$dir.$class.'.php');
+require(APP.'/c'.$dir.$class.'.php');
 if(!class_exists($class)) {
   show_404('class_not_exists:'.$class);
 }

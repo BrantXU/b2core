@@ -1,16 +1,21 @@
 <!DOCTYPE html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-  <title><?=$page_title?></title>
-  <meta name="keywords" content="<?=$meta_keywords?>"/>
-  <meta name="description" content="<?=$meta_description?>"/>
-  <link href="<?=BASE ?>/pure-min.css" rel="stylesheet" type="text/css">
+  <title><?php echo $page_title ?? ''; ?></title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="keywords" content="<?php echo $meta_keywords ?? ''; ?>">
+  <meta name="description" content="<?php echo $meta_description ?? ''; ?>">
+  <link href="/uikit.min.css" rel="stylesheet" type="text/css">
+  <script src="/uikit.min.js"></script>
   <style>
-    body{background: #f9f9ff;line-height: 1.5;}
+    body{background: #f6f6f6;line-height: 1.5;}
+    h3{margin:0;}
+    .canvas{background: #fff;padding: 20px;}
     .container{padding: 20px;}
     a{color: #000;}
     .help-inline{color: #f00;}
-    .nav li{display: inline-block;} 
+    .nav li{display: inline-block; padding:10px;} 
     
     /* 多级菜单样式 */
     .nav, .submenu {
@@ -66,7 +71,6 @@
   </style>
 </head>
 <body>
-  <div class="container">
     <div> 
   <?php if(!empty($u) && is_array($u) && array_key_exists('id', $u) && $u['id']!=0){?>
    当前登录 <?=isset($u['name']) ? $u['name'] : (isset($u['email']) ? $u['email'] : '用户')?> ，
@@ -77,8 +81,18 @@
   <?php }  ?>
   <?php if(!empty($menu_data)): ?>
   <?=render_menu($menu_data)?>
-  <?php endif; ?>  
+  <?php endif; ?>
 </div>
+<div class="container">  <?php if (!empty($breadcrumb)): ?>
+  <nav >
+    <ul class="uk-breadcrumb">
+      <?php foreach ($breadcrumb as $item): ?>
+        <li><?php echo ($item['active'] ?? false) ? '<span>' . ($item['label'] ?? 'Unlabeled') . '</span>' : '<a href="' . $item['url'] . '" class="uk-link-reset">' . ($item['label'] ?? 'Unlabeled') . '</a>'; ?></li>
+      <?php endforeach; ?>
+    </ul>
+  </nav>
+  <?php endif; ?>
+  <div class="canvas">  
     <?php if(isset($al_content)) echo $al_content; else echo $content ?? '';?>
   </div>
 </body>

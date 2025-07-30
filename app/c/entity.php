@@ -30,21 +30,39 @@ class entity extends base {
     $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = '实体列表';
     $param['item'] = $this->item;
     $param['entity_type'] = $this->type;
+    
+    // 添加面包屑数据
+    $param['breadcrumb'] = [
+      ['label' => '首页', 'url' => tenant_url(''), 'active' => false],
+      ['label' => '实体管理', 'url' => tenant_url($this->type), 'active' => false],
+      ['label' => '实体列表', 'url' => '', 'active' => true]
+    ];
+    
     $this->display('v/entity/list', $param);
   }
 
   /**
    * 创建实体页面
    */
+  public function add(): void {
+    $this->create();
+  }
+  
   public function create(): void {
     $conf = array('name' => 'required', 'type' => 'required');
     $err = validate($conf);
     
+    // 添加面包屑数据
+    $param['breadcrumb'] = [
+      ['label' => '首页', 'url' => tenant_url(''), 'active' => false],
+      ['label' => '实体管理', 'url' => tenant_url('entity'), 'active' => false],
+      ['label' => '新增实体', 'url' => '', 'active' => true]
+    ];
+    
     if (!empty($_POST) && $err === TRUE) {
       // 在控制器中生成ID并添加到数据中
       $_POST['id'] = randstr(8);
-      // 设置租户ID（这里假设为固定值，实际应用中应从会话或上下文中获取）
-      $_POST['tenant_id'] = 'default';
+      // 租户ID通过表单隐藏字段设置
       // 设置创建和更新时间
       $_POST['created_at'] = date('Y-m-d H:i:s');
       $_POST['updated_at'] = date('Y-m-d H:i:s');
@@ -75,6 +93,13 @@ class entity extends base {
   public function edit(): void {
     $id = $_GET['id'];
     $entity = $this->m->getEntity($id);
+    
+    // 添加面包屑数据
+    $param['breadcrumb'] = [
+      ['label' => '首页', 'url' => tenant_url(''), 'active' => false],
+      ['label' => '实体管理', 'url' => tenant_url('entity'), 'active' => false],
+      ['label' => '编辑实体', 'url' => '', 'active' => true]
+    ];
     
     if (!$entity) {
       show_404('实体不存在');
@@ -119,5 +144,32 @@ class entity extends base {
     } else {
       redirect(tenant_url('entity/'), '删除实体失败。');
     }
+  }
+  
+  public function view() {
+    $id = $_GET['id'] ?? '';
+    if (empty($id)) {
+      redirect(tenant_url('entity/'), '实体ID不存在');
+      return;
+    }
+    $entity = $this->m->getEntity($id);
+    if (!$entity) {
+      redirect(tenant_url('entity/'), '实体不存在');
+      return;
+    }
+    // 获取实体配置项
+    $item = $this->item;
+    $param = [
+      'page_title' => '实体展示',
+      'entity' => $entity,
+      'entity_type' => $entity['type'],
+      'item' => $item,
+      'breadcrumb' => [
+        ['url' => tenant_url('/'), 'text' => '首页', 'active' => false],
+        ['url' => tenant_url('/entity'), 'text' => '实体管理', 'active' => false],
+        ['url' => '#', 'text' => '实体展示', 'active' => true]
+      ]
+    ];
+    $this->display('v/entity/show', $param);
   }
 }

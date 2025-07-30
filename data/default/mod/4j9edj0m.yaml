@@ -284,7 +284,7 @@ item:
         IPO
       payload: null
       ignore_linkage: 否
-      multiple: 否
+      multiple: true
       ajax: 否
       tags: 否
       tags_no_layer: 否

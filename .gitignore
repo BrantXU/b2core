@@ -64,3 +64,6 @@ config.json
 
 # 数据目录
 /data/
+# java
+
+/java/

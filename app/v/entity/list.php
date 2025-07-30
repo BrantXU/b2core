@@ -1,12 +1,9 @@
-<div>
-  <h2>实体列表</h2>
-  
-  <div style="margin-bottom: 20px;">
-    <a href="<?=tenant_url($entity_type.'/create/')?>" class="pure-button pure-button-primary">创建实体</a>
+  <div class="uk-margin-bottom">
+    <a href="<?=tenant_url($entity_type.'/create/')?>" class="uk-button uk-button-primary">创建</a>
   </div>
   
   <?php if(isset($entities) && !empty($entities)): ?>
-    <table class="pure-table pure-table-horizontal" style="width: 100%;">
+    <table class="uk-table uk-table-striped uk-table-hover" style="width: 100%;">
       <?php
       // 定义表头翻译映射
       $headerMap = [
@@ -57,7 +54,11 @@
                     if (isset($entityData[$key])) {
                       $value = $entityData[$key];
                       if (is_scalar($value)) {
-                        echo htmlspecialchars((string)$value);
+                        if ($fieldName === 'name') {
+                          echo '<a href="' . tenant_url($entity_type . '/view') . '?id=' . $entity['id'] . '" class="uk-link">' . htmlspecialchars((string)$value) . '</a>';
+                        } else {
+                          echo htmlspecialchars((string)$value);
+                        }
                       } else {
                         echo '[复杂数据]';
                       }
@@ -66,14 +67,13 @@
                 ?></td>
             <?php endforeach; ?>
             <td>
-              <a href="<?=tenant_url($entity_type.'/edit')?>?id=<?=$entity['id']?>" class="pure-button pure-button-small">编辑</a>
-              <a href="<?=tenant_url($entity_type.'/delete')?>?id=<?=$entity['id']?>" class="pure-button pure-button-small button-error" onclick="return confirm('确定要删除此实体吗？')">删除</a>
+              <a href="<?=tenant_url($entity_type.'/edit')?>?id=<?=$entity['id']?>" class="uk-button uk-button-small">编辑</a>
+              <a href="<?=tenant_url($entity_type.'/delete')?>?id=<?=$entity['id']?>" class="uk-button uk-button-small uk-button-danger" onclick="return confirm('确定要删除此实体吗？')">删除</a>
             </td>
           </tr>
         <?php endforeach; ?>
       </tbody>
     </table>
   <?php else: ?>
-    <div class="pure-alert">暂无实体数据</div>
+    <div class="uk-alert uk-alert-warning">暂无实体数据</div>
   <?php endif; ?>
-</div>
