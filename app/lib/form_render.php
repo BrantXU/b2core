@@ -28,7 +28,8 @@ class FormRenderer {
                 case 'select_new':
                     $html .= '<select name="data['.$field.']" '.$required.' style="width: 90%;">';
                     $html .= $tips;
-                    $options = explode("\n", $config['props']['data_source']);
+                    $dataSource = $config['props']['data_source'] ?? '';
+                    $options = explode("\n", $dataSource);
                     foreach($options as $opt) {
                         $opt = trim($opt);
                         if($opt === '') continue;

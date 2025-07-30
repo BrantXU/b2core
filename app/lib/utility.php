@@ -205,7 +205,7 @@ function render_menu($menu_data, $level = 0) {
         // 为有子菜单的项添加特殊类
         $item_class = $has_children ? 'has-children' : '';
         $html .= '<li class="' . $li_class . ' ' . $item_class . '">';
-        $url =  tenant_url(isset($item['url']) ? $item['url'] : $key);
+        $url =  tenant_url(isset($item['mod']) ? $item['mod'] : $key);
         $html .= '<a href="' .$url . '">' . htmlspecialchars($item['title'] ?? '') . '</a>';
         
         // 如果有子菜单，递归渲染

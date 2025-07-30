@@ -1,0 +1,478 @@
+home:
+  title: 首页
+  icon: home
+  children:
+    index:
+      title: 桌面
+    fund_report:
+      title: 驾驶舱
+      type: load
+      url: '?/fund_analysis/view/about/hi40uyhwvk'
+calendar:
+  title: 日程
+  icon: ios-calendar
+  children:
+    index:
+      title: 日视图
+    week:
+      title: 周视图
+    list2:
+      title: 日程列表
+    add:
+      title: 新增
+    edit:
+      title: 编辑
+      hidden: true
+    del:
+      title: 删除
+      hidden: true
+    import:
+      title: 导入
+      hidden: true
+    export:
+      title: 导出
+      hidden: true
+    view:
+      title: 查看
+      hidden: tru
+      children:
+        about:
+          title: 概况
+1erztlh1:
+  title: 基金管理
+  mod: 1erztlh1
+  children:
+    index:
+      title: 浏览
+    add:
+      title: 新增
+    edit:
+      title: 编辑
+      hidden: true
+    del:
+      title: 删除
+      hidden: true
+    view:
+      title: 查看
+      hidden: true
+      children:
+        about:
+          title: 概况
+        position:
+          title: 投资组合
+          type: data
+          layout: data_list_easy
+          mod: position
+          filter:
+            Fund: eid
+        deal:
+          title: 交易明细
+          type: data
+          layout: data_list_easy
+          mod: deal
+          filter:
+            Fund: eid
+        fundposition:
+          title: 投资人
+          type: data
+          layout: data_list_easy
+          mod: fundposition
+          filter:
+            fund: eid
+        cashflow:
+          title: 现金流
+          type: ext
+          mod: cashflow
+          filter:
+            fund: eid
+        report:
+          title: 基金报告
+          type: ext
+          mod: fenxibaogao
+          filter:
+            fund: eid
+company:
+  title: 企业管理
+  mod: 4j9edj0m
+  children:
+    index:
+      title: 清单
+    add:
+      title: 新增
+    edit:
+      title: 编辑
+      hidden: true
+    del:
+      title: 删除
+      hidden: true
+    view:
+      title: 查看
+      hidden: true
+      children:
+        about:
+          title: 概况
+        event:
+          title: 企业事项
+          type: data
+          layout: data_list_easy
+          mod: event
+          filter:
+            company: eid
+        gongshang:
+          title: 工商数据
+          type: ext
+          mod: gongshang
+        valuation:
+          title: 企业估值
+          type: data
+          layout: data_list_easy
+          mod: company_valuation
+          hidden: true
+          filter:
+            company: eid
+        round:
+          title: 企业融资
+          type: data
+          layout: data_list_easy
+          mod: round
+          filter:
+            company: eid
+        report:
+          title: 企业市值
+          type: ext
+          mod: shichangbaogao
+          filter:
+            fund: eid
+        position:
+          title: 持有份额
+          type: data
+          layout: data_list_easy
+          mod: position
+          filter:
+            Company: eid
+        deal:
+          title: 交易流水
+          type: data
+          layout: data_list_easy
+          mod: deal
+          filter:
+            Company: eid
+        calendar:
+          title: 相关日程
+          type: data
+          mod: calendar
+          filter:
+            company: eid
+        doc:
+          title: 文档
+          mod: doc_company
+          type: doc
+deal:
+  title: 交易明细
+  children:
+    index:
+      title: 浏览
+    add:
+      title: 新增
+    edit:
+      title: 编辑
+      hidden: true
+    del:
+      title: 删除
+      hidden: true
+    import:
+      title: 导入
+    export:
+      title: 导出
+    view:
+      title: 查看
+      hidden: true
+position:
+  title: 投资组合
+  children:
+    index:
+      title: 浏览
+    import:
+      title: 导入
+    export:
+      title: 导出
+      hidden: true
+    view:
+      title: 查看
+      hidden: true
+      children:
+        about:
+          title: 概况
+investor:
+  title: 投资人
+  children:
+    index:
+      title: 浏览
+    add:
+      title: 新增
+    edit:
+      title: 编辑
+      hidden: true
+    del:
+      title: 删除
+      hidden: true
+    view:
+      title: 查看
+      hidden: true
+      children:
+        about:
+          title: 概况
+        fundposition:
+          title: 投资信息
+          type: data
+          layout: data_list_easy
+          mod: fundposition
+          filter:
+            investor: eid
+funddeal:
+  title: 出资分配
+  children:
+    index:
+      title: 浏览
+    add:
+      title: 新增
+    edit:
+      title: 编辑
+      hidden: true
+    del:
+      title: 删除
+      hidden: true
+    import:
+      title: 导入
+    export:
+      title: 导出
+      hidden: true
+    view:
+      title: 查看
+      hidden: true
+      children:
+        about:
+          title: 概况
+        doc:
+          title: 文档
+        calendar:
+          title: 日程
+          type: data
+          mod: calendar
+          filter:
+            rel_e: eid
+fundposition:
+  title: 投资人份额
+  children:
+    index:
+      title: 浏览
+    import:
+      title: 导入
+    export:
+      title: 导出
+      hidden: true
+    view:
+      title: 查看
+      hidden: true
+      children:
+        about:
+          title: 概况
+        doc:
+          title: 文档
+        calendar:
+          title: 日程
+          type: data
+          mod: calendar
+          filter:
+            rel_e: eid
+cf_notice:
+  title: 'Call款&分配'
+  children:
+    index:
+      title: 浏览
+    add:
+      title: 新增
+    edit:
+      title: 编辑
+      hidden: true
+    del:
+      title: 删除
+      hidden: true
+    import:
+      title: 导入
+    export:
+      title: 导出
+      hidden: true
+    view:
+      title: 查看
+      hidden: true
+      children:
+        about:
+          title: 概况
+        doc:
+          title: 文档
+        calendar:
+          title: 日程
+          type: data
+          mod: calendar
+          filter:
+            rel_e: eid
+mktprice:
+  title: 股票市场
+  filter:
+    Date: time_tmonth
+  children:
+    index:
+      title: 浏览
+      btns:
+        测试: |
+          ?/entity/vendor_bridge/szxcjk/batch_update_address
+    add:
+      title: 新增
+    edit:
+      title: 编辑
+      hidden: true
+    del:
+      title: 删除
+      hidden: true
+    import:
+      title: 导入
+    export:
+      title: 导出
+      hidden: true
+    view:
+      title: 查看
+      hidden: true
+      children:
+        about:
+          title: 概况
+stock:
+  title: 股价
+  mod: stock
+  children:
+    index:
+      title: 浏览
+    view:
+      title: 查看
+      hidden: true
+      children:
+        about:
+          title: 概况
+fx:
+  title: 汇率
+  mod: fx
+  children:
+    index:
+      title: 浏览
+    add:
+      title: 新增
+    edit:
+      title: 编辑
+      hidden: true
+    del:
+      title: 删除
+      hidden: true
+    import:
+      title: 导入
+    export:
+      title: 导出
+      hidden: true
+    view:
+      title: 查看
+      hidden: true
+      children:
+        about:
+          title: 概况
+charts:
+  title: 图表
+  children:
+    index:
+      title: 浏览
+    add:
+      title: 新增
+    edit:
+      title: 编辑
+      hidden: true
+    del:
+      title: 删除
+      hidden: true
+    import:
+      title: 导入
+      hidden: true
+    export:
+      title: 导出
+      hidden: true
+    view:
+      title: 查看
+      hidden: true
+      children:
+        about:
+          title: 概况
+analy2:
+  title: 'Portfolio Analysis'
+  mod: entity_
+  filter:
+    type: project
+analy3:
+  title: 'CR Gain'
+  mod: entity_
+  filter:
+    type:
+      - fund
+      - projfund
+trash:
+  title: 回收站
+  icon: ios-trash-outline
+  haschild: false
+  children:
+    index:
+      title: 文件
+    entity_:
+      title: 对象
+config:
+  title: 配置
+  icon: ios-settings
+  children:
+    setting:
+      title: 配置
+    space_script:
+      title: 脚本
+    space:
+      title: 空间设置
+    _role:
+      title: 角色
+      type: load
+      url: '?/config/_role'
+    usr_analytics:
+      title: 访问统计
+    devtools:
+      title: 调试工具
+    trace:
+      title: 日志
+    usr:
+      title: 用户
+      children:
+        about:
+          title: 查看
+        edit:
+          title: 编辑
+account:
+  title: 账户
+  hidden: false
+  icon: android-contact
+  children:
+    index:
+      title: 账号
+    edit:
+      title: 编辑资料
+    chpwd:
+      title: 修改密码
+    style:
+      title: 偏好设置
+logout:
+  title: 退出
+  icon: power
+  children:
+    index:
+      title: 退出系统
+      canvas: '#remodal'
