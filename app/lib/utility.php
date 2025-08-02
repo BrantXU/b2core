@@ -1,4 +1,6 @@
 <?php
+require_once('menu_render.php');
+require_once('form_render.php');
 // function : verify the validity of form
 function validate($conf = array(), $data = array()) {
   $data = empty($data) ? $_POST : $data;
@@ -182,106 +184,4 @@ function _encode($arr)
 function _decode($str)
 {
   return json_decode($str,true);
-}
-
-/**
- * 递归渲染多级菜单
- * @param array $menu_data 菜单数据
- * @param int $level 菜单层级
- * @return string HTML代码
- */
-function render_menu($menu_data, $level = 0, $current_path = '') {
-    $html = '';
-    
-    // 根据层级设置不同的CSS类
-    $ul_class = $level == 0 ? 'nav nav-pills' : 'submenu';
-    $li_class = $level == 0 ? '' : 'submenu-item';
-    
-    $html .= '<ul class="' . $ul_class . '">';
-    
-    foreach ($menu_data as $key => $item) {
-        // 跳过隐藏菜单项
-        if (isset($item['Hidden']) && $item['Hidden'] === true) {
-            continue;
-        }
-        // 检查是否有子菜单
-        $has_children = isset($item['children']) && is_array($item['children']) && !empty($item['children']);
-        // 为有子菜单的项添加特殊类
-        $item_class = $has_children ? 'has-children' : '';
-        $html .= '<li class="' . $li_class . ' ' . $item_class . '">';
-        $item_path = isset($item['mod']) ? $item['mod'] : $key;
-        $full_path = $current_path ? rtrim($current_path, '/') . '/' . ltrim($item_path, '/') : $item_path;
-        $url = tenant_url($full_path);
-        $html .= '<a href="' .$url . '">' . htmlspecialchars($item['title'] ?? '') . '</a>';
-        
-        // 如果有子菜单，递归渲染
-        if ($has_children) {
-            $html .= render_menu($item['children'], $level + 1, $full_path);
-        }
-        
-        $html .= '</li>';
-    }
-    
-    $html .= '</ul>';
-    
-    return $html;
-}
-
-/**
- * 转换菜单数据格式
- * @param array $menu_data 原始菜单数据
- * @return array 转换后的菜单数据
- */
-function convert_menu_data($menu_data) {
-    $result = array();
-    
-    foreach ($menu_data as $key => $item) {
-        // 跳过隐藏的菜单项
-        if (isset($item['hidden']) && $item['hidden'] === true) {
-            continue;
-        }
-        
-        $new_item = array(
-            'name' => isset($item['title']) ? $item['title'] : $key,
-            'url' => isset($item['url']) ? $item['url'] : '#'
-        );
-        
-        // 处理子菜单
-        if (isset($item['children']) && is_array($item['children'])) {
-            $new_item['children'] = convert_menu_data($item['children']);
-        }
-        
-        $result[] = $new_item;
-    }
-    
-    return $result;
-}
-
-/**
- * 生成包含租户ID的URL
- * @param string $path 路径
- * @return string 完整URL
- */
-function tenant_url($path = '') {
-  $path = (string)$path;
-  // 确保路径以/开头
-  if ($path && $path[0] !== '/') {
-    $path = '/' . $path;
-  }
-  
-  // 获取当前租户ID
-  $tenant_id = '';
-  if (isset($_SESSION['route_tenant_id'])) {
-    $tenant_id = $_SESSION['route_tenant_id'];
-  } elseif (isset($_SESSION['current_tenant'])) {
-    $tenant_id = $_SESSION['current_tenant'];
-  }
-  
-  // 如果有租户ID，则在路径前加上租户ID
-  if ($tenant_id) {
-    return '/' . $tenant_id . $path;
-  }
-  
-  // 如果没有租户ID，直接返回路径
-  return $path;
 }

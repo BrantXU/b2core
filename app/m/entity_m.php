@@ -63,4 +63,19 @@ class entity_m extends m {
   public function deleteEntity($id) {
     return $this->del($id);
   }
+
+  /**
+   * 获取所有实体数据
+   * @param string $type 实体类型
+   * @return array
+   */
+  public function getAllEntities($type = null) {
+      $where = '1';
+      if (!empty($type)) {
+          $type = $this->db->escape($type);
+          $where = "type = '{$type}'";
+      }
+      $query = "SELECT * FROM {$this->table} WHERE {$where}";
+      return $this->db->query($query);
+  }
 }

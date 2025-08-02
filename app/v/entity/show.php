@@ -13,9 +13,11 @@
   }
   ?>
 
-  <div class="uk-container uk-padding uk-border-rounded uk-form uk-form-stacked"><div class="uk-grid uk-child-width-1-1" uk-grid>
-    <?php echo FormRenderer::renderFormFields($item, $entityData, [], [], true); ?>
-  <div class="uk-margin-top">
-    <a href="<?=BASE?>/entity/" class="uk-button">返回列表</a>
+  <div class="uk-padding uk-form uk-form-stacked">
+    <div class="uk-grid uk-child-width-1-1" uk-grid>
+      <?php echo FormRenderer::renderFormFields($item, $entityData, [], [], true); ?>
+      <div class="uk-margin-top">
+        <a href="<?=BASE?>/entity/" class="uk-button">返回列表</a>
+      </div>
+    </div>
   </div>
-  </div></div>

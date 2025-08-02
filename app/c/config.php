@@ -66,31 +66,41 @@ class config extends base {
     // 获取租户列表用于显示
     $tenant_m = load('m/tenant_m');
     $param['tenants'] = $tenant_m->tenantlist();
-    $this->display('v/config/create', $param);
+    $this->display('v/config/edit', $param);
   }
 
   /**
    * 编辑配置页面
    */
   public function edit(): void {
-    $id = $_GET['id'];
-    $config = $this->m->getConfig($id);
+    // 检查是否是创建操作
+    $isCreate = isset($_GET['action']) && $_GET['action'] == 'create';
     
-    if (!$config) {
-      show_404('配置不存在');
-    }
-    
-    // 载入YAML处理类
-    require_once(APP . 'lib/yaml.php');
-    
-    // 将JSON值转换为YAML格式用于显示
-    if (isset($config['value'])) {
-      // 尝试解析JSON
-      $jsonData = json_decode($config['value'], true);
-      if ($jsonData !== null) {
-        // 如果是有效的JSON，转换为YAML显示
-        $config['value'] = YAML::encode($jsonData);
+    if (!$isCreate) {
+      $id = $_GET['id'];
+      $config = $this->m->getConfig($id);
+      
+      if (!$config) {
+        show_404('配置不存在');
       }
+      
+      // 载入YAML处理类
+      require_once(APP . 'lib/yaml.php');
+      
+      // 将JSON值转换为YAML格式用于显示
+      if (isset($config['value'])) {
+        // 尝试解析JSON
+        $jsonData = json_decode($config['value'], true);
+        if ($jsonData !== null) {
+          // 如果是有效的JSON，转换为YAML显示
+          $config['value'] = YAML::encode($jsonData);
+        }
+      }
+    } else {
+      // 创建操作时，初始化空配置
+      $config = array();
+      // 载入YAML处理类
+      require_once(APP . 'lib/yaml.php');
     }
     
     $conf = array('key' => 'required', 'value' => 'required');
@@ -107,20 +117,44 @@ class config extends base {
         }
       }
       
-      // 更新时间戳
-      $_POST['updated_at'] = date('Y-m-d H:i:s');
-      $result = $this->m->updateConfig($id, $_POST);
-      if ($result) {
-        redirect(tenant_url('config/'), '配置更新成功。');
+      if ($isCreate) {
+        // 创建配置逻辑
+        // 在控制器中生成ID并添加到数据中
+        $_POST['id'] = randstr(8);
+        $_POST['config_type'] = $_POST['config_type'] ?? '';
+        // 设置租户ID（这里假设为固定值，实际应用中应从会话或上下文中获取）
+        $_POST['tenant_id'] = 'default';
+        // 设置时间戳
+        $_POST['created_at'] = date('Y-m-d H:i:s');
+        $_POST['updated_at'] = date('Y-m-d H:i:s');
+        // 检查是否已存在相同key的配置
+        $existingConfig = $this->m->getConfigByKey($_POST['key']);
+        if ($existingConfig) {
+          $err = array('key' => '该键名已存在，请使用不同的键名');
+        } else {
+          $result = $this->m->createConfig($_POST);
+          if ($result) {
+            redirect(tenant_url('config/'), '配置创建成功。');
+          } else {
+            $err = array('general' => '创建配置失败');
+          }
+        }
       } else {
-        $err = array('general' => '更新配置失败');
+        // 更新时间戳
+        $_POST['updated_at'] = date('Y-m-d H:i:s');
+        $result = $this->m->updateConfig($id, $_POST);
+        if ($result) {
+          redirect(tenant_url('config/'), '配置更新成功。');
+        } else {
+          $err = array('general' => '更新配置失败');
+        }
       }
     }
     
     $param['config'] = $config;
     $param['val'] = $_POST;
     $param['err'] = is_array($err) ? $err : array();
-    $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = '编辑配置';
+    $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = $isCreate ? '创建配置' : '编辑配置';
     // 获取租户列表用于显示
     $tenant_m = load('m/tenant_m');
     $param['tenants'] = $tenant_m->tenantlist();

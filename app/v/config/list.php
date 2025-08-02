@@ -1,12 +1,12 @@
 <div>
   <h2>配置列表</h2>
   
-  <div style="margin-bottom: 20px;">
-    <a href="<?=tenant_url('config/create/')?>" class="pure-button pure-button-primary">创建配置</a>
+  <div class="uk-margin">
+    <a href="<?=tenant_url('config/edit/') ?>?action=create" class="uk-button uk-button-primary">创建配置</a>
   </div>
   
   <?php if(isset($configs) && !empty($configs)): ?>
-    <table class="pure-table pure-table-horizontal" style="width: 100%;">
+    <table class="uk-table uk-table-divider uk-table-striped" style="width: 100%;">
       <thead>
         <tr>
           <th>ID</th>
@@ -32,14 +32,14 @@
             <td><?=$config['created_at']?></td>
             <td><?=$config['updated_at']?></td>
             <td>
-              <a href="<?=tenant_url('config/edit')?>?id=<?=$config['id']?>" class="pure-button pure-button-small">编辑</a>
-              <a href="<?=tenant_url('config/delete')?>?id=<?=$config['id']?>" class="pure-button pure-button-small button-error" onclick="return confirm('确定要删除此配置吗？')">删除</a>
+              <a href="<?=tenant_url('config/edit')?>?id=<?=$config['id']?>" class="uk-button uk-button-small uk-button-default">编辑</a>
+              <a href="<?=tenant_url('config/delete')?>?id=<?=$config['id']?>" class="uk-button uk-button-small uk-button-danger" onclick="return confirm('确定要删除此配置吗？')">删除</a>
             </td>
           </tr>
         <?php endforeach; ?>
       </tbody>
     </table>
   <?php else: ?>
-    <div class="pure-alert">暂无配置数据</div>
+    <div class="uk-alert uk-alert-warning">暂无配置数据</div>
   <?php endif; ?>
 </div>

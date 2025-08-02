@@ -91,7 +91,7 @@ calendar:
           mod: fenxibaogao
           filter:
             fund: eid
-company:
+4j9edj0m:
   title: 企业管理
   mod: 4j9edj0m
   children:
@@ -99,6 +99,10 @@ company:
       title: 清单
     add:
       title: 新增
+    export:
+      title: 导出
+    import:
+      title: 导入
     edit:
       title: 编辑
       hidden: true
@@ -169,6 +173,7 @@ company:
           type: doc
 deal:
   title: 交易明细
+  mod: gvjgjyya
   children:
     index:
       title: 浏览
@@ -203,186 +208,194 @@ position:
       children:
         about:
           title: 概况
-investor:
-  title: 投资人
+invv:
+  title: LP
+  type: dir
   children:
-    index:
-      title: 浏览
-    add:
-      title: 新增
-    edit:
-      title: 编辑
-      hidden: true
-    del:
-      title: 删除
-      hidden: true
-    view:
-      title: 查看
-      hidden: true
+    investor:
+      title: 投资人
       children:
-        about:
-          title: 概况
-        fundposition:
-          title: 投资信息
-          type: data
-          layout: data_list_easy
-          mod: fundposition
-          filter:
-            investor: eid
-funddeal:
-  title: 出资分配
+        index:
+          title: 浏览
+        add:
+          title: 新增
+        edit:
+          title: 编辑
+          hidden: true
+        del:
+          title: 删除
+          hidden: true
+        view:
+          title: 查看
+          hidden: true
+          children:
+            about:
+              title: 概况
+            fundposition:
+              title: 投资信息
+              type: data
+              layout: data_list_easy
+              mod: fundposition
+              filter:
+                investor: eid
+    funddeal:
+      title: 出资分配
+      children:
+        index:
+          title: 浏览
+        add:
+          title: 新增
+        edit:
+          title: 编辑
+          hidden: true
+        del:
+          title: 删除
+          hidden: true
+        import:
+          title: 导入
+        export:
+          title: 导出
+          hidden: true
+        view:
+          title: 查看
+          hidden: true
+          children:
+            about:
+              title: 概况
+            doc:
+              title: 文档
+            calendar:
+              title: 日程
+              type: data
+              mod: calendar
+              filter:
+                rel_e: eid
+    fundposition:
+      title: 投资人份额
+      children:
+        index:
+          title: 浏览
+        import:
+          title: 导入
+        export:
+          title: 导出
+          hidden: true
+        view:
+          title: 查看
+          hidden: true
+          children:
+            about:
+              title: 概况
+            doc:
+              title: 文档
+            calendar:
+              title: 日程
+              type: data
+              mod: calendar
+              filter:
+                rel_e: eid
+    cf_notice:
+      title: 'Call款&分配'
+      children:
+        index:
+          title: 浏览
+        add:
+          title: 新增
+        edit:
+          title: 编辑
+          hidden: true
+        del:
+          title: 删除
+          hidden: true
+        import:
+          title: 导入
+        export:
+          title: 导出
+          hidden: true
+        view:
+          title: 查看
+          hidden: true
+          children:
+            about:
+              title: 概况
+            doc:
+              title: 文档
+            calendar:
+              title: 日程
+              type: data
+              mod: calendar
+              filter:
+                rel_e: eid
+mkt:
+  title: 市场
+  type: dir
   children:
-    index:
-      title: 浏览
-    add:
-      title: 新增
-    edit:
-      title: 编辑
-      hidden: true
-    del:
-      title: 删除
-      hidden: true
-    import:
-      title: 导入
-    export:
-      title: 导出
-      hidden: true
-    view:
-      title: 查看
-      hidden: true
+    mktprice:
+      title: 股票市场
+      filter:
+        Date: time_tmonth
       children:
-        about:
-          title: 概况
-        doc:
-          title: 文档
-        calendar:
-          title: 日程
-          type: data
-          mod: calendar
-          filter:
-            rel_e: eid
-fundposition:
-  title: 投资人份额
-  children:
-    index:
-      title: 浏览
-    import:
-      title: 导入
-    export:
-      title: 导出
-      hidden: true
-    view:
-      title: 查看
-      hidden: true
+        index:
+          title: 浏览
+          btns:
+            测试: |
+              ?/entity/vendor_bridge/szxcjk/batch_update_address
+        add:
+          title: 新增
+        edit:
+          title: 编辑
+          hidden: true
+        del:
+          title: 删除
+          hidden: true
+        import:
+          title: 导入
+        export:
+          title: 导出
+          hidden: true
+        view:
+          title: 查看
+          hidden: true
+          children:
+            about:
+              title: 概况
+    stock:
+      title: 股价
+      mod: stock
       children:
-        about:
-          title: 概况
-        doc:
-          title: 文档
-        calendar:
-          title: 日程
-          type: data
-          mod: calendar
-          filter:
-            rel_e: eid
-cf_notice:
-  title: 'Call款&分配'
-  children:
-    index:
-      title: 浏览
-    add:
-      title: 新增
-    edit:
-      title: 编辑
-      hidden: true
-    del:
-      title: 删除
-      hidden: true
-    import:
-      title: 导入
-    export:
-      title: 导出
-      hidden: true
-    view:
-      title: 查看
-      hidden: true
+        index:
+          title: 浏览
+        view:
+          title: 查看
+          hidden: true
+          children:
+            about:
+              title: 概况
+    fx:
+      title: 汇率
+      mod: fx
       children:
-        about:
-          title: 概况
-        doc:
-          title: 文档
-        calendar:
-          title: 日程
-          type: data
-          mod: calendar
-          filter:
-            rel_e: eid
-mktprice:
-  title: 股票市场
-  filter:
-    Date: time_tmonth
-  children:
-    index:
-      title: 浏览
-      btns:
-        测试: |
-          ?/entity/vendor_bridge/szxcjk/batch_update_address
-    add:
-      title: 新增
-    edit:
-      title: 编辑
-      hidden: true
-    del:
-      title: 删除
-      hidden: true
-    import:
-      title: 导入
-    export:
-      title: 导出
-      hidden: true
-    view:
-      title: 查看
-      hidden: true
-      children:
-        about:
-          title: 概况
-stock:
-  title: 股价
-  mod: stock
-  children:
-    index:
-      title: 浏览
-    view:
-      title: 查看
-      hidden: true
-      children:
-        about:
-          title: 概况
-fx:
-  title: 汇率
-  mod: fx
-  children:
-    index:
-      title: 浏览
-    add:
-      title: 新增
-    edit:
-      title: 编辑
-      hidden: true
-    del:
-      title: 删除
-      hidden: true
-    import:
-      title: 导入
-    export:
-      title: 导出
-      hidden: true
-    view:
-      title: 查看
-      hidden: true
-      children:
-        about:
-          title: 概况
+        index:
+          title: 浏览
+        add:
+          title: 新增
+        edit:
+          title: 编辑
+          hidden: true
+        del:
+          title: 删除
+          hidden: true
+        import:
+          title: 导入
+        export:
+          title: 导出
+          hidden: true
+        view:
+          title: 查看
+          hidden: true
+          children:
+            about:
+              title: 概况
 charts:
   title: 图表
   children:

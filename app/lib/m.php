@@ -67,24 +67,27 @@ class m {
    */
   protected function add($data) {
     if(empty($data)) return false;
-    
-    $fields = array();
-    $values = array();
+    $lastId = null;
+    $fields = [];
+    $values = [];
     foreach($data as $key => $val) {
-      if(in_array($key, $this->fields)) {
-        $fields[] = $key;
-        $values[] = "'".$this->db->escape($val)."'";
-      }
+        if(in_array($key, $this->fields)) {
+            $fields[] = $key;
+            $values[] = "'".$this->db->escape($val)."'";
+        }
     }
     
-    if(empty($fields)) return false;
-    
-    $query = "INSERT INTO {$this->table} (".implode(',', $fields).") VALUES (".implode(',', $values).")";
-    if($this->db->query($query)) {
-      return $this->db->insert_id();
+    if(!empty($fields)) {
+        $query = "INSERT INTO {$this->table} (".implode(',', $fields).") VALUES (".implode(',', $values).")";
+        if($this->db->query($query)) {
+            $lastId = $this->db->insert_id();
+            // 及时释放内存
+            unset($fields, $values, $chunk);
+            gc_collect_cycles();
+        }
     }
-    return false;
-  }
+    return $lastId;
+}
 
   /**
    * 更新记录

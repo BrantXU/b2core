@@ -142,8 +142,12 @@ if(!method_exists($class,$method)) {
 }
 
 // 实例化控制器并调用方法
-if($class=='entity') $B2 = new $class($entity_type);
-else $B2 = new $class();
+if($class=='entity') {
+    $entity_type = isset($seg[1]) ? $seg[1] : 'default';
+    $B2 = new $class($entity_type);
+} else {
+    $B2 = new $class();
+}
 call_user_func_array(array(&$B2, $method), array_slice($seg, 3));
 
 /**
@@ -263,8 +267,8 @@ function __msg(string $str): void {
   header("Content-type: text/html; charset=utf-8");
   echo '<!DOCTYPE html><head>
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-    <link href="pure-min.css" rel="stylesheet" type="text/css">
-    </head><body><div style="padding: 20px;background: #f9f9ff;line-height: 1.5;margin: 20px;border-radius: 10px;border: 1px solid #ddd;margin: 100px auto;text-align: center;" >';
+    <link href="/uikit.min.css" rel="stylesheet" type="text/css">
+    </head><body><div class="uk-container" style="padding: 20px;background: #f9f9ff;line-height: 1.5;margin: 20px;border-radius: 10px;border: 1px solid #ddd;margin: 100px auto;text-align: center;" >';
   echo $str;
   echo '</div></body></html>';
   exit(1);

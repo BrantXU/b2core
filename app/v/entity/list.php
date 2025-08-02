@@ -1,24 +1,15 @@
-  <div class="uk-margin-bottom">
-    <a href="<?=tenant_url($entity_type.'/create/')?>" class="uk-button uk-button-primary">创建</a>
-  </div>
-  
+<div>
+      <a href="<?= tenant_url($entity_type.'/export/') ?>" class="uk-button uk-button-secondary">导出数据</a>
+      <a href="<?= tenant_url($entity_type.'/import/') ?>" class="uk-button uk-button-primary">导入数据</a>
+      <a href="<?=tenant_url($entity_type.'/create/')?>" class="uk-button uk-button-success">创建</a>
+    </div>
+
   <?php if(isset($entities) && !empty($entities)): ?>
     <table class="uk-table uk-table-striped uk-table-hover" style="width: 100%;">
       <?php
-      // 定义表头翻译映射
-      $headerMap = [
-        'id' => 'ID',
-        'tenant_id' => '租户ID',
-        'name' => '名称',
-        'type' => '类型',
-        'description' => '描述',
-        'created_at' => '创建时间',
-        'updated_at' => '更新时间'
-      ];
-      // 从$this->item获取表头字段
+      // 从item获取表头字段
       $fields = [];
       if (!empty($item) && is_array($item)) {
-        $fields = [];
         foreach ($item as $key => $config) {
           if (isset($config['listed']) && $config['listed'] == 1) {
             $fields[$key] = $config;
@@ -36,39 +27,22 @@
       </thead>
       <tbody>
         <?php foreach ($entities as $entity): ?>
-          <?php 
-          $entityData = [];
-          if (!empty($entity['data'])) {
-            $entityData = json_decode($entity['data'], true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-              $entityData = [];
-            }
-          }
-          ?>
-          <tr>
-            <?php foreach ($fields as $fieldName => $fieldConfig):              ?>
-                <td><?php
-                  if (is_array($entityData) && is_array($fieldConfig)) {
-                    // 使用配置中的field属性作为数据键，缺失时回退到字段名
-                    $key = isset($fieldConfig['field']) && is_string($fieldConfig['field']) ? $fieldConfig['field'] : $fieldName;
-                    if (isset($entityData[$key])) {
-                      $value = $entityData[$key];
-                      if (is_scalar($value)) {
-                        if ($fieldName === 'name') {
-                          echo '<a href="' . tenant_url($entity_type . '/view') . '?id=' . $entity['id'] . '" class="uk-link">' . htmlspecialchars((string)$value) . '</a>';
-                        } else {
-                          echo htmlspecialchars((string)$value);
-                        }
-                      } else {
-                        echo '[复杂数据]';
-                      }
-                    }
-                  }
-                ?></td>
+          <tr class="clickable-row" data-id="<?= $entity['id'] ?>">
+            <?php foreach ($fields as $fieldName => $fieldConfig): ?>
+              <td>
+                <?php
+                // 使用经过渲染的字段
+                if (isset($entity['rendered_fields'][$fieldName])) {
+                  echo $entity['rendered_fields'][$fieldName];
+                } else {
+                  echo '';
+                }
+                ?>
+              </td>
             <?php endforeach; ?>
             <td>
-              <a href="<?=tenant_url($entity_type.'/edit')?>?id=<?=$entity['id']?>" class="uk-button uk-button-small">编辑</a>
-              <a href="<?=tenant_url($entity_type.'/delete')?>?id=<?=$entity['id']?>" class="uk-button uk-button-small uk-button-danger" onclick="return confirm('确定要删除此实体吗？')">删除</a>
+              <a href="<?=tenant_url($entity_type.'/edit')?>/<?=$entity['id']?>" class="uk-button uk-button-small">编辑</a>
+              <a href="<?=tenant_url($entity_type.'/delete')?>/<?=$entity['id']?>" class="uk-button uk-button-small uk-button-danger" onclick="return confirm('确定要删除此实体吗？')">删除</a>
             </td>
           </tr>
         <?php endforeach; ?>
@@ -77,3 +51,30 @@
   <?php else: ?>
     <div class="uk-alert uk-alert-warning">暂无实体数据</div>
   <?php endif; ?>
+  <div class="uk-flex uk-flex-between uk-margin">
+    <div>
+      <a href="<?= tenant_url($entity_type.'/export/') ?>" class="uk-button uk-button-secondary">导出数据</a>
+      <a href="<?= tenant_url($entity_type.'/import/') ?>" class="uk-button uk-button-primary">导入数据</a>
+      <a href="<?=tenant_url($entity_type.'/create/')?>" class="uk-button uk-button-success">创建</a>
+    </div>
+  </div>
+
+  <script>
+    // 添加表格行点击事件
+    document.addEventListener('DOMContentLoaded', function() {
+      const rows = document.querySelectorAll('.clickable-row');
+      rows.forEach(row => {
+        row.addEventListener('click', function(e) {
+          // 检查点击的是否是链接或按钮，如果是则不触发行点击事件
+          if (e.target.closest('a, button')) {
+            return;
+          }
+          const id = this.getAttribute('data-id');
+          window.location.href = '<?=tenant_url($entity_type.'/view')?>/' + id;
+        });
+        // 添加悬停效果
+        row.style.cursor = 'pointer';
+      });
+    });
+  </script>
+</div>
