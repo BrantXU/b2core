@@ -239,49 +239,39 @@ function render_object_menu($menu_data, $object_id, $menu_key) {
         return $html;
     }
     
+    // 获取租户ID
+    $tenant_id = '';
+    if (isset($_SESSION['route_tenant_id'])) {
+        $tenant_id = $_SESSION['route_tenant_id'];
+    } elseif (isset($_SESSION['current_tenant'])) {
+        $tenant_id = $_SESSION['current_tenant'];
+    }
+    
+    // model名称即菜单键
+    $model = $menu_key;
+    
     $view_children = $menu_item['children']['view']['children'];
-    $html .= '<ul class="uk-nav uk-nav-default">';
+    $html .= '<ul class="uk-tab" data-uk-tab>';
     foreach ($view_children as $key => $item) {
         // 跳过隐藏菜单项
         if (isset($item['hidden']) && $item['hidden'] === true) {
             continue;
         }
+        // 二级操作
+        $secondary_operation = $key;
+        // 构建新格式的URL: tenantid/model/view/objectid/secondary_operation
+        $url_parts = [];
+        $url_parts[] = $model;
+        $url_parts[] = 'view';
+        $url_parts[] = $object_id;
+        $url_parts[] = $secondary_operation;
         
-        $html .= '<li>';
+        $url_path = implode('/', $url_parts);
+        $url = tenant_url($url_path);
         
-        // 处理URL
-        if (isset($item['type'])) {
-            switch ($item['type']) {
-                case 'data':
-                case 'ext':
-                    // 构建URL
-                    $mod = isset($item['mod']) ? $item['mod'] : $key;
-                    $url = tenant_url($mod . '/index');
-                    
-                    // 添加过滤器参数
-                    if (isset($item['filter'])) {
-                        $query_params = [];
-                        foreach ($item['filter'] as $filter_key => $filter_value) {
-                            // 替换eid为实际的对象ID
-                            if ($filter_value === 'eid') {
-                                $query_params[$filter_key] = $object_id;
-                            } else {
-                                $query_params[$filter_key] = $filter_value;
-                            }
-                        }
-                        $url .= '?' . http_build_query($query_params);
-                    }
-                    break;
-                default:
-                    $item_path = isset($item['mod']) ? $item['mod'] : $key;
-                    $url = tenant_url($item_path);
-                    break;
-            }
-        } else {
-            $item_path = isset($item['mod']) ? $item['mod'] : $key;
-            $url = tenant_url($item_path);
-        }
-        
+        // 检查是否为当前活动页面
+        $active = is_current_path(parse_url($url, PHP_URL_PATH)) ? 'uk-active' : '';
+        $html .= '<li class="' . $active . '">';
         $html .= '<a href="' . $url . '">' . htmlspecialchars($item['title'] ?? '') . '</a>';
         $html .= '</li>';
     }

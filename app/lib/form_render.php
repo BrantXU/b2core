@@ -73,6 +73,7 @@ class FormRenderer {
                         $entityModel = new entity_m();
                         // 获取指定类型的实体数据
                         $entities = $entityModel->getAllEntities($dataSource);
+                        echo $dataSource;
 
                         foreach($entities as $entity) {
                             $entityId = htmlspecialchars($entity['id']);

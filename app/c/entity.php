@@ -4,6 +4,8 @@ class entity extends base {
   protected $type;
   public $tenant_id;
   public $item;
+  public $object_menu_key = '';
+  public $object_id = '';
 
   public function __construct(string $entity_type = '' )
   {
@@ -13,21 +15,22 @@ class entity extends base {
     $this->m = load('m/entity_m');
     $this->m->type = $entity_type;
     $this->tenant_id = $_SESSION['route_tenant_id'];
-    //读取 data/tenantid/mod/$entity_type.json
-    $file = APP.'../data/'.$this->tenant_id.'/mod/'.$entity_type.'.json';
-    if(file_exists($file)){
-      $data = json_decode(file_get_contents($file),true);
-      //print_r($data);
-      $this->item = $data['item'] ?? []; // 确保item是数组
-    } else {
-      $this->item = []; // 默认设为空数组
-    }
+    // 读取实体配置
+    $this->item = $this->getItem($entity_type);
   }
 
   /**
    * 实体列表页面
    */
   public function index(): void {
+    $this->list($this->type);
+  }
+
+  public function list(string $entity_type): void {
+
+    echo $entity_type;
+    $this->m = load('m/entity_m');
+    $this->m->type = $entity_type;
     $entities = $this->m->entitylist();
     
     // 加工处理entities数据
@@ -84,7 +87,9 @@ class entity extends base {
     $param['entities'] = $processedEntities;
     $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = '实体列表';
     $param['item'] = $this->item;
-    $param['entity_type'] = $this->type;
+    $param['entity_type'] = $entity_type;
+    $param['object_menu_key'] = $this->object_menu_key;
+    $param['object_id'] = $this->object_id;
     $this->display('v/entity/list', $param);
   }
 
@@ -92,10 +97,10 @@ class entity extends base {
    * 创建实体页面
    */
   public function add(): void {
-    $this->create();
+    $this->create($this->type);
   }
   
-  public function create(): void {
+  private function create($mod): void {
     // 详细记录表单提交数据
     if (!empty($_POST)) {
       error_log('表单提交数据: ' . print_r($_POST, true));
@@ -137,11 +142,23 @@ class entity extends base {
     
     $param['val'] = $_POST;
     $param['err'] = is_array($err) ? $err : array();
-    $param['entity_type'] = $this->type;
-    $param['item'] = $this->item;
+    $param['entity_type'] = $mod;
+    $param['item'] = $this->getItem($mod);
     $param['entity'] = array();
     $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = '创建实体';
     $this->display('v/entity/edit', $param);
+  }
+
+  private function getItem($mod) {
+    $file = APP.'../data/'.$this->tenant_id.'/conf/'.$mod.'.json';
+    if(file_exists($file)){
+      $data = json_decode(file_get_contents($file),true);
+      //print_r($data);
+      $this->item = $data['item'] ?? []; // 确保item是数组
+    } else {
+      $this->item = []; // 默认设为空数组
+    }
+    return $this->item;
   }
 
   /**
@@ -195,8 +212,9 @@ class entity extends base {
     }
   }
   
-  public function view($id ='') {
-   // $id = $_GET['id'] ?? '';
+  public function view($id ='',$action = '',$action2 = 'data') {
+    //如果用户访问的是对象菜单，则从 menu 中读取菜单配置 
+    global $seg;
     if (empty($id)) {
       redirect(tenant_url('entity/'), '实体ID不存在');
       return;
@@ -206,13 +224,69 @@ class entity extends base {
       redirect(tenant_url('entity/'), '实体不存在');
       return;
     }
+
+    
+    // 添加view键存在性检查
+    
+    
+    if (isset($this->menu_data[$seg[1]]['children']['view']) && 
+        isset($this->menu_data[$seg[1]]['children']['view']['children'][$action])) { 
+        $objmenu = $this->menu_data[$seg[1]]['children']['view']['children'][$action];
+        if(isset($objmenu['type'])){
+          switch($action2){
+            case 'data':
+              //print_r($objmenu);
+              $this->object_menu_key = $this->type;
+              $this->object_id = $id;
+              $this->list($objmenu['mod']);
+              break;
+            case 'add':
+              $this->create($objmenu['mod']);
+              break;
+            case 'edit':
+              $this->edit($id);
+              break;
+            case 'delete':
+              $this->delete($id);
+              break;
+            default:
+              $this->show($entity);
+              break;
+          }
+        } else {
+          $this->show($entity);
+        }
+    } else {
+        // 如果菜单配置不存在，默认调用show方法
+        $this->show($entity);
+    }
+  }
+  
+  private function show($entity) {
+    $id = $entity['id'];
+   // $id = $_GET['id'] ?? '';
+
     // 获取实体配置项
     $item = $this->item;
+    // 构建面包屑
+    $breadcrumb = [
+      ['label' => '首页', 'url' => tenant_url('home/')],
+      ['label' => '实体管理', 'url' => tenant_url('entity/')],
+    ];
+    
+    // 当name存在时，面包屑最后一段显示name
+    $last_segment = ['label' => '实体详情', 'url' => '', 'active' => true];
+    if (isset($entity['name']) && !empty($entity['name'])) {
+      $last_segment['label'] = $entity['name'];
+    }
+    $breadcrumb[] = $last_segment;
+    
     $param = [
       'page_title' => '实体展示',
       'entity' => $entity,
       'entity_type' => $entity['type'],
       'item' => $item,
+      'breadcrumb' => $breadcrumb,
       // 设置对象菜单所需变量
       'object_menu_key' => $this->type,
       'object_id' => $id

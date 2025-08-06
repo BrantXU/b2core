@@ -185,3 +185,21 @@ function _decode($str)
 {
   return json_decode($str,true);
 }
+
+/**
+ * 检查是否为AJAX请求
+ */
+function is_ajax()
+{
+  return isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
+}
+
+/**
+ * 输出JSON格式数据
+ */
+function json_output($data)
+{
+  header('Content-Type: application/json; charset=utf-8');
+  echo json_encode($data);
+  exit;
+}

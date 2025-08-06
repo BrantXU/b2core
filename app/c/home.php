@@ -8,4 +8,13 @@ class home extends base{
         $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = 'welcome';
         $this->display('v/index', $param);
     }
+
+    /**
+     * 评论模块测试页面
+     */
+    public function test_comment(): void {
+        $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = '评论模块测试';
+        $this->display('v/test_comment', $param);
+    }
 }
+?>

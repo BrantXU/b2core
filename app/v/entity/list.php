@@ -1,7 +1,7 @@
 <div>
       <a href="<?= tenant_url($entity_type.'/export/') ?>" class="uk-button uk-button-secondary">导出数据</a>
       <a href="<?= tenant_url($entity_type.'/import/') ?>" class="uk-button uk-button-primary">导入数据</a>
-      <a href="<?=tenant_url($entity_type.'/create/')?>" class="uk-button uk-button-success">创建</a>
+      <a href="<?=tenant_url($entity_type.'/add/')?>" class="uk-button uk-button-success">创建</a>
     </div>
 
   <?php if(isset($entities) && !empty($entities)): ?>
@@ -55,7 +55,7 @@
     <div>
       <a href="<?= tenant_url($entity_type.'/export/') ?>" class="uk-button uk-button-secondary">导出数据</a>
       <a href="<?= tenant_url($entity_type.'/import/') ?>" class="uk-button uk-button-primary">导入数据</a>
-      <a href="<?=tenant_url($entity_type.'/create/')?>" class="uk-button uk-button-success">创建</a>
+      <a href="<?=tenant_url($entity_type.'/add/')?>" class="uk-button uk-button-success model-create">创建</a>
     </div>
   </div>
 

@@ -119,7 +119,7 @@ calendar:
           title: 企业事项
           type: data
           layout: data_list_easy
-          mod: event
+          mod: 25e8bm3p
           filter:
             company: eid
         gongshang:
