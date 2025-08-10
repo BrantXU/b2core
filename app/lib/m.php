@@ -31,9 +31,12 @@ class m {
     
     if (!empty($conditions)) {
       $conditionParts = [];
+      //print_r($conditions);
       foreach ($conditions as $column => $value) {
         $escapedValue = $this->db->escape($value);
-        $conditionParts[] = "`{$column}` = '{$escapedValue}'";
+        //TODO ： json 查询分别处理
+        $conditionParts[] = "{$column} = '{$escapedValue}'";
+        //$conditionParts[] = "`{$column}` = '{$escapedValue}'";
       }
       $where .= " AND " . implode(" AND ", $conditionParts);
     }
@@ -131,13 +134,30 @@ class m {
       $id = (int)$id;
       $query = "DELETE FROM {$this->table} WHERE {$this->key}={$id}";
     } else {
-      $id = "'".$this->db->escape($id)."'";
+      $id = "'" . $this->db->escape($id) . "'";
       $query = "DELETE FROM {$this->table} WHERE {$this->key}={$id}";
     }
-    return $this->db->query($query);
+    
+    // 添加调试日志
+    error_log('执行删除SQL: ' . $query);
+    $result = $this->db->query($query);
+    
+    if (!$result) {
+      // 数据库操作失败，错误信息已由db类记录
+      error_log('SQL执行失败: ' . $this->db->last_query);
+    }
+    
+    return $result;
   }
 
+  /**
+   * 处理不存在的方法调用
+   * @param string $name 方法名
+   * @param array $arg 参数数组
+   * @return bool|mixed 返回false表示方法不存在
+   */
   public function __call($name, $arg) {
-    return call_user_func_array(array($this, $name), $arg);
+    error_log("尝试调用不存在的方法: {$name}");
+    return false;
   }
 }

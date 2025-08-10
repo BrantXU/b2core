@@ -49,7 +49,7 @@ settings:
         <select name="config_type" class="uk-select">
           <option value="mod" <?=isset($val['config_type']) && $val['config_type'] == 'mod' ? 'selected' : (isset($config['config_type']) && $config['config_type'] == 'mod' ? 'selected' : '')?>>模型(mod)</option>
           <option value="flow" <?=isset($val['config_type']) && $val['config_type'] == 'flow' ? 'selected' : (isset($config['config_type']) && $config['config_type'] == 'flow' ? 'selected' : '')?>>流程(flow)</option>
-          <option value="men" <?=isset($val['config_type']) && $val['config_type'] == 'men' ? 'selected' : (isset($config['config_type']) && $config['config_type'] == 'men' ? 'selected' : '')?>>菜单(men)</option>
+          <option value="menu" <?=isset($val['config_type']) && $val['config_type'] == 'menu' ? 'selected' : (isset($config['config_type']) && $config['config_type'] == 'menu' ? 'selected' : '')?>>菜单(menu)</option>
           <option value="layout" <?=isset($val['config_type']) && $val['config_type'] == 'layout' ? 'selected' : (isset($config['config_type']) && $config['config_type'] == 'layout' ? 'selected' : '')?>>排版(layout)</option>
           <option value="doc" <?=isset($val['config_type']) && $val['config_type'] == 'doc' ? 'selected' : (isset($config['config_type']) && $config['config_type'] == 'doc' ? 'selected' : '')?>>文档(doc)</option>
         </select>

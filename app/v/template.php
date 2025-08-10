@@ -6,9 +6,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="keywords" content="<?php echo $meta_keywords ?? ''; ?>">
   <meta name="description" content="<?php echo $meta_description ?? ''; ?>">
-  <link href="/uikit.min.css" rel="stylesheet" type="text/css">
-  <script src="/uikit.min.js"></script>
-  <script src="/uikit-icons.min.js"></script>
+  <link href="/static/css/uikit.min.css" rel="stylesheet" type="text/css">
+  <script src="/static/js/uikit.min.js"></script>
+  <script src="/static/js/uikit-icons.min.js"></script>
+  <script src="/static/js/base.js"></script>
+  <script src="/static/js/tableEnhancer.js"></script>
   <style>
     body{background: #f6f6f6;line-height: 1.5;}
     h3.uk-first-column{padding:0 15px;}
@@ -104,6 +106,12 @@
     <?php endif; ?>
 
     <?php if(isset($al_content)) echo $al_content; else echo $content ?? ''; ?>
+
+    <?php if(!empty($log)): ?>
+    <pre>
+    <?php print_r($log); ?>
+    </pre>
+    <?php endif; ?>
   </div>
 </body>
 </html>

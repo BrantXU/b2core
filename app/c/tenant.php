@@ -11,8 +11,32 @@ class tenant extends base {
    * 租户列表页面
    */
   public function index(): void {
-    $tenants = $this->m->tenantlist();
+    // 获取当前页码，默认为1
+    $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+    $page = max(1, $page); // 确保页码至少为1
+    
+    // 设置每页显示的记录数
+    $limit = 10;
+    
+    // 获取租户列表（带分页）
+    $tenants = $this->m->tenantlist($page, $limit);
+    
+    // 获取总记录数
+    $total = $this->m->getTotal();
+    
+    // 计算总页数
+    $totalPages = ceil($total / $limit);
+    
+    // 准备分页数据
+    $pagination = array(
+      'current' => $page,
+      'total' => $totalPages,
+      'limit' => $limit,
+      'totalItems' => $total
+    );
+    
     $param['tenants'] = $tenants;
+    $param['pagination'] = $pagination;
     $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = '租户列表';
     $this->display('v/tenant/list', $param);
   }

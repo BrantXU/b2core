@@ -160,8 +160,10 @@ class db {
    * 转义字符串
    */
   function escape($str) {
-    return $this->driver == 'sqlite' ?
-      SQLite3::escapeString($str) :
-      mysqli_real_escape_string($this->link, $str);
+    if ($this->driver == 'sqlite') {
+      return $str === null ? '' : SQLite3::escapeString($str);
+    } else {
+      return $str === null ? '' : mysqli_real_escape_string($this->link, $str);
+    }
   }
 }

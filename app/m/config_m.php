@@ -22,6 +22,37 @@ class config_m extends m {
   }
 
   /**
+   * 获取配置总记录数
+   * @return int
+   */
+  public function getTotal() {
+    $sql = "SELECT COUNT(*) as total FROM {$this->table}";
+    
+    try {
+      $result = $this->db->query($sql);
+      return isset($result[0]['total']) ? (int)$result[0]['total'] : 0;
+    } catch (Exception $e) {
+      $this->log('获取配置总数失败: ' . $e->getMessage());
+      return 0;
+    }
+  }
+
+  /**
+   * 获取所有配置数据
+   * @return array
+   */
+  public function getAll() {
+    $sql = "SELECT * FROM {$this->table} ORDER BY created_at DESC";
+    
+    try {
+      return $this->db->query($sql);
+    } catch (Exception $e) {
+      $this->log('获取所有配置失败: ' . $e->getMessage());
+      return [];
+    }
+  }
+
+  /**
    * 根据ID获取配置信息
    * @param string $id 配置ID
    * @return array|null
@@ -90,7 +121,6 @@ class config_m extends m {
     
     // 调用父类的update方法更新数据
     $result = $this->update($id, $data);
-    
     // 如果更新成功，更新配置文件
     if ($result) {
       $this->updateConfigFile($data['tenant_id']);
@@ -110,12 +140,65 @@ class config_m extends m {
     
     $result = $this->del($id);
     
+    // 添加调试日志
+    if ($result) {
+      error_log('成功删除配置 ID: ' . $id);
+    } else {
+      error_log('删除配置失败 ID: ' . $id);
+    }
+    
     // 如果删除成功，更新配置文件
     if ($result && $config && isset($config['tenant_id'])) {
       $this->updateConfigFile($config['tenant_id']);
     }
-    
     return $result;
+  }
+
+  /**
+   * 批量删除配置
+   * @param array $ids 配置ID数组
+   * @return array 包含成功和失败的ID数组
+   */
+  public function batchDeleteConfig($ids) {
+    $successIds = array();
+    $failIds = array();
+    $tenantIds = array();
+
+    foreach ($ids as $id) {
+      // 获取配置信息
+      $config = $this->getConfig($id);
+      
+      if (!$config) {
+        $failIds[] = $id;
+        continue;
+      }
+      
+      // 记录租户ID，用于后续更新配置文件
+      $tenantIds[$config['tenant_id']] = true;
+      
+      // 删除配置
+      $result = $this->del($id);
+      
+     // echo $id;
+      // 添加调试日志
+      if ($result) {
+        $successIds[] = $id;
+        error_log('成功删除配置 ID: ' . $id);
+      } else {
+        $failIds[] = $id;
+        error_log('删除配置失败 ID: ' . $id);
+      }
+    }
+    
+    // 更新受影响的租户的配置文件
+    foreach (array_keys($tenantIds) as $tenantId) {
+      $this->updateConfigFile($tenantId);
+    }
+    
+    return array(
+      'success' => $successIds,
+      'fail' => $failIds
+    );
   }
   
   /**
@@ -184,17 +267,28 @@ class config_m extends m {
       /* Yaml 是为了调试方便，正式环境不建议使用 */
       $yamlFile = realpath($confDir) . '/' . $configId . '.yaml';
       error_log('Writing YAML file: ' . $yamlFile);
-      if (function_exists('yaml_emit')) {
-        // 检查是否存在YAML_UTF8_ENCODING常量，如果不存在则使用默认编码
-        $encoding = defined('YAML_UTF8_ENCODING') ? YAML_UTF8_ENCODING : 2;
-        if (file_put_contents($yamlFile, yaml_emit($configData, $encoding)) !== false) {
-          error_log('Created YAML file: ' . $yamlFile);
-        } else {
-          error_log('Failed to create YAML file: ' . $yamlFile);
+      
+      // 使用已加载的YAML类进行处理
+      if (class_exists('YAML')) {
+        try {
+          $yamlContent = YAML::encode($configData);
+          if (file_put_contents($yamlFile, $yamlContent) !== false) {
+            error_log('Created YAML file: ' . $yamlFile);
+          } else {
+            error_log('Failed to create YAML file: ' . $yamlFile);
+          }
+        } catch (Exception $e) {
+          error_log('Error encoding YAML: ' . $e->getMessage());
+          // 失败时尝试使用JSON格式
+          if (file_put_contents($yamlFile, json_encode($configData, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)) !== false) {
+            error_log('Created YAML file (JSON format): ' . $yamlFile);
+          } else {
+            error_log('Failed to create YAML file (JSON format): ' . $yamlFile);
+          }
         }
       } else {
-        // 如果没有yaml_emit函数，尝试使用JSON格式存储为YAML
-        error_log('Warning: yaml_emit function not available. Using JSON format for YAML file: ' . $yamlFile);
+        // 如果YAML类不可用，使用JSON格式
+        error_log('Warning: YAML class not available. Using JSON format for YAML file: ' . $yamlFile);
         if (file_put_contents($yamlFile, json_encode($configData, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)) !== false) {
           error_log('Created YAML file (JSON format): ' . $yamlFile);
         } else {

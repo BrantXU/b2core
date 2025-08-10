@@ -8,12 +8,30 @@ class config extends base {
   }
 
   /**
-   * 配置列表页面
+   * 配置列表页面 - 前端分页版本
    */
   public function index(): void {
-    $configs = $this->m->configlist();
+    // 获取所有配置数据
+    $configs = $this->m->getAll();
+    // 设置默认每页显示数量
+    $limit = 10;
+    // 计算总记录数
+    $total = count($configs);
+    // 计算总页数
+    $totalPages = max(1, ceil($total / $limit));
+    
+    // 准备分页数据
+    $pagination = [
+      'total_items' => $total,
+      'limit' => $limit,
+      'total_pages' => $totalPages
+    ];
+    
     $param['configs'] = $configs;
+    $param['pagination'] = $pagination;
     $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = '配置列表';
+    $this->addBreadcrumb('配置管理', tenant_url('config/'));
+    $this->addBreadcrumb('配置列表', '', true);
     $this->display('v/config/list', $param);
   }
 
@@ -63,6 +81,8 @@ class config extends base {
     $param['val'] = $_POST;
     $param['err'] = is_array($err) ? $err : array();
     $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = '创建配置';
+    $this->addBreadcrumb('配置管理', tenant_url('config/'));
+    $this->addBreadcrumb('创建配置', '', true);
     // 获取租户列表用于显示
     $tenant_m = load('m/tenant_m');
     $param['tenants'] = $tenant_m->tenantlist();
@@ -155,6 +175,8 @@ class config extends base {
     $param['val'] = $_POST;
     $param['err'] = is_array($err) ? $err : array();
     $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = $isCreate ? '创建配置' : '编辑配置';
+    $this->addBreadcrumb('配置管理', tenant_url('config/'));
+    $this->addBreadcrumb($isCreate ? '创建配置' : '编辑：'.$config['key'], '', true);
     // 获取租户列表用于显示
     $tenant_m = load('m/tenant_m');
     $param['tenants'] = $tenant_m->tenantlist();
@@ -174,4 +196,204 @@ class config extends base {
       redirect(tenant_url('config/'), '删除配置失败。');
     }
   }
+
+  /**
+   * 批量删除配置
+   */
+  public function batch_delete(): void {
+    if (!empty($_POST['ids']) && is_array($_POST['ids'])) {
+      $ids = $_POST['ids'];
+      $this->log('收到批量删除请求，ID数量: ' . count($ids));
+      
+      $result = $this->m->batchDeleteConfig($ids);
+      
+      $successCount = count($result['success']);
+      $failCount = count($result['fail']);
+      $this->log('批量删除结果: 成功 ' . $successCount . ' 条，失败 ' . $failCount . ' 条');
+      
+      $message = '成功删除 ' . $successCount . ' 条配置';
+      if ($failCount > 0) {
+        $message .= '，失败 ' . $failCount . ' 条配置';
+      }
+      
+      redirect(tenant_url('config/'), $message);
+    } else {
+      $this->log('批量删除请求参数无效');
+      redirect(tenant_url('config/'), '请选择要删除的配置。');
+    }
+  }
+
+  /**
+   * lpp配置导入
+   * 支持单条配置或JSON数组格式的多条配置导入
+   */
+  public function import(): void {
+    // 载入YAML处理类
+    require_once(APP . 'lib/yaml.php');
+    
+    $err = array();
+    $successCount = 0;
+    $failCount = 0;
+    $failMessages = array();
+    // 添加日志记录
+    $this->log($_FILES);
+    if (isset($_FILES['config_file'])) {
+      $file = $_FILES['config_file'];
+      $this->log('收到文件上传请求: ' . print_r($file, true));
+      // 检查文件是否上传成功
+      if ($file['error'] !== UPLOAD_ERR_OK) {
+        $err['general'] = '文件上传失败，请重试。错误码: ' . $file['error'];
+        $this->log('文件上传失败，错误码: ' . $file['error']);
+      } else {
+        // 获取文件扩展名
+      $fileExt = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+      $this->log('文件扩展名: ' . $fileExt);
+      
+      // 获取文件内容
+      $fileContent = file_get_contents($file['tmp_name']);
+      
+      // 如果是cfg格式文件，需要先解压
+      if ($fileExt === 'cfg') {
+        $this->log('检测到cfg格式文件，尝试解压');
+        if (function_exists('gcompress_decompress')) {
+          $uncompressedContent = gcompress_decompress($fileContent);
+          if ($uncompressedContent !== false) {
+            $fileContent = $uncompressedContent;
+            $this->log('cfg文件解压成功，解压后大小: ' . strlen($fileContent) . ' 字节');
+          } else {
+            $err['general'] = 'cfg文件解压失败，请确保文件已正确压缩。';
+            $this->log('cfg文件解压失败');
+          }
+        } else {
+          $err['general'] = '系统不支持gcompress解压功能。';
+          $this->log('系统不支持gcompress解压功能');
+        }
+      }
+      
+      if (empty($err)) {
+        $this->log('文件处理成功，大小: ' . strlen($fileContent) . ' 字节');
+        
+        // 尝试解析文件内容（先尝试YAML，再尝试JSON）
+        $configData = YAML::decode($fileContent);
+        if ($configData === null) {
+          $this->log('尝试以YAML解析失败，转为JSON解析');
+          $configData = json_decode($fileContent, true);
+        } else {
+          $this->log('成功以YAML解析文件内容');
+        }
+        
+        if ($configData === null) {
+          $err['general'] = '无法解析配置文件，请确保文件格式为YAML或JSON。';
+          $this->log('无法解析配置文件，JSON错误: ' . json_last_error_msg());
+        } else {
+          $this->log('成功解析配置文件，数据类型: ' . (is_array($configData) ? '数组' : '对象'));
+          
+          // 确定配置数据是单条还是多条
+          $configsToProcess = array();
+          
+          // 检查是否是JSON数组格式（多条配置）
+          if (is_array($configData) && isset($configData[0]) && is_array($configData[0])) {
+            $configsToProcess = $configData;
+            $this->log('检测到多条配置，数量: ' . count($configsToProcess));
+          } elseif (is_array($configData) && isset($configData['id']) && isset($configData['key'])) {
+            // 单条配置
+            $configsToProcess[] = $configData;
+            $this->log('检测到单条配置');
+          } else {
+            $err['general'] = '配置文件格式不正确，应为JSON数组或包含id和key字段的对象。';
+            $this->log('配置文件格式不正确，缺少必要字段');
+          }
+          
+          // 处理配置数据
+            if (!empty($configsToProcess) && empty($err)) {
+              $this->log('开始处理配置数据，总数: ' . count($configsToProcess));
+              foreach ($configsToProcess as $index => $item) {
+                //$this->log('处理第 ' . ($index + 1) . ' 条配置');
+                // 检查单条配置格式
+                if (!is_array($item) || !isset($item['id']) || !isset($item['key'])) {
+                  $failCount++;
+               //   $failMessages[] = '第' . ($index + 1) . '条配置缺少必要字段(id或key)';
+                 // $this->log('第 ' . ($index + 1) . ' 条配置缺少必要字段(id或key): ' . print_r($item, true));
+                  continue;
+                }
+                
+                $this->log('第 ' . ($index + 1) . ' 条配置格式正确，id: ' . $item['id'] . ', key: ' . $item['key']);
+                
+                // 准备配置数据
+                $data = array(
+                  'id' => $item['id'],
+                  'key' => $item['key'],
+                  'value' =>$item['data'],
+                  'config_type' => isset($item['type']) ? $item['type'] : 'mod',
+                  'description' => isset($item['label']) ? $item['label'] : '',
+                  'tenant_id' => 'default', // 根据实际需求设置租户ID
+                  'created_at' => date('Y-m-d H:i:s'),
+                  'updated_at' => date('Y-m-d H:i:s')
+                );
+                
+                // 移除id和key，将剩余部分作为value
+                $itemCopy = $item;
+                unset($itemCopy['id']);
+                unset($itemCopy['key']);
+                unset($itemCopy['config_type']);
+                unset($itemCopy['description']);
+                
+               // $data['value'] = json_encode($itemCopy, JSON_UNESCAPED_UNICODE);
+                $this->log('第 ' . ($index + 1) . ' 条配置值: ' . $data['value']);
+                
+                // 检查是否已存在相同id或key的配置
+                $existingConfigById = $this->m->getConfig($data['id']);
+                $existingConfigByKey = $this->m->getConfigByKey($data['key']);
+                
+                if ($existingConfigById) {
+                  $this->log('第 ' . ($index + 1) . ' 条配置id已存在: ' . $data['id'] . '，尝试更新');
+                  // 更新现有配置
+                  $result = $this->m->updateConfig($data['id'], $data);
+                  if ($result) {
+                    $successCount++;
+                    $this->log('第 ' . ($index + 1) . ' 条配置更新成功');
+                  } else {
+                    $failCount++;
+                    $failMessages[] = '第' . ($index + 1) . '条配置(id: ' . $data['id'] . ')更新失败';
+                    $this->log('第 ' . ($index + 1) . ' 条配置更新失败');
+                  }
+              } elseif ($existingConfigByKey) {
+                $failCount++;
+                $failMessages[] = '第' . ($index + 1) . '条配置(key: ' . $data['key'] . ')的键名已存在';
+              } else {
+                // 创建新配置
+                $result = $this->m->createConfig($data);
+                if ($result) {
+                  $successCount++;
+                } else {
+                  $failCount++;
+                  $failMessages[] = '第' . ($index + 1) . '条配置(id: ' . $data['id'] . ')创建失败';
+                }
+              }
+            }
+            
+            // 导入完成，显示结果
+            $this->log('配置处理完成，成功: ' . $successCount . ' 条，失败: ' . $failCount . ' 条');
+            if ($successCount > 0) {
+              $message = '成功导入 ' . $successCount . ' 条配置';
+              if ($failCount > 0) {
+                $message .= '，失败 ' . $failCount . ' 条。失败信息：' . implode('; ', $failMessages);
+              }
+              $this->log('导入结果: ' . $message);
+              redirect(tenant_url('config/'), $message);
+            } else {
+              $err['general'] = '所有配置导入失败：' . implode('; ', $failMessages);
+              $this->log('导入失败: ' . $err['general']);
+            }
+          }
+        }
+      }
+    }
+    
+  }
+
+  $param['err'] = $err;
+  $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = 'lpp配置导入';
+  $this->display('v/config/import', $param);
+}
 }

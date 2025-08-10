@@ -10,6 +10,8 @@ load('lib/utility',false);
 class base extends c {
 
     public $menu_data = array();
+    public $log = [];
+    public $conf = [];
 	// 构造函数 - 检查数据库配置
 	function __construct(){
 		global $db_config,$db,$db_tenant;
@@ -41,22 +43,21 @@ class base extends c {
             $tenantDbConfig['tenant_id'] = $tenantId;
             $db_tenant = new db($tenantDbConfig);
             $GLOBALS['db_tenant'] = $db_tenant;
+            $this->addBreadcrumb('首页', tenant_url('home/'));
         }
 
         // 读入 conf.json 文件
         $conf_json = file_get_contents(APP.'../data/'.$tenantId.'/conf.json');
-        //echo $conf_json;
         if ($conf_json === false) {
             error_log('无法读取 conf.json 文件');
             return;
         }
-        $conf = json_decode($conf_json, true);
+        $this->conf = json_decode($conf_json, true);
     
-        // 从conf.json中获取菜单配置ID (菜单配置类型为'men')
         $menu_config_id = null;
-        if (isset($conf['type_map']) && isset($conf['type_map']['men'])) {
+        if (isset($this->conf['type_map']) && isset($this->conf['type_map']['menu'])) {
             // 获取菜单类型的第一个配置ID
-            $menu_configs = $conf['type_map']['men'];            
+            $menu_configs = $this->conf['type_map']['menu'];            
             if (!empty($menu_configs)) {
                 $menu_config_id = key($menu_configs); // 获取第一个键作为配置ID
             }
@@ -113,13 +114,27 @@ class base extends c {
                 array('name' => '租户管理', 'url' => tenant_url('tenant/')),
                 array('name' => '配置管理', 'url' => tenant_url('config')),
                 array('name' => '用户管理', 'url' => tenant_url('user')),
-                array('name' => '实体管理', 'url' => tenant_url('entity'))
+                array('name' => '配置管理', 'url' => tenant_url('config')),
             );
         }
 
         $this->menu_data = $menu_data;
 	}
 	
+    /**
+     * 记录日志，可以接受字符串、数组或对象
+     * @param mixed $data 要记录的数据
+     */
+    public function log($data)
+  {
+    // 如果是数组或对象，转换为JSON字符串
+    if (is_array($data) || is_object($data)) {
+      //$data = json_encode($data, JSON_UNESCAPED_UNICODE);
+    }
+    $this->log[] = $data;
+  }
+
+
 	// 检查用户登录状态
 	function check() {
 		$u = load('m/user_m')->check(); 
@@ -157,98 +172,25 @@ class base extends c {
         $param['menu_data'] = $this->menu_data;
         $param['breadcrumb'] = $this->breadcrumb();
 		$param['al_content'] = view($view,$param,TRUE);
+        $param['log'] = $this->log;
 		header("Content-type: text/html; charset=utf-8");
 		view('v/template',$param);
 	}
     
     
+    protected $breadcrumbs = [];
+
+    public function addBreadcrumb($label, $url = '', $isActive = false)
+    {
+        $this->breadcrumbs[] = [
+            'label' => $label,
+            'url' => $url,
+            'active' => $isActive
+        ];
+    }
+
     private function breadcrumb()
     {
-        $breadcrumb = [];
-        // 获取当前页面路径
-        $current_path = $_SERVER['REQUEST_URI'] ?? '';
-        // 移除查询参数
-        if (strpos($current_path, '?') !== false) {
-            $current_path = substr($current_path, 0, strpos($current_path, '?'));
-        }
-        // 移除租户ID前缀
-        $tenant_id = $_SESSION['current_tenant'] ?? '';
-        if ($tenant_id && strpos($current_path, '/' . $tenant_id) === 0) {
-            $current_path = substr($current_path, strlen('/' . $tenant_id));
-        }
-        // 移除开头的斜杠
-        $current_path = ltrim($current_path, '/');
-        // 分割路径获取模块名
-        $path_parts = explode('/', $current_path);
-        $module_name = $path_parts[0] ?? '';
-        $action_name = $path_parts[1] ?? '';
-        
-        // 从菜单数据中查找模块名称
-        $menu_data = $this->menu_data ?? [];
-        $module_title = '首页'; // 默认值
-        $module_url = tenant_url('');
-        
-        if (!empty($menu_data) && !empty($module_name)) {
-            foreach ($menu_data as $item) {
-                // 检查是否为目录类型
-                $is_dir = isset($item['type']) && $item['type'] === 'dir';
-                
-                if ($is_dir && isset($item['children']) && is_array($item['children'])) {
-                    foreach ($item['children'] as $sub_item) {
-                        $item_mod = isset($sub_item['mod']) ? $sub_item['mod'] : '';
-                        if ($item_mod === $module_name) {
-                            $module_title = $sub_item['title'] ?? $sub_item['name'] ?? $module_name;
-                            $module_url = tenant_url($module_name);
-                            break 2; // 跳出两层循环
-                        }
-                    }
-                } else {
-                    $item_mod = isset($item['mod']) ? $item['mod'] : '';
-                    if ($item_mod === $module_name) {
-                        $module_title = $item['title'] ?? $item['name'] ?? $module_name;
-                        $module_url = tenant_url($module_name);
-                        break;
-                    }
-                }
-            }
-        }
-        
-        // 添加面包屑数据
-        $breadcrumb[] = ['label' => '首页', 'url' => tenant_url(''), 'active' => false];
-        
-        // 如果有模块名称且不是首页，则添加模块面包屑
-        if (!empty($module_name) && $module_name !== 'home') {
-            $breadcrumb[] = ['label' => $module_title, 'url' => $module_url, 'active' => false];
-        }
-        
-        // 添加当前页面面包屑
-        if (!empty($action_name)) {
-            // 根据操作名称生成标签
-            $action_label = [
-                'index' => '列表',
-                'add' => '新增',
-                'create' => '新增',
-                'edit' => '编辑',
-                'view' => '查看',
-                'delete' => '删除',
-                'import' => '导入',
-                'export' => '导出'
-            ][$action_name] ?? ucfirst($action_name);
-            
-            // 如果模块名称不为空，则组合标签
-            if (!empty($module_name)) {
-                $action_label = $module_title . $action_label;
-            }
-            
-            $breadcrumb[] = ['label' => $action_label, 'url' => '', 'active' => true];
-        } elseif (empty($module_name) || $module_name === 'home') {
-            // 如果是首页，则设置首页为活动状态
-            $breadcrumb[0]['active'] = true;
-        } else {
-            // 如果只有模块名称没有操作，则设置模块为活动状态
-            $breadcrumb[count($breadcrumb) - 1]['active'] = true;
-        }
-        
-        return $breadcrumb;
+        return $this->breadcrumbs;
     }
 }

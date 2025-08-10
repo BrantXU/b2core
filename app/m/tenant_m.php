@@ -19,6 +19,15 @@ class tenant_m extends m {
   }
 
   /**
+   * 获取总记录数
+   * @return int
+   */
+  public function getTotal() {
+    $result = $this->db->query("SELECT COUNT(*) as total FROM {\$this->table}");
+    return isset($result[0]['total']) ? (int)$result[0]['total'] : 0;
+  }
+
+  /**
    * 根据ID获取租户信息
    * @param int $id 租户ID
    * @return array|null

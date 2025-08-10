@@ -1,3 +1,5 @@
+# AI编程规则总结
+
 ## 数据库规则
 1. 不要对Id使用auto_increment属性，使用utility.php中的randstr()方法生成唯一ID。
 2. 采用SQLite数据库，每个租户的数据存储在独立的sqlite文件中，文件路径为：`data/{tenant_id}/db.sqlite`。

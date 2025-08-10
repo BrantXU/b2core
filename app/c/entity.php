@@ -3,7 +3,6 @@ class entity extends base {
   protected $m;
   protected $type;
   public $tenant_id;
-  public $item;
   public $object_menu_key = '';
   public $object_id = '';
 
@@ -15,26 +14,29 @@ class entity extends base {
     $this->m = load('m/entity_m');
     $this->m->type = $entity_type;
     $this->tenant_id = $_SESSION['route_tenant_id'];
-    // 读取实体配置
-    $this->item = $this->getItem($entity_type);
+    $menuLabel = $this->menu_data[$entity_type]['title'] ?? '-';
+    $this->addBreadcrumb($menuLabel, tenant_url($entity_type.'/'));   
   }
 
   /**
    * 实体列表页面
    */
-  public function index(): void {
+  public function index(): void { 
     $this->list($this->type);
   }
 
-  public function list(string $entity_type): void {
-
-    echo $entity_type;
+  public function list(string $entity_type,$opt = []): void {
+    $this->log($entity_type);
     $this->m = load('m/entity_m');
     $this->m->type = $entity_type;
+    if(isset($opt['filter'])){
+      $this->m->conditions['data->>\'$.Fund\''] = 'aa';//$opt['filter'];
+    }
     $entities = $this->m->entitylist();
     
     // 加工处理entities数据
     $processedEntities = [];
+    $item = $this->getItem($entity_type);
     foreach ($entities as $entity) {
       // 解码data字段中的JSON数据
       $entityData = [];
@@ -47,35 +49,32 @@ class entity extends base {
       
       // 合并基础字段和data字段
       $fullEntityData = array_merge($entity, $entityData);
-      
       // 使用FormRenderer渲染实体字段
       $renderedFields = [];
-      if (!empty($this->item)) {
-        foreach ($this->item as $fieldName => $fieldConfig) {
-          if (isset($fieldConfig['listed']) && $fieldConfig['listed'] == 1) {
-            // 准备renderControl所需参数
-            $type = $fieldConfig['type'] ?? 'text';
-            $value = isset($fullEntityData[$fieldName]) ? htmlspecialchars($fullEntityData[$fieldName]) : '';
-            $readonly = isset($fieldConfig['readonly']) && $fieldConfig['readonly'] ? 'readonly' : '';
-            $readonlyClass = $readonly ? ' uk-background-muted' : '';
-            $required = isset($fieldConfig['required']) && $fieldConfig['required'] ? 'required' : '';
-            $tips = isset($fieldConfig['tips']) ? '<small class="help-text">'.htmlspecialchars($fieldConfig['tips']).'</small>' : '';
-            $props = $fieldConfig['props'] ?? [];
+      foreach ($item as $fieldName => $fieldConfig) {
+        if (isset($fieldConfig['listed']) && $fieldConfig['listed'] == 1) {
+          // 准备renderControl所需参数
+          $type = $fieldConfig['type'] ?? 'text';
+          $value = isset($fullEntityData[$fieldName]) ? htmlspecialchars($fullEntityData[$fieldName]) : '';
+          $readonly = isset($fieldConfig['readonly']) && $fieldConfig['readonly'] ? 'readonly' : '';
+          $readonlyClass = $readonly ? ' uk-background-muted' : '';
+          $required = isset($fieldConfig['required']) && $fieldConfig['required'] ? 'required' : '';
+          $tips = isset($fieldConfig['tips']) ? '<small class="help-text">'.htmlspecialchars($fieldConfig['tips']).'</small>' : '';
+          $props = $fieldConfig['props'] ?? [];
 
-            $renderedFields[$fieldName] = FormRenderer::renderControl(
-              $type, 
-              $fieldName, 
-              $value, 
-              $readonly, 
-              $readonlyClass, 
-              $required, 
-              $tips, 
-              true, // view模式
-              $props, 
-              $fullEntityData, 
-              [] 
-            );
-          }
+          $renderedFields[$fieldName] = FormRenderer::renderControl(
+            $type, 
+            $fieldName, 
+            $value, 
+            $readonly, 
+            $readonlyClass, 
+            $required, 
+            $tips, 
+            true, // view模式
+            $props, 
+            $fullEntityData, 
+            [] 
+          );
         }
       }
       
@@ -86,7 +85,7 @@ class entity extends base {
     
     $param['entities'] = $processedEntities;
     $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = '实体列表';
-    $param['item'] = $this->item;
+    $param['item'] = $item;
     $param['entity_type'] = $entity_type;
     $param['object_menu_key'] = $this->object_menu_key;
     $param['object_id'] = $this->object_id;
@@ -113,13 +112,12 @@ class entity extends base {
       error_log('表单验证结果: ' . ($err === TRUE ? '通过' : print_r($err, true)));
     }
     
-   
     if (!empty($_POST) ) {
       // 在控制器中生成ID并添加到数据中
       $_POST['id'] = randstr(8);
       $_POST['tenant_id'] = $this->tenant_id;
       $_POST['type'] = $this->type;
-      $_POST['name'] = $_POST['data']['name'];
+      $_POST['name'] = (isset($_POST['data']['name']))?$_POST['data']['name']:'';
       // 租户ID通过表单隐藏字段设置
       // 设置创建和更新时间
       $_POST['created_at'] = date('Y-m-d H:i:s');
@@ -149,16 +147,39 @@ class entity extends base {
     $this->display('v/entity/edit', $param);
   }
 
+  /**
+   * 获取实体配置
+   * @param string $mod 配置ID或值
+   * @return array 配置项数组
+   */
   private function getItem($mod) {
-    $file = APP.'../data/'.$this->tenant_id.'/conf/'.$mod.'.json';
+    $configId = $mod;
+    // 1. 检查$this->conf是否存在且包含id_map
+    //print_r($this->conf['id_key_map']); 
+    if (!empty($this->conf) && isset($this->conf['id_key_map'])) {
+      // 2. 检查id是否存在于id_map中
+      if (!isset($this->conf['id_key_map'][$mod])) {
+        // 3. 如果id不存在，尝试根据value查找id
+        $reverseMap = array_flip($this->conf['id_key_map']);
+ //       print_r($reverseMap); 
+        if (isset($reverseMap[$mod])) {
+          $configId = $reverseMap[$mod];
+        }
+      }
+    }
+    
+    // 4. 根据找到的configId载入配置文件
+    $file = APP.'../data/'.$this->tenant_id.'/conf/'.$configId.'.json';
+    $item = [];
     if(file_exists($file)){
       $data = json_decode(file_get_contents($file),true);
-      //print_r($data);
-      $this->item = $data['item'] ?? []; // 确保item是数组
+      $item = $data['item'] ?? []; // 确保item是数组
     } else {
-      $this->item = []; // 默认设为空数组
+      $this->log('配置文件不存在: ' . $file);
+      $item = []; // 默认设为空数组
     }
-    return $this->item;
+    
+    return $item;
   }
 
   /**
@@ -183,14 +204,16 @@ class entity extends base {
       $_POST['data'] = json_encode($_POST['data'],JSON_UNESCAPED_UNICODE);
       $result = $this->m->updateEntity($id, $_POST);
       if ($result) {
-        redirect(tenant_url($this->type.'/'), '实体更新成功。');
+        // 检查是否存在重定向URL
+        $redirectUrl = isset($_POST['redirect_url']) && !empty($_POST['redirect_url']) ? $_POST['redirect_url'] : tenant_url($this->type.'/');
+        redirect($redirectUrl, '实体更新成功。');
       } else {
         $err = array('general' => '更新实体失败');
       }
     }
     
     $param['entity'] = $entity;
-    $param['item'] = $this->item;
+    $param['item'] = $this->getItem($this->type);
     $param['entity_type'] = $this->type;
     $param['val'] = $_POST;
     $param['err'] = is_array($err) ? $err : array();
@@ -225,7 +248,8 @@ class entity extends base {
       return;
     }
 
-    
+    $this->addBreadcrumb(isset($entity['name']) ? $entity['name'] : '实体详情', '', true);
+   
     // 添加view键存在性检查
     
     
@@ -233,12 +257,14 @@ class entity extends base {
         isset($this->menu_data[$seg[1]]['children']['view']['children'][$action])) { 
         $objmenu = $this->menu_data[$seg[1]]['children']['view']['children'][$action];
         if(isset($objmenu['type'])){
+          $action2 = $objmenu['type'];
+          $this->log($objmenu);
           switch($action2){
             case 'data':
               //print_r($objmenu);
               $this->object_menu_key = $this->type;
               $this->object_id = $id;
-              $this->list($objmenu['mod']);
+              $this->list($objmenu['mod'],$objmenu);
               break;
             case 'add':
               $this->create($objmenu['mod']);
@@ -248,6 +274,10 @@ class entity extends base {
               break;
             case 'delete':
               $this->delete($id);
+              break;
+            case 'ext':
+              $this->log("ext:  ".$objmenu['mod']); 
+              $this->show($entity,$objmenu['mod']); 
               break;
             default:
               $this->show($entity);
@@ -262,31 +292,21 @@ class entity extends base {
     }
   }
   
-  private function show($entity) {
+  // view 是视图， 如果定义了就用视图来渲染数据，否则用实体类型来渲染数据
+  private function show($entity,$view = '') {
     $id = $entity['id'];
-   // $id = $_GET['id'] ?? '';
-
+    // $id = $_GET['id'] ?? '';
     // 获取实体配置项
-    $item = $this->item;
-    // 构建面包屑
-    $breadcrumb = [
-      ['label' => '首页', 'url' => tenant_url('home/')],
-      ['label' => '实体管理', 'url' => tenant_url('entity/')],
-    ];
-    
-    // 当name存在时，面包屑最后一段显示name
-    $last_segment = ['label' => '实体详情', 'url' => '', 'active' => true];
-    if (isset($entity['name']) && !empty($entity['name'])) {
-      $last_segment['label'] = $entity['name'];
-    }
-    $breadcrumb[] = $last_segment;
-    
+    $this->log("show:  ".$view); 
+    $item = $view?$this->getItem($view):$this->getItem($entity['type']);
+    $this->log($item); 
+    // 构建面包屑 
     $param = [
       'page_title' => '实体展示',
       'entity' => $entity,
       'entity_type' => $entity['type'],
       'item' => $item,
-      'breadcrumb' => $breadcrumb,
+      
       // 设置对象菜单所需变量
       'object_menu_key' => $this->type,
       'object_id' => $id
@@ -362,11 +382,12 @@ class entity extends base {
       
       // 写入CSV头部 - 从item配置中获取
       $header = [];
-      if (is_array($this->item) && !empty($this->item)) {
+      $item = $this->getItem($this->type);
+      if (is_array($item) && !empty($item)) {
           // 使用item配置中的字段名称作为表头
           $header = array_map(function($field) {
               return $field['name'] ?? '';
-          }, array_values($this->item));
+          }, array_values($item));
       } else {
           // 如果没有有效的item配置，使用默认表头
           $header = ['ID', 'Name', 'Type', 'Created At', 'Updated At'];
@@ -379,9 +400,9 @@ class entity extends base {
           $data = json_decode($entity['data'], true) ?? [];
 
           $row = [];
-          if (is_array($this->item) && !empty($this->item)) {
+          if (is_array($item) && !empty($item)) {
               // 根据item配置中的字段导出对应的数据
-              foreach ($this->item as $fieldId => $field) {
+              foreach ($item as $fieldId => $field) {
                   // 从data中获取对应字段的值，如果不存在则为空字符串
                   $row[] = $data[$fieldId] ?? '';
               }

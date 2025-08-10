@@ -203,3 +203,27 @@ function json_output($data)
   echo json_encode($data);
   exit;
 }
+
+/**
+ * gcompress解压函数
+ * @param string $compressedData 压缩的数据
+ * @return string|false 解压后的数据，失败时返回false
+ */
+function gcompress_decompress($compressedData)
+{
+  // 检查数据是否为空
+  if (empty($compressedData)) {
+    return false;
+  }
+  
+  // 尝试使用gzuncompress解压
+  $uncompressedData = @gzuncompress($compressedData);
+  
+  // 检查解压是否成功
+  if ($uncompressedData === false) {
+    // 可能是使用其他压缩方式，尝试使用gzinflate
+    $uncompressedData = @gzinflate($compressedData);
+  }
+  
+  return $uncompressedData;
+}

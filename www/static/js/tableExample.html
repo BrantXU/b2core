@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>表格助手类示例</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.16.22/css/uikit.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.16.22/js/uikit.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.16.22/js/uikit-icons.min.js"></script>
+    <script src="tableHelper.js"></script>
+</head>
+<body>
+    <div class="uk-container uk-margin-top">
+        <h1 class="uk-heading-medium">表格助手类示例</h1>
+
+        <!-- 搜索和批量操作区域 -->
+        <div class="uk-flex uk-flex-between uk-margin-bottom">
+            <div class="uk-flex uk-flex-middle">
+                <div class="uk-search uk-search-default">
+                    <span uk-search-icon></span>
+                    <input id="searchInput" class="uk-search-input" type="search" placeholder="搜索...">
+                </div>
+            </div>
+            <div class="uk-flex uk-flex-middle uk-gap-small">
+                <div>显示</div>
+                <select id="pageSizeSelector" class="uk-select uk-width-small">
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+                <div>条/页</div>
+            </div>
+        </div>
+
+        <!-- 表格区域 -->
+        <div class="uk-overflow-auto">
+            <table id="exampleTable" class="uk-table uk-table-hover uk-table-divider" data-table-config='{
+                "paginationLinksId": "paginationLinks",
+                "prevPageId": "prevPage",
+                "nextPageId": "nextPage",
+                "totalItemsId": "totalItems",
+                "pageSizeId": "pageSize",
+                "pageSizeSelectorId": "pageSizeSelector",
+                "searchInputId": "searchInput",
+                "selectAllId": "selectAll",
+                "batchDeleteBtnId": "batchDeleteBtn",
+                "headers": [
+                    {"title": "名称", "field": "name"},
+                    {"title": "年龄", "field": "age"},
+                    {"title": "邮箱", "field": "email"},
+                    {"title": "状态", "field": "status", "render": "renderStatus"},
+                    {"title": "创建时间", "field": "createdAt"}
+                ],
+                "onEdit": "handleEdit",
+                "onDelete": "handleDelete"
+            }'>
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll"></th>
+                        <th>名称</th>
+                        <th>年龄</th>
+                        <th>邮箱</th>
+                        <th>状态</th>
+                        <th>创建时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- 批量操作按钮 -->
+        <div class="uk-margin-top uk-flex uk-flex-between">
+            <div>
+                <button id="batchDeleteBtn" class="uk-button uk-button-danger" disabled>批量删除</button>
+            </div>
+            <div class="uk-text-right">
+                共 <span id="totalItems"></span> 条记录，每页显示 <span id="pageSize"></span> 条
+            </div>
+        </div>
+
+        <!-- 分页区域 -->
+        <ul class="uk-pagination uk-flex-right uk-margin-top" id="paginationLinks">
+            <li id="prevPage"><a href="#"><span uk-pagination-previous></span></a></li>
+            <li id="nextPage"><a href="#"><span uk-pagination-next></span></a></li>
+        </ul>
+    </div>
+
+    <script>
+        // 模拟数据
+        const tableData = [
+            { id: '1', name: '张三', age: 25, email: 'zhangsan@example.com', status: 1, createdAt: '2023-01-15' },
+            { id: '2', name: '李四', age: 30, email: 'lisi@example.com', status: 0, createdAt: '2023-02-20' },
+            { id: '3', name: '王五', age: 28, email: 'wangwu@example.com', status: 1, createdAt: '2023-03-10' },
+            { id: '4', name: '赵六', age: 35, email: 'zhaoliu@example.com', status: 2, createdAt: '2023-04-05' },
+            { id: '5', name: '钱七', age: 22, email: 'qianqi@example.com', status: 1, createdAt: '2023-05-18' },
+            { id: '6', name: '孙八', age: 40, email: 'sunba@example.com', status: 0, createdAt: '2023-06-22' },
+            { id: '7', name: '周九', age: 27, email: 'zhoujiu@example.com', status: 1, createdAt: '2023-07-30' },
+            { id: '8', name: '吴十', age: 32, email: 'wushi@example.com', status: 2, createdAt: '2023-08-12' },
+            { id: '9', name: '郑十一', age: 29, email: 'zhengshiyi@example.com', status: 1, createdAt: '2023-09-08' },
+            { id: '10', name: '王十二', age: 33, email: 'wangshier@example.com', status: 0, createdAt: '2023-10-15' },
+            { id: '11', name: '刘十三', age: 26, email: 'liushisan@example.com', status: 1, createdAt: '2023-11-20' },
+            { id: '12', name: '陈十四', age: 31, email: 'chenshisi@example.com', status: 2, createdAt: '2023-12-05' }
+        ];
+
+        // 状态渲染函数
+        function renderStatus(item) {
+            const statusMap = {
+                0: { text: '禁用', class: 'uk-label uk-label-danger' },
+                1: { text: '启用', class: 'uk-label uk-label-success' },
+                2: { text: '审核中', class: 'uk-label uk-label-warning' }
+            };
+            const status = statusMap[item.status] || { text: '未知', class: 'uk-label' };
+            return `<span class="${status.class}">${status.text}</span>`;
+        }
+
+        // 编辑处理函数
+        function handleEdit(item) {
+            UIkit.modal.alert(`编辑用户: ${item.name}`);
+            // 这里可以实现编辑逻辑
+        }
+
+        // 删除处理函数
+        function handleDelete(item) {
+            UIkit.modal.confirm(`确定要删除用户: ${item.name}吗?`).then(() => {
+                // 这里可以实现删除逻辑
+                UIkit.notification('删除成功');
+            }).catch(() => {
+                // 取消删除
+            });
+        }
+
+        // 批量删除按钮事件
+        document.getElementById('batchDeleteBtn').addEventListener('click', function() {
+            const tableHelper = window.exampleTableHelper;
+            if (tableHelper) {
+                const selectedIds = tableHelper.getSelectedIds();
+                if (selectedIds.length > 0) {
+                    UIkit.modal.confirm(`确定要删除选中的 ${selectedIds.length} 条记录吗?`).then(() => {
+                        // 这里可以实现批量删除逻辑
+                        UIkit.notification('批量删除成功');
+                    }).catch(() => {
+                        // 取消删除
+                    });
+                }
+            }
+        });
+
+        // 页面加载完成后初始化表格
+        document.addEventListener('DOMContentLoaded', function() {
+            // 查找表格配置
+            const table = document.getElementById('exampleTable');
+            try {
+                // 获取配置
+                const config = JSON.parse(table.getAttribute('data-table-config'));
+                // 设置表格ID
+                config.tableId = table.id;
+                // 设置数据
+                config.data = tableData;
+                // 设置渲染函数
+                config.headers.find(h => h.render === 'renderStatus').render = renderStatus;
+                // 设置回调函数
+                config.onEdit = handleEdit;
+                config.onDelete = handleDelete;
+                // 创建表格助手实例
+                window.exampleTableHelper = new TableHelper(config);
+            } catch (error) {
+                console.error('表格初始化失败:', error);
+            }
+        });
+    </script>
+</body>
+</html>

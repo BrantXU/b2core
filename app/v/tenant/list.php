@@ -35,4 +35,31 @@
   <?php else: ?>
     <div class="pure-alert">暂无租户数据</div>
   <?php endif; ?>
+
+  <?php if(isset($pagination)): ?>
+    <div class="pagination" style="margin-top: 20px; text-align: center;">
+      <span>共 <?=$pagination['totalItems']?> 条记录，每页显示 <?=$pagination['limit']?> 条，共 <?=$pagination['total']?> 页</span>
+      <div style="margin-top: 10px;">
+        <?php if($pagination['current'] > 1): ?>
+          <a href="<?=tenant_url('tenant/')?>?page=<?=$pagination['current']-1?>&" class="pure-button pure-button-small">上一页</a>
+        <?php endif; ?>
+
+        <?php
+        // 显示页码链接，最多显示10个页码
+        $startPage = max(1, $pagination['current'] - 4);
+        $endPage = min($pagination['total'], $startPage + 9);
+        
+        for($i = $startPage; $i <= $endPage; $i++):
+        ?>
+          <a href="<?=tenant_url('tenant/')?>?page=<?=$i?>&" class="pure-button pure-button-small <?=($i == $pagination['current']) ? 'pure-button-active' : ''?>">
+            <?=$i?>
+          </a>
+        <?php endfor; ?>
+
+        <?php if($pagination['current'] < $pagination['total']): ?>
+          <a href="<?=tenant_url('tenant/')?>?page=<?=$pagination['current']+1?>&" class="pure-button pure-button-small">下一页</a>
+        <?php endif; ?>
+      </div>
+    </div>
+  <?php endif; ?>
 </div>
