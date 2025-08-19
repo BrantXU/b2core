@@ -25,11 +25,13 @@ define('SEED', 'b2core_secret_key'); // 用于加密的种子字符串
 
 // URL路由配置
 $route_config = array(
-    '/login/'=>'/user/login/',    // 登录页面路由
+    '/login'=>'/default/user/login/',    // 登录页面路由
     '/reg/'=>'/user/reg/',        // 注册页面路由
-    '/logout/'=>'/user/logout/',   // 登出路由
+    '/:any/logout'=>'/default/user/logout',   // 登出路由
     '/tenant/'=>'/tenant/', // 创建租户路由
 );
+
+
 
 // 数据库配置信息
 $db_config = array(

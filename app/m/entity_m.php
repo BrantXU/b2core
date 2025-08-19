@@ -4,6 +4,7 @@ class entity_m extends m {
   public $fields;
   public $type;
   public $conditions = [];
+  public $tenant_id;
 
   public function __construct($table = null) 
   {
@@ -30,6 +31,38 @@ class entity_m extends m {
       $conditions = array_merge($conditions,$this->conditions);
     }
     return $this->getPage($page, $limit, $conditions);
+  }
+
+  /**
+   * 分页获取数据，重写父类方法以支持JSON查询
+   * @param int $page 页码
+   * @param int $limit 每页记录数
+   * @param array $conditions 条件
+   * @return array
+   */
+  protected function getPage($page = 1, $limit = 20, $conditions = []) {
+    $offset = ($page - 1) * $limit;
+    $where = $this->filter;
+    
+    if (!empty($conditions)) {
+      $conditionParts = [];
+      foreach ($conditions as $column => $value) {
+        // 处理JSON查询条件
+        if (strpos($column, 'json_filter_') === 0) {
+          // 提取JSON字段名
+          $jsonKey = substr($column, 12); // 去掉 'json_filter_' 前缀
+          $escapedValue = $this->db->escape($value);
+          $conditionParts[] = "data->>'\$.{$jsonKey}' = '{$escapedValue}'";
+        } else {
+          $escapedValue = $this->db->escape($value);
+          $conditionParts[] = "{$column} = '{$escapedValue}'";
+        }
+      }
+      $where .= " AND " . implode(" AND ", $conditionParts);
+    }
+    
+    $query = "SELECT * FROM {$this->table} WHERE {$where} LIMIT {$limit} OFFSET {$offset}";
+    return $this->db->query($query);
   }
 
   /**
@@ -130,5 +163,37 @@ class entity_m extends m {
       }
       $query = "SELECT * FROM {$this->table} WHERE {$where}";
       return $this->db->query($query);
+  }
+
+  /**
+   * 获取实体配置
+   * @param string $mod 配置ID或值
+   * @param array $conf 配置映射数组
+   * @return array 配置项数组
+   */
+  public function getItem($mod) {
+    global $conf;
+    $configId = $mod;
+    // 1. 检查$conf是否存在且包含id_map
+    if (!empty($conf) && isset($conf['id_key_map'])) {
+      // 2. 检查id是否存在于id_map中
+      if (!isset($conf['id_key_map'][$mod])) {
+        // 3. 如果id不存在，尝试根据value查找id
+        $reverseMap = array_flip($conf['id_key_map']);
+        if (isset($reverseMap[$mod])) {
+          $configId = $reverseMap[$mod];
+        }
+      }
+    }
+    
+    // 4. 根据找到的configId载入配置文件
+    $file = APP.'../data/'.$this->tenant_id.'/conf/'.$configId.'.json';
+    $item = [];
+    if(file_exists($file)){
+      $data = json_decode(file_get_contents($file),true);
+      $item = $data['item'] ?? []; // 确保item是数组
+    }
+    
+    return $item;
   }
 }

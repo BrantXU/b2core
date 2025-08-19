@@ -18,7 +18,7 @@
 
 ## URI规则
 URI格式遵循以下模式：
-`{tenant_id}/{entity_type}/{entity_action}/{entity_id}/{submenu}/{submenu_action}/{submenu_entity_id}`
+`{tenant_id}/{entity_type}/{entity_action}/{submenu}/{entity_id}/{submenu_action}/{submenu_entity_id}`
 
 示例：
 `default/1erztlh1/view/shngjYJZ/fundposition/add`

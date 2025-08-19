@@ -5,6 +5,8 @@ class home extends base{
     	parent::__construct();
     }
     public function index():void {
+
+        $this->log($_SESSION);
         $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = 'welcome';
         $this->display('v/index', $param);
     }

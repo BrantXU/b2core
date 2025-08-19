@@ -259,12 +259,12 @@ function render_object_menu($menu_data, $object_id, $menu_key) {
         }
         // 二级操作
         $secondary_operation = $key;
-        // 构建新格式的URL: tenantid/model/view/objectid/secondary_operation
+        // 构建新格式的URL: tenantid/model/view/secondary_operation/objectid
         $url_parts = [];
         $url_parts[] = $model;
         $url_parts[] = 'view';
-        $url_parts[] = $object_id;
         $url_parts[] = $secondary_operation;
+        $url_parts[] = $object_id;
         
         $url_path = implode('/', $url_parts);
         $url = tenant_url($url_path);

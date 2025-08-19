@@ -2,6 +2,7 @@
 // 加载配置文件
 require_once APP . 'config.php';
 
+$conf = [];
 // 加载工具类库
 load('lib/utility',false);
 // 初始化数据库连接(如果配置了数据库)
@@ -11,12 +12,16 @@ class base extends c {
 
     public $menu_data = array();
     public $log = [];
-    public $conf = [];
 	// 构造函数 - 检查数据库配置
 	function __construct(){
-		global $db_config,$db,$db_tenant;
-            // 确保db_config全局变量已定义
-            // 确保db_config全局变量已定义并正确加载
+		global $db_config,$db,$db_tenant,$conf,$tenant_id,$uri;
+        $user = load('m/user_m')->check();
+        if(!$user['id']&& $uri!='/default/user/login'){
+            redirect(BASE . '/login/', '登录系统');
+        }
+
+    // 确保db_config全局变量已定义
+    // 确保db_config全局变量已定义并正确加载
 
         if (!isset($GLOBALS['db_config'])) {
             error_log('数据库配置未找到');
@@ -31,33 +36,30 @@ class base extends c {
         $GLOBALS['db'] = $db;
         
         // 初始化租户数据库连接（如果有当前租户）
-        if (isset($_SESSION['route_tenant_id'])) {
-            //print_r($_SESSION);
-            $tenantId = $_SESSION['route_tenant_id'];
-            $tenantDbConfig = $GLOBALS['db_config'];
-            // 确保租户数据库配置存在
-            if (!is_array($tenantDbConfig)) {
-                error_log('租户数据库配置不存在');
-                return;
-            }
-            $tenantDbConfig['tenant_id'] = $tenantId;
-            $db_tenant = new db($tenantDbConfig);
-            $GLOBALS['db_tenant'] = $db_tenant;
-            $this->addBreadcrumb('首页', tenant_url('home/'));
+        $tenantId =$tenant_id ?:'default';
+        $_SESSION['route_tenant_id'] = $tenantId;
+        $tenantDbConfig = $GLOBALS['db_config'];
+        // 确保租户数据库配置存在
+        if (!is_array($tenantDbConfig)) {
+            error_log('租户数据库配置不存在');
+            return;
         }
-
+        $tenantDbConfig['tenant_id'] = $tenantId;
+        $db_tenant = new db($tenantDbConfig);
+        $GLOBALS['db_tenant'] = $db_tenant;
+        $this->addBreadcrumb('首页', tenant_url('home/'));
         // 读入 conf.json 文件
         $conf_json = file_get_contents(APP.'../data/'.$tenantId.'/conf.json');
         if ($conf_json === false) {
             error_log('无法读取 conf.json 文件');
             return;
         }
-        $this->conf = json_decode($conf_json, true);
+        $conf = json_decode($conf_json, true);
     
         $menu_config_id = null;
-        if (isset($this->conf['type_map']) && isset($this->conf['type_map']['menu'])) {
+        if (isset($conf['type_map']) && isset($conf['type_map']['menu'])) {
             // 获取菜单类型的第一个配置ID
-            $menu_configs = $this->conf['type_map']['menu'];            
+            $menu_configs = $conf['type_map']['menu'];            
             if (!empty($menu_configs)) {
                 $menu_config_id = key($menu_configs); // 获取第一个键作为配置ID
             }
@@ -144,7 +146,6 @@ class base extends c {
 	// 显示视图的统一方法
 	function display($view='v/index',$param = array()){
         $param['u'] = $this->check();
-        
         // 获取当前租户信息
         // 首先检查路由中指定的租户ID
         if(isset($_SESSION['route_tenant_id'])) {
@@ -166,8 +167,6 @@ class base extends c {
             }
             $param['current_tenant'] = null;
         }
-		
-
         
         $param['menu_data'] = $this->menu_data;
         $param['breadcrumb'] = $this->breadcrumb();

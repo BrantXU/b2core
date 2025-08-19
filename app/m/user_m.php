@@ -133,7 +133,7 @@ class user_m extends m {
 		}
 	}
     
-	  function check()
+	function check()
   {
     // 从session读取认证信息
     if(isset($_SESSION[$this->auth])){

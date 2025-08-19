@@ -13,7 +13,7 @@
 
 // 定义框架版本号
 define('B2CORE_VERSION','3.0');
-
+$tenant_id = '';
 // 统一开启session
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
@@ -53,6 +53,8 @@ function render_url(): void {
   exit(0);
 }
 
+
+
 /**
  * 路由处理
  * 根据config.php中的路由配置进行URL重写
@@ -63,6 +65,8 @@ foreach ($route_config as $key => $val) {
     $uri = preg_replace('#^'.$key.'#', $val, $uri);
   }
 }
+
+echo $uri;
 
 // 解析URL段落
 $uri = rtrim($uri,'/'); 
@@ -95,7 +99,6 @@ if (!$is_specific_route && count($seg) >= 2) {
   array_shift($seg);
   array_unshift($seg,'');
   // 将租户ID存储到全局变量或session中
-  $_SESSION['route_tenant_id'] = $tenant_id;
 } 
 
   /**

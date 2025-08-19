@@ -17,7 +17,7 @@
     <div class="uk-grid uk-child-width-1-1" uk-grid>
       <?php echo FormRenderer::renderFormFields($item, $entityData, [], [], true); ?>
       <div class="uk-margin-top">
-        <a href="<?=BASE?>/<?=$_SESSION['route_tenant_id']?>/<?=$entity['type']?>/edit/<?=$entity['id']?>" class="uk-button uk-button-primary">编辑</a>
+        <a href="<?=tenant_url($entity['type'].'/view/'.$action.'/'.$entity['id'].'/edit')?>" class="uk-button uk-button-primary">编辑</a>
         <a href="<?=BASE?>/entity/" class="uk-button">返回列表</a>
       </div>
     </div>

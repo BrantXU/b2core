@@ -70,7 +70,7 @@
             return;
           }
           const id = this.getAttribute('data-id');
-          window.location.href = '<?=tenant_url($entity_type.'/view')?>/' + id;
+          window.location.href = '<?=tenant_url( $entity_type.'/view/about/')?>' + id;
         });
         // 添加悬停效果
         row.style.cursor = 'pointer';
