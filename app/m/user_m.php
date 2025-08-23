@@ -81,6 +81,12 @@ class user_m extends m {
     }
 
     function login($username,$password){
+	    // 检查数据库连接是否正常
+	    if (!isset($this->db) || is_null($this->db)) {
+	        $this->login_err = '数据库连接未初始化！';
+	        return FALSE;
+	    }
+	    
 	    $username = $this->db->escape($username);
 	    // 先检查表结构
 	    $hasLevel = false;
@@ -124,6 +130,11 @@ class user_m extends m {
     }
     
     function isexist($name){
+		// 检查数据库连接是否正常
+		if (!isset($this->db) || is_null($this->db)) {
+		    return '数据库连接未初始化！';
+		}
+		
 		$query = "SELECT COUNT(*) as count FROM ".$this->table." WHERE username='".$this->db->escape($name)."'";
 		$res=$this->db->query($query);
 		if($res[0]['count'] > 0){
@@ -169,6 +180,11 @@ class user_m extends m {
      * @return bool
      */
     public function addUserToTenant($userId, $tenantId) {
+        // 检查数据库连接是否正常
+        if (!isset($this->db) || is_null($this->db)) {
+            return false;
+        }
+        
         $userId = $this->db->escape($userId);
         $tenantId = $this->db->escape($tenantId);
         $query = "INSERT INTO tb_user_tenant (user_id, tenant_id) VALUES ('$userId', '$tenantId')";

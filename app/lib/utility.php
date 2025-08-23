@@ -1,6 +1,7 @@
 <?php
 require_once('menu_render.php');
 require_once('form_render.php');
+require_once('table_render.php');
 // function : verify the validity of form
 function validate($conf = array(), $data = array()) {
   $data = empty($data) ? $_POST : $data;

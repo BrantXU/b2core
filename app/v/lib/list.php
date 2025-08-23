@@ -26,18 +26,14 @@
         </tr>
       </thead>
       <tbody>
-        <?php foreach ($entities as $entity): ?>
+        <?php foreach ($entities as $ent):
+          $entity = json_decode($ent['data'],true);
+          $entity['id'] = $ent['id'];
+          ?>
           <tr class="clickable-row" data-id="<?= $entity['id'] ?>">
             <?php foreach ($fields as $fieldName => $fieldConfig): ?>
               <td>
-                <?php
-                // 使用经过渲染的字段
-                if (isset($entity['rendered_fields'][$fieldName])) {
-                  echo $entity['rendered_fields'][$fieldName];
-                } else {
-                  echo '';
-                }
-                ?>
+              <?=isset($entity[$fieldName])?FormRenderer::item($entity[$fieldName],$fieldConfig,isset($entity[$fieldName.'_label'])?$entity[$fieldName.'_label']:''):''?>
               </td>
             <?php endforeach; ?>
             <td>

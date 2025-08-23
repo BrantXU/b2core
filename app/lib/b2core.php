@@ -66,7 +66,7 @@ foreach ($route_config as $key => $val) {
   }
 }
 
-echo $uri;
+// echo $uri;
 
 // 解析URL段落
 $uri = rtrim($uri,'/'); 

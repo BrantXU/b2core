@@ -15,14 +15,8 @@ class base extends c {
 	// 构造函数 - 检查数据库配置
 	function __construct(){
 		global $db_config,$db,$db_tenant,$conf,$tenant_id,$uri;
-        $user = load('m/user_m')->check();
-        if(!$user['id']&& $uri!='/default/user/login'){
-            redirect(BASE . '/login/', '登录系统');
-        }
-
-    // 确保db_config全局变量已定义
-    // 确保db_config全局变量已定义并正确加载
-
+        
+        // 确保db_config全局变量已定义并正确加载
         if (!isset($GLOBALS['db_config'])) {
             error_log('数据库配置未找到');
             return;
@@ -47,6 +41,12 @@ class base extends c {
         $tenantDbConfig['tenant_id'] = $tenantId;
         $db_tenant = new db($tenantDbConfig);
         $GLOBALS['db_tenant'] = $db_tenant;
+        
+        // 在初始化数据库连接后再检查用户登录状态
+        $user = load('m/user_m')->check();
+        if(!$user['id']&& $uri!='/default/user/login'){
+            redirect(BASE . '/login/', '登录系统');
+        }
         $this->addBreadcrumb('首页', tenant_url('home/'));
         // 读入 conf.json 文件
         $conf_json = file_get_contents(APP.'../data/'.$tenantId.'/conf.json');
@@ -144,7 +144,7 @@ class base extends c {
 	}
 
 	// 显示视图的统一方法
-	function display($view='v/index',$param = array()){
+    function display($view='v/index',$param = array(), $show_menu = true){
         $param['u'] = $this->check();
         // 获取当前租户信息
         // 首先检查路由中指定的租户ID
@@ -168,13 +168,19 @@ class base extends c {
             $param['current_tenant'] = null;
         }
         
-        $param['menu_data'] = $this->menu_data;
-        $param['breadcrumb'] = $this->breadcrumb();
-		$param['al_content'] = view($view,$param,TRUE);
+        // 只有在需要显示菜单时才添加菜单数据
+        if ($show_menu) {
+            $param['menu_data'] = $this->menu_data;
+            $param['breadcrumb'] = $this->breadcrumb(); 
+        } else {
+            // 添加隐藏菜单的标志
+            $param['hide_menu'] = true;
+        }
+        $param['al_content'] = view($view,$param,TRUE);
         $param['log'] = $this->log;
-		header("Content-type: text/html; charset=utf-8");
-		view('v/template',$param);
-	}
+        header("Content-type: text/html; charset=utf-8");
+        view('v/template',$param);
+    }
     
     
     protected $breadcrumbs = [];

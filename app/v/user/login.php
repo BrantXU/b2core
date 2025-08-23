@@ -3,7 +3,7 @@
   <?php if(isset($info) && $info): ?>
     <div class="pure-alert pure-alert-error"><?=$info?></div>
   <?php endif; ?>
-  <form method="post" class="pure-form pure-form-stacked">
+  <form class="pure-form pure-form-stacked" method="post">
     <div>
       <label>用户名</label>
       <input type="text" name="username" 

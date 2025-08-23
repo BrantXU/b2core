@@ -27,7 +27,7 @@
       line-height: 40px;
       white-space: nowrap;
     }
-    .uk-dropdown{padding: 3px;}
+    .uk-dropdown{padding: 3px;font-size:.875rem;}
     .uk-navbar-nav > li.uk-parent > a::after {
       content: "";
       margin-left: 6px;
@@ -41,7 +41,6 @@
     .uk-nav-sub .uk-nav-sub {
       padding-left: 15px;
     }
-    
     /* 两排菜单样式 */
     .top-menu {
       background: #f8f8f8;
@@ -60,10 +59,12 @@
     .top-menu li>a:hover, .uk-dropdown-navbar .uk-nav-navbar li>a:hover{background: #f5f5f5;}
     .top-menu li.uk-active>a, .uk-dropdown-navbar .uk-nav-navbar li.uk-active>a{background: #e0e0e0; font-weight: bold;}
     .uk-navbar-nav, .uk-nav-navbar{gap:0px;}
+    .usr-panel{float:right;}
   </style>
 </head>
 <body>
-    <div> 
+  <div> 
+  <div class="usr-panel" >
   <?php if(!empty($u) && is_array($u) && array_key_exists('id', $u) && $u['id']!=0){?>
    当前登录 <?=isset($u['name']) ? $u['name'] : (isset($u['email']) ? $u['email'] : '用户')?> ，
    <?php if(!empty($current_tenant) && is_array($current_tenant) && array_key_exists('name', $current_tenant) && isset($current_tenant['name'])){?>
@@ -71,8 +72,9 @@
    <?php }?>
    <a href="<?=tenant_url('user/logout')?>">退出登录</a>
   <?php }  ?>
-  
-  <?php if(!empty($menu_data)): ?>
+  </div>
+
+  <?php if(!empty($menu_data) && is_array($menu_data) && empty($hide_menu)): ?>
   <!-- 顶部主菜单 -->
   <nav class="uk-navbar-container top-menu" uk-navbar>
     <div class="uk-navbar-left">
@@ -98,6 +100,8 @@
         <?php endforeach; ?>
       </ul>
     </nav>
+
+
     <?php endif; ?>
 
     <!-- 渲染对象菜单 -->
@@ -106,7 +110,6 @@
     <?php endif; ?>
 
     <?php if(isset($al_content)) echo $al_content; else echo $content ?? ''; ?>
-
     <?php if(!empty($log)): ?>
     <pre>
     <?php print_r($log); ?>

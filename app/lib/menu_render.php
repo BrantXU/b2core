@@ -1,48 +1,4 @@
 <?php 
-
-/**
- * 递归渲染多级菜单
- * @param array $menu_data 菜单数据
- * @param int $level 菜单层级
- * @return string HTML代码
- */
-function render_menu($menu_data, $level = 0, $current_path = '') {
-    $html = '';
-    
-    // 根据层级设置不同的CSS类
-    $ul_class = $level == 0 ? 'uk-nav uk-nav-default' : 'uk-nav-sub';
-    $li_class = $level == 0 ? 'uk-parent' : '';
-    
-    $html .= '<ul class="' . $ul_class . '"'.($level == 0 ? ' uk-nav-parent-icon' : '').' data-uk-nav>';
-    
-    foreach ($menu_data as $key => $item) {
-        // 跳过隐藏菜单项
-        if (isset($item['hidden']) && $item['hidden'] === true) {
-            continue;
-        }
-        // 检查是否有子菜单
-        $has_children = isset($item['children']) && is_array($item['children']) && !empty($item['children']);
-        // 为有子菜单的项添加特殊类
-        $item_class = $has_children ? 'uk-parent' : '';
-        $html .= '<li class="' . $li_class . ' ' . $item_class . '">';
-        $item_path = isset($item['mod']) ? $item['mod'] : $key;
-        $full_path = $current_path ? rtrim($current_path, '/') . '/' . ltrim($item_path, '/') : $item_path;
-        $url = tenant_url($full_path);
-        $html .= '<a href="' .$url . '">' . htmlspecialchars($item['title'] ?? '') . '</a>';
-        
-        // 如果有子菜单，递归渲染
-        if ($has_children) {
-            $html .= render_menu($item['children'], $level + 1, $full_path);
-        }
-        
-        $html .= '</li>';
-    }
-    
-    $html .= '</ul>';
-    
-    return $html;
-}
-
 /**
  * 渲染顶部主菜单
  * @param array $menu_data 菜单数据
@@ -52,6 +8,8 @@ function render_top_menu($menu_data) {
     $html = '<ul class="uk-navbar-nav">';
     foreach ($menu_data as $key => $item) {
         // 跳过隐藏菜单项
+
+        if(in_array($key , ['id','key']))continue;
         if (isset($item['hidden']) && $item['hidden'] === true) {
             continue;
         }

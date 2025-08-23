@@ -27,7 +27,6 @@ class entity extends base {
   }
 
   public function list(string $entity_type,$opt = []): void {
-    $this->log($opt);
     $this->m = load('m/entity_m');
     $this->m->type = $entity_type;
     if(isset($opt['filter']) && is_array($opt['filter'])) {
@@ -38,56 +37,62 @@ class entity extends base {
       }
     }
     $entities = $this->m->entitylist();
-    
     // 加工处理entities数据
     $processedEntities = [];
     $item = $this->m->getItem($entity_type);
-    foreach ($entities as $entity) {
-      // 解码data字段中的JSON数据
-      $entityData = [];
-      if (!empty($entity['data'])) {
-        $entityData = json_decode($entity['data'], true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-          $entityData = [];
-        }
-      }
+    $tr = new TableRenderer();
+    $tr->item = $item;
+    $tr->data = $entities;
+    $tr->entity_type = $entity_type;
+    $param['table_content'] = $tr->render();
+    
+    // foreach ($entities as $entity) {
+    //   // 解码data字段中的JSON数据
+    //   $entityData = [];
+    //   if (!empty($entity['data'])) {
+    //     $entityData = json_decode($entity['data'], true);
+    //     if (json_last_error() !== JSON_ERROR_NONE) {
+    //       $entityData = [];
+    //     }
+    //   }
       
-      // 合并基础字段和data字段
-      $fullEntityData = array_merge($entity, $entityData);
-      // 使用FormRenderer渲染实体字段
-      $renderedFields = [];
-      foreach ($item as $fieldName => $fieldConfig) {
-        if (isset($fieldConfig['listed']) && $fieldConfig['listed'] == 1) {
-          // 准备renderControl所需参数
-          $type = $fieldConfig['type'] ?? 'text';
-          $value = isset($fullEntityData[$fieldName]) ? htmlspecialchars($fullEntityData[$fieldName]) : '';
-          $readonly = isset($fieldConfig['readonly']) && $fieldConfig['readonly'] ? 'readonly' : '';
-          $readonlyClass = $readonly ? ' uk-background-muted' : '';
-          $required = isset($fieldConfig['required']) && $fieldConfig['required'] ? 'required' : '';
-          $tips = isset($fieldConfig['tips']) ? '<small class="help-text">'.htmlspecialchars($fieldConfig['tips']).'</small>' : '';
-          $props = $fieldConfig['props'] ?? [];
+    //   // 合并基础字段和data字段
+    //   $fullEntityData = array_merge($entity, $entityData);
+    //   // 使用FormRenderer渲染实体字段
+    //   $renderedFields = [];
+    //   foreach ($item as $fieldName => $fieldConfig) {
+    //     if (isset($fieldConfig['listed']) && $fieldConfig['listed'] == 1) {
+    //       // 准备renderControl所需参数
+    //       $type = $fieldConfig['type'] ?? 'text';
+    //       $value = isset($fullEntityData[$fieldName]) ? htmlspecialchars($fullEntityData[$fieldName]) : '';
+    //       $readonly = isset($fieldConfig['readonly']) && $fieldConfig['readonly'] ? 'readonly' : '';
+    //       $readonlyClass = $readonly ? ' uk-background-muted' : '';
+    //       $required = isset($fieldConfig['required']) && $fieldConfig['required'] ? 'required' : '';
+    //       $tips = isset($fieldConfig['tips']) ? '<small class="help-text">'.htmlspecialchars($fieldConfig['tips']).'</small>' : '';
+    //       $props = $fieldConfig['props'] ?? [];
 
-          $renderedFields[$fieldName] = FormRenderer::renderControl(
-            $type, 
-            $fieldName, 
-            $value, 
-            $readonly, 
-            $readonlyClass, 
-            $required, 
-            $tips, 
-            true, // view模式
-            $props, 
-            $fullEntityData, 
-            [],
-            $item
-          );
-        }
-      }
+    //       $renderedFields[$fieldName] = FormRenderer::renderControl(
+    //         $type, 
+    //         $fieldName, 
+    //         $value, 
+    //         $readonly, 
+    //         $readonlyClass, 
+    //         $required, 
+    //         $tips, 
+    //         true, // view模式
+    //         $props, 
+    //         $fullEntityData, 
+    //         [],
+    //         $item
+    //       );
+    //     }
+    //   }
       
-      $processedEntity = $entity;
-      $processedEntity['rendered_fields'] = $renderedFields;
-      $processedEntities[] = $processedEntity;
-    }
+    //   $processedEntity = $entity;
+    //   $processedEntity['rendered_fields'] = $renderedFields;
+    //   $processedEntities[] = $processedEntity;
+    // }
+
     
     $param['entities'] = $processedEntities;
     $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = '实体列表';
@@ -95,7 +100,9 @@ class entity extends base {
     $param['entity_type'] = $entity_type;
     $param['object_menu_key'] = $this->object_menu_key;
     $param['object_id'] = $this->object_id;
-    $this->display('v/entity/list', $param);
+
+
+    $this->display('v/entity/list1', $param);
   }
 
   /**

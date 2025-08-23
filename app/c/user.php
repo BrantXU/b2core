@@ -105,7 +105,7 @@ class user extends base{
         exit;
       } else {
         $param['info'] = $this->m->getLoginError();
-        $this->display('v/user/login',$param);   
+        $this->display('v/user/login',$param, false);   
         exit;
       }
   }
@@ -144,7 +144,7 @@ class user extends base{
     $param['val'] = $_POST;
     $param['err'] = is_array($err) ? $err : array();
     $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = '用户注册';
-    $this->display('v/user/register',$param);
+    $this->display('v/user/register',$param, false);
   }
   
   function test(){
