@@ -23,7 +23,6 @@ class tenant extends base {
     
     // 获取总记录数
     $total = $this->m->getTotal();
-    
     // 计算总页数
     $totalPages = ceil($total / $limit);
     
@@ -68,10 +67,8 @@ class tenant extends base {
   /**
    * 编辑租户页面
    */
-  public function edit(): void {
-    $id = $_GET['id'];
+  public function edit($id): void {
     $tenant = $this->m->getTenant($id);
-    
     if (!$tenant) {
       show_404('租户不存在');
     }

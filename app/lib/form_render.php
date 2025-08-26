@@ -3,6 +3,8 @@
  * FormRenderer类 - 表单渲染工具
  * 用于根据配置和数据渲染不同类型的表单字段
  */
+require_once(APP.'lib/render_select.php');
+
 class FormRenderer {
     /**
      * 渲染单个表单字段
@@ -52,7 +54,16 @@ class FormRenderer {
             $label = isset($entityData[$field.'_label']) ? $entityData[$field.'_label'] : '';
 
             // 调用渲染控件的方法
-            $html .= self::renderControl($config['type'], $field, $value, $label, $readonly, $required, $tips, $view, $config['props'] ?? []);
+            $controlConfig = [
+                'type' => $config['type'],
+                'id' => $field,
+                'readonly' => !empty($readonly),
+                'required' => !empty($required),
+                'tips' => $tips,
+                'view' => $view,
+                'props' => $config['props'] ?? []
+            ];
+            $html .= self::renderControl($value, $controlConfig, $label);
 
             // 添加错误信息
             $errorMsg = isset($err['data'][$field]) ? $err['data'][$field] : '';
@@ -76,35 +87,26 @@ class FormRenderer {
         if (empty($config)) {
             return $value;
         }
-
-        return self::renderControl(
-            $config['type'],
-            $config['id'],
-            $value,
-            $label,
-            isset($config['readonly']) ? true : false,
-            isset($config['required']) ? true : false,
-            isset($config['tips']) ? $config['tips'] : '',
-            true,
-            isset($config['props']) ? $config['props'] : []
-        );
+        $config['view'] = true;
+        return self::renderControl($value, $config, $label);
     }
 
     /**
      * 仅负责渲染控件部分
      * 
-     * @param string $type 控件类型
-     * @param string $field 字段名
      * @param mixed $value 字段值
+     * @param array $config 控件配置
      * @param string $label 标签值
-     * @param string $readonly 是否只读
-     * @param string $required 是否必填
-     * @param string $tips 提示信息
-     * @param bool|string $view 视图类型
-     * @param array $props 额外属性
      * @return string 渲染后的HTML
      */
-    public static function renderControl($type, $field, $value, $label, $readonly, $required, $tips, $view, $props = []) {
+    public static function renderControl($value, $config, $label) {
+        $type = $config['type'];
+        $field = $config['id'] ?? '';
+        $readonly = isset($config['readonly']) && $config['readonly'] ? 'readonly' : '';
+        $required = isset($config['required']) && $config['required'] ? 'required' : '';
+        $tips = isset($config['tips']) ? '<small class="help-text">'.htmlspecialchars($config['tips']).'</small>' : '';
+        $view = $config['view'] ?? false;
+        $props = $config['props'] ?? [];
         $html = '';
         $readonlyClass = $readonly ? ' uk-background-muted' : ''; // 添加只读样式类
 
@@ -119,79 +121,7 @@ class FormRenderer {
 
             case 'select_new':
             case 'select':
-                $hiddenName = 'data['.$field.'_label]';
-
-                if ($view) {
-                    $displayValue = $label ?: htmlspecialchars($value);
-                    $html .= '<div class="uk-text-muted">' . $displayValue . '</div>';
-                } else {
-                    // 初始化hiddenValue为空字符串
-                    $hiddenValue = '';
-
-                    // 获取数据源和类型
-                    $dataSource = $props['data_source'] ?? '';
-                    $sourceType = $props['type'] ?? '';
-
-                    // 查找当前选中的值
-                    $selectedValue = isset($value) ? $value : '';
-
-                    // 处理mod类型的数据源
-                    if ($sourceType === 'mod' && !empty($dataSource)) {
-                        // 引入entity模型
-                        $entityModel = new entity_m();
-                        // 获取指定类型的实体数据
-                        $entities = $entityModel->getAllEntities($dataSource);
-
-                        // 查找选中实体的标签
-                        $hiddenValue = self::getHiddenValueFromEntities($selectedValue, $entities, $label);
-                    } else {
-                        // 处理普通选项
-                        $options = !empty($dataSource) ? explode("
-", $dataSource) : [];
-                        // 查找选中选项的标签
-                        $hiddenValue = self::getHiddenValueFromOptions($selectedValue, $options, $label);
-                    }
-
-                    // 添加隐藏字段
-                    $html .= '<input type="hidden" name="'.$hiddenName.'" value="'.$hiddenValue.'">';
-
-                    // 添加选择框
-                    $html .= '<select class="uk-select uk-width-1-1' . $readonlyClass . '" name="data['.$field.']" '.$required
-                        .' onchange="document.getElementsByName(\''.$hiddenName.'\')[0].value = this.options[this.selectedIndex].text">';
-                    $html .= $tips;
-
-                    // 添加选项
-                    if ($sourceType === 'mod' && !empty($dataSource) && !empty($entities)) {
-                        foreach ($entities as $entity) {
-                            $entityId = htmlspecialchars($entity['id']);
-                            $entityName = htmlspecialchars($entity['name']);
-                            $isSelected = (isset($value) && $value === $entityId) ? 'selected' : '';
-                            $html .= '<option value="'.$entityId.'" '.$isSelected.'>'.$entityName.'</option>';
-                        }
-                    } else {
-                        $options = !empty($dataSource) ? explode("
-", $dataSource) : [];
-                        foreach ($options as $opt) {
-                            $opt = trim($opt);
-                            if ($opt === '') continue;
-
-                            // 解析选项值和标签
-                            if (strpos($opt, ':') !== false) {
-                                list($optValue, $optLabel) = explode(':', $opt, 2);
-                                $optValue = trim($optValue);
-                                $optLabel = trim($optLabel);
-                            } else {
-                                $optValue = $opt;
-                                $optLabel = $opt;
-                            }
-
-                            $isSelected = (isset($value) && $value === $optValue) ? 'selected' : '';
-                            $html .= '<option value="'.htmlspecialchars($optValue).'" '.$isSelected.'>'.htmlspecialchars($optLabel).'</option>';
-                        }
-                    }
-
-                    $html .= '</select>';
-                }
+                $html .= render_select($value, $config, $label, $view);
                 break;
 
             case 'percent':
@@ -235,10 +165,27 @@ class FormRenderer {
                     $html .= $tips;
                 }
                 break;
-
+            case 'puretext':
+                $html .= '<div class="uk-text-muted">' .$props['tpl'] . '</div>';
+                break;
             case 'data':
-                // data类型控件需要渲染成占据一整行的表格
-                $html .= self::table_render();
+                //print_r($config['props']);
+                $tr = new TableRenderer();
+                $tr->item = load('m/entity_m')->getItem($config['props']['data_source']);
+                $conditions = [];
+                if(isset($config['filter'])) {
+                    $filter = explode(':',$config['filter']);
+                    $tr_filter = array($filter[0] => $filter[1]);
+                    foreach($tr_filter as $key => $value) {
+                        // Store the key and value separately for proper escaping in the model
+                        $value = $value=='eid'?$opt['eid']:$value;
+                        $conditions["json_filter_{$key}"] = $value;
+                    }
+                }
+                
+                $tr->data =  load('m/entity_m')->getPage(1,200,$conditions);
+                $tr->entity_type = $config['props']['data_source'];
+                $html.= $tr->render();
                 break;
 
             default:
@@ -262,106 +209,6 @@ class FormRenderer {
         // 这里添加表格渲染逻辑
         // 临时返回一个空表格作为占位符
         return '<div class="uk-overflow-auto"><table class="uk-table uk-table-divider"><thead><tr><th>暂无数据</th></tr></thead><tbody><tr><td>请配置数据源</td></tr></tbody></table></div>';
-    }
-
-    /**
-     * 从实体列表中获取隐藏字段的值
-     * 
-     * @param string $selectedValue 选中的值
-     * @param array $entities 实体列表
-     * @param string $label 标签值
-     * @return string 隐藏字段的值
-     */
-    private static function getHiddenValueFromEntities($selectedValue, $entities, $label) {
-        $hiddenValue = '';
-
-        // 如果有选中的实体ID，查找对应的标签
-        if (!empty($selectedValue)) {
-            foreach ($entities as $entity) {
-                if ($entity['id'] === $selectedValue) {
-                    $hiddenValue = htmlspecialchars($entity['name']);
-                    break;
-                }
-            }
-        }
-
-        // 如果没有找到对应的标签，但有选中的值，使用选中的值作为标签
-        if (empty($hiddenValue) && !empty($selectedValue)) {
-            $hiddenValue = htmlspecialchars($selectedValue);
-        }
-
-        // 如果仍然没有hiddenValue，但有标签值，则使用它
-        if (empty($hiddenValue) && !empty($label)) {
-            $hiddenValue = htmlspecialchars($label);
-        }
-
-        // 如果仍然没有hiddenValue，且没有选中的值，则使用第一个选项的标签作为默认值
-        if (empty($hiddenValue) && empty($selectedValue) && !empty($entities)) {
-            $hiddenValue = htmlspecialchars($entities[0]['name']);
-        }
-
-        return $hiddenValue;
-    }
-
-    /**
-     * 从选项列表中获取隐藏字段的值
-     * 
-     * @param string $selectedValue 选中的值
-     * @param array $options 选项列表
-     * @param string $label 标签值
-     * @return string 隐藏字段的值
-     */
-    private static function getHiddenValueFromOptions($selectedValue, $options, $label) {
-        $hiddenValue = '';
-
-        // 如果有选中的值，查找对应的标签
-        if (!empty($selectedValue)) {
-            foreach ($options as $opt) {
-                $opt = trim($opt);
-                if ($opt === '') continue;
-
-                // 解析选项值和标签
-                if (strpos($opt, ':') !== false) {
-                    list($optValue, $optLabel) = explode(':', $opt, 2);
-                    $optValue = trim($optValue);
-                    $optLabel = trim($optLabel);
-                } else {
-                    $optValue = $opt;
-                    $optLabel = $opt;
-                }
-
-                // 如果找到匹配的值，使用对应的标签
-                if ($optValue === $selectedValue) {
-                    $hiddenValue = htmlspecialchars($optLabel);
-                    break;
-                }
-            }
-        }
-
-        // 如果没有找到对应的标签，但有选中的值，使用选中的值作为标签
-        if (empty($hiddenValue) && !empty($selectedValue)) {
-            $hiddenValue = htmlspecialchars($selectedValue);
-        }
-
-        // 如果仍然没有hiddenValue，但有标签值，则使用它
-        if (empty($hiddenValue) && !empty($label)) {
-            $hiddenValue = htmlspecialchars($label);
-        }
-
-        // 如果仍然没有hiddenValue，且没有选中的值，则使用第一个选项的标签作为默认值
-        if (empty($hiddenValue) && empty($selectedValue) && !empty($options)) {
-            $firstOption = trim($options[0]);
-            if (!empty($firstOption)) {
-                if (strpos($firstOption, ':') !== false) {
-                    list(, $firstOptionLabel) = explode(':', $firstOption, 2);
-                    $hiddenValue = htmlspecialchars(trim($firstOptionLabel));
-                } else {
-                    $hiddenValue = htmlspecialchars($firstOption);
-                }
-            }
-        }
-
-        return $hiddenValue;
     }
 
     /**

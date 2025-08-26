@@ -8,8 +8,8 @@ class entity_m extends m {
 
   public function __construct($table = null) 
   {
-    global $db_tenant;
-    $this->db = $db_tenant; 
+    global $tdb;
+    $this->db = $tdb; 
     $this->table = 'tb_entity';
     $this->conditions = [];
     $this->key = 'id';    
@@ -40,7 +40,7 @@ class entity_m extends m {
    * @param array $conditions 条件
    * @return array
    */
-  protected function getPage($page = 1, $limit = 20, $conditions = []) {
+  public function getPage($page = 1, $limit = 20, $conditions = []) {
     $offset = ($page - 1) * $limit;
     $where = $this->filter;
     

@@ -396,4 +396,12 @@ class config extends base {
   $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = 'lpp配置导入';
   $this->display('v/config/import', $param);
 }
+  function convert() : void {
+    $configs = $this->m->getPage(1,20,['config_type'=>'mod']);
+    //print_r($configs);
+    foreach($configs as $c){
+      $d = json_decode($c['value'],true);
+      print_r($d);
+    } 
+  }
 }

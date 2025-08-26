@@ -8,19 +8,20 @@ class entity extends base {
 
   public function __construct(string $entity_type = '' )
   {
+    global $tenant_id;
     parent::__construct();
     // 声明并初始化 $type 属性
     $this->type = $entity_type;
     $this->m = load('m/entity_m');
-    $this->tenant_id = $_SESSION['route_tenant_id'];
+    $this->m->tenant_id =  $this->tenant_id = $tenant_id;
     $this->m->type = $entity_type;
-    $this->m->tenant_id = $this->tenant_id;
+    // todo：  需要一个 menutitle 的数组，用于生成 breadcrumb 要考虑到子菜单的问题。
     $menuLabel = $this->menu_data[$entity_type]['title'] ?? '-';
     $this->addBreadcrumb($menuLabel, tenant_url($entity_type.'/'));   
   }
 
   /**
-   * 实体列表页面
+   * 列表页面
    */
   public function index(): void { 
     $this->list($this->type);
@@ -43,76 +44,24 @@ class entity extends base {
     $tr = new TableRenderer();
     $tr->item = $item;
     $tr->data = $entities;
+    $tr->opt = $opt;
     $tr->entity_type = $entity_type;
     $param['table_content'] = $tr->render();
-    
-    // foreach ($entities as $entity) {
-    //   // 解码data字段中的JSON数据
-    //   $entityData = [];
-    //   if (!empty($entity['data'])) {
-    //     $entityData = json_decode($entity['data'], true);
-    //     if (json_last_error() !== JSON_ERROR_NONE) {
-    //       $entityData = [];
-    //     }
-    //   }
-      
-    //   // 合并基础字段和data字段
-    //   $fullEntityData = array_merge($entity, $entityData);
-    //   // 使用FormRenderer渲染实体字段
-    //   $renderedFields = [];
-    //   foreach ($item as $fieldName => $fieldConfig) {
-    //     if (isset($fieldConfig['listed']) && $fieldConfig['listed'] == 1) {
-    //       // 准备renderControl所需参数
-    //       $type = $fieldConfig['type'] ?? 'text';
-    //       $value = isset($fullEntityData[$fieldName]) ? htmlspecialchars($fullEntityData[$fieldName]) : '';
-    //       $readonly = isset($fieldConfig['readonly']) && $fieldConfig['readonly'] ? 'readonly' : '';
-    //       $readonlyClass = $readonly ? ' uk-background-muted' : '';
-    //       $required = isset($fieldConfig['required']) && $fieldConfig['required'] ? 'required' : '';
-    //       $tips = isset($fieldConfig['tips']) ? '<small class="help-text">'.htmlspecialchars($fieldConfig['tips']).'</small>' : '';
-    //       $props = $fieldConfig['props'] ?? [];
-
-    //       $renderedFields[$fieldName] = FormRenderer::renderControl(
-    //         $type, 
-    //         $fieldName, 
-    //         $value, 
-    //         $readonly, 
-    //         $readonlyClass, 
-    //         $required, 
-    //         $tips, 
-    //         true, // view模式
-    //         $props, 
-    //         $fullEntityData, 
-    //         [],
-    //         $item
-    //       );
-    //     }
-    //   }
-      
-    //   $processedEntity = $entity;
-    //   $processedEntity['rendered_fields'] = $renderedFields;
-    //   $processedEntities[] = $processedEntity;
-    // }
-
-    
     $param['entities'] = $processedEntities;
-    $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = '实体列表';
+    $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = '列表';
     $param['item'] = $item;
     $param['entity_type'] = $entity_type;
     $param['object_menu_key'] = $this->object_menu_key;
     $param['object_id'] = $this->object_id;
-
-
-    $this->display('v/entity/list1', $param);
+    $this->display('v/entity/list', $param);
   }
 
   /**
-   * 创建实体页面
+   * 创建页面
    */
-  public function add(): void {
-    $this->create($this->type);
-  }
-  
-  private function create($mod): void {
+  public function add($opt=''): void {
+    $filter = base64_decode($opt);
+    $mod = $this->type;
     // 详细记录表单提交数据
     if (!empty($_POST)) {
       error_log('表单提交数据: ' . print_r($_POST, true));
@@ -138,16 +87,15 @@ class entity extends base {
       $_POST['data'] = json_encode($_POST['data'], JSON_UNESCAPED_UNICODE);
 
       error_log('准备保存的数据: ' . print_r($_POST, true));
-      
       $result = $this->m->createEntity($_POST);
-      
       error_log('createEntity 结果: ' . ($result ? '成功' : '失败'));
       
       if ($result) {
-        redirect(tenant_url($this->type.'/'), '实体创建成功。');
+        $redirectUrl = isset($_POST['redirect_url']) && !empty($_POST['redirect_url']) ? $_POST['redirect_url'] : tenant_url($this->type.'/');
+        redirect($redirectUrl, '添加成功。');
       } else {
-        $err = array('general' => '创建实体失败，请联系管理员');
-        error_log('创建实体失败，错误信息: ' . print_r($err, true));
+        $err = array('general' => '创建失败，请联系管理员');
+        error_log('创建失败，错误信息: ' . print_r($err, true));
       }
     }
     
@@ -155,20 +103,20 @@ class entity extends base {
     $param['err'] = is_array($err) ? $err : array();
     $param['entity_type'] = $mod;
     $param['item'] = $this->m->getItem($mod);
-    $param['entity'] = array();
-    $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = '创建实体';
+    $param['entity']['data'] = $filter;
+    $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = '创建';
     $this->display('v/entity/edit', $param);
   }
 
   /**
-   * 编辑实体页面
+   * 编辑页面
    */
   public function edit($id ='',$mod =''): void {
  //   $id = $_GET['id'];
     $entity = $this->m->getEntity($id);
     
     if (!$entity) {
-      show_404('实体不存在');
+      show_404('不存在');
     }
     
     $conf = array('name' => 'required');
@@ -184,9 +132,9 @@ class entity extends base {
       if ($result) {
         // 检查是否存在重定向URL
         $redirectUrl = isset($_POST['redirect_url']) && !empty($_POST['redirect_url']) ? $_POST['redirect_url'] : tenant_url($this->type.'/');
-        redirect($redirectUrl, '实体更新成功。');
+        redirect($redirectUrl, '更新成功。');
       } else {
-        $err = array('general' => '更新实体失败');
+        $err = array('general' => '更新失败');
       }
     }
     
@@ -195,46 +143,42 @@ class entity extends base {
     $param['entity_type'] = $this->type;
     $param['val'] = $_POST;
     $param['err'] = is_array($err) ? $err : array();
-    $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = '编辑实体';
+    $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = '编辑';
     $this->display('v/entity/edit', $param);
   }
 
   /**
-   * 删除实体
+   * 删除
    */
-  public function delete(): void {
-    $id = $_GET['id'];
+  public function delete($id): void {
     $result = $this->m->deleteEntity($id);
-    
     if ($result) {
-      redirect(tenant_url('entity/'), '实体删除成功。');
+      redirect(tenant_url(seg(1)), '删除成功。');
     } else {
-      redirect(tenant_url('entity/'), '删除实体失败。');
+      redirect(tenant_url(seg(1)), '删除失败。');
     }
   }
   
   public function view($action = 'about',$id ='',$action2 = '') {
-    //如果用户访问的是对象菜单，则从 menu 中读取菜单配置 
-    global $seg;
     if (empty($id)) {
-      redirect(tenant_url('entity/'), '实体ID不存在');
+      redirect(tenant_url(seg(1)), 'ID不存在');
       return;
     }
     $entity = $this->m->getEntity($id);
     if (!$entity) {
-      redirect(tenant_url('entity/'), '实体不存在');
+      redirect(tenant_url(seg(1)), '不存在');
       return;
     }
 
     $this->object_id = $id;
     $this->object_menu_key = $this->type;
 
-    $this->addBreadcrumb(isset($entity['name']) ? $entity['name'] : '实体详情', '', true);
+    $this->addBreadcrumb(isset($entity['name']) ? $entity['name'] : '详情', '', true);
     // 添加view键存在性检查
-    if (isset($this->menu_data[$seg[1]]['children']['view']) && 
-        isset($this->menu_data[$seg[1]]['children']['view']['children'][$action])) { 
-
-        $objmenu = $this->menu_data[$seg[1]]['children']['view']['children'][$action];
+    if (isset($this->menu_data[seg(1)]['children']['view']) && 
+        isset($this->menu_data[seg(1)]['children']['view']['children'][$action])) { 
+        $objmenu = $this->menu_data[seg(1)]['children']['view']['children'][$action];
+      }
         if(isset($objmenu['type'])){
           $action2 = $action2?:$objmenu['type'];
           switch($action2){
@@ -258,20 +202,20 @@ class entity extends base {
               $this->show($entity);
               break;
           }
-        } else {
+        }
+        else {
+          // 如果菜单配置不存在，默认调用show方法
           if($action2 =='edit'){
             $this->edit($id);
           } else {
             $this->show($entity);
           }
         }
-    } else {
-        // 如果菜单配置不存在，默认调用show方法
-        $this->show($entity);
-    }
+
+
   }
   
-  // view 是视图， 如果定义了就用视图来渲染数据，否则用实体类型来渲染数据
+  // view 是视图， 如果定义了就用视图来渲染数据，否则用类型来渲染数据
   private function show($entity,$view = '') {
     global $seg;
     $id = $entity['id'];
@@ -279,7 +223,7 @@ class entity extends base {
     //$this->log($item); 
     // 构建面包屑 
     $param = [
-      'page_title' => '实体展示',
+      'page_title' => '展示',
       'entity' => $entity,
       'entity_type' => $entity['type'],
       'item' => $item,
@@ -292,7 +236,7 @@ class entity extends base {
   }
   
   /**
-   * 导入实体数据
+   * 导入数据
    */
   public function import(): void {
       if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['import_file'])) {
@@ -319,7 +263,7 @@ class entity extends base {
                   continue;
               }
               
-              // 准备实体数据
+              // 准备数据
               $entity_data = [
                   'name' => $data['name'],
                   'type' => $this->type,
@@ -329,7 +273,7 @@ class entity extends base {
                   'id' => randstr(8)
               ];
               
-              // 保存实体
+              // 保存
               if ($this->m->createEntity($entity_data)) {
                   $success++;
               } else {
@@ -341,14 +285,14 @@ class entity extends base {
           redirect(tenant_url('entity/'), "导入完成：成功{$success}条，失败{$error}条");
       }
       
-      $this->display('v/entity/import', ['page_title' => '导入实体']);
+      $this->display('v/entity/import', ['page_title' => '导入']);
   }
 
   /**
-   * 导出实体数据，导出的数据应该是 数据表中 data 字段中的 json 数据，表头的内容在 item 配置中。
+   * 导出数据，导出的数据应该是 数据表中 data 字段中的 json 数据，表头的内容在 item 配置中。
    */
   public function export(): void {
-      // 获取所有实体数据
+      // 获取所有数据
       $entities = $this->m->getAllEntities($this->type);
       
       // 设置CSV响应头

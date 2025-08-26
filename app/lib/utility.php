@@ -42,7 +42,8 @@ function validate($conf = array(), $data = array()) {
 function redirect($url , $msg ='',$ext_msg = '') //跳转
 {
   $param = array('url'=>$url, 'msg'=>$msg, 'ext_msg'=>$ext_msg);
- // if(!view('redirect',$param)) header("location:$url");
+ // if(!view('redirect',$param)) 
+  header("location:$url");
   view('v/redirect',$param);
   exit();
 }

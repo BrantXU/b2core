@@ -10,6 +10,7 @@ class m {
   protected $key;
   public $table;
   public $fields;
+  public $conditions;
   
   function __construct($table) {
     global $db;
@@ -25,7 +26,7 @@ class m {
    * @param array $conditions 条件
    * @return array
    */
-  protected function getPage($page = 1, $limit = 20, $conditions = []) {
+  public function getPage($page = 1, $limit = 20, $conditions = []) {
     $offset = ($page - 1) * $limit;
     $where = $this->filter;
     
@@ -36,7 +37,6 @@ class m {
         $escapedValue = $this->db->escape($value);
         //TODO ： json 查询分别处理
         $conditionParts[] = "{$column} = '{$escapedValue}'";
-        //$conditionParts[] = "`{$column}` = '{$escapedValue}'";
       }
       $where .= " AND " . implode(" AND ", $conditionParts);
     }

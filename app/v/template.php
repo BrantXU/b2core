@@ -11,6 +11,7 @@
   <script src="/static/js/uikit-icons.min.js"></script>
   <script src="/static/js/base.js"></script>
   <script src="/static/js/tableEnhancer.js"></script>
+  <script src="/static/js/modal.js"></script>
   <style>
     body{background: #f6f6f6;line-height: 1.5;}
     h3.uk-first-column{padding:0 15px;}
@@ -60,20 +61,33 @@
     .top-menu li.uk-active>a, .uk-dropdown-navbar .uk-nav-navbar li.uk-active>a{background: #e0e0e0; font-weight: bold;}
     .uk-navbar-nav, .uk-nav-navbar{gap:0px;}
     .usr-panel{float:right;}
-  </style>
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      position: relative;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      z-index: 1001;
+    }
+
+</style>
 </head>
 <body>
   <div> 
-  <div class="usr-panel" >
-  <?php if(!empty($u) && is_array($u) && array_key_exists('id', $u) && $u['id']!=0){?>
-   当前登录 <?=isset($u['name']) ? $u['name'] : (isset($u['email']) ? $u['email'] : '用户')?> ，
-   <?php if(!empty($current_tenant) && is_array($current_tenant) && array_key_exists('name', $current_tenant) && isset($current_tenant['name'])){?>
-   访问租户 <?=htmlspecialchars($current_tenant['name'] ?? '未知租户')?> ，
-   <?php }?>
-   <a href="<?=tenant_url('user/logout')?>">退出登录</a>
-  <?php }  ?>
-  </div>
-
   <?php if(!empty($menu_data) && is_array($menu_data) && empty($hide_menu)): ?>
   <!-- 顶部主菜单 -->
   <nav class="uk-navbar-container top-menu" uk-navbar>

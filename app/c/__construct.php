@@ -1,7 +1,6 @@
 <?php
 // 加载配置文件
 require_once APP . 'config.php';
-
 $conf = [];
 // 加载工具类库
 load('lib/utility',false);
@@ -9,53 +8,45 @@ load('lib/utility',false);
 
 // 基础控制器类
 class base extends c {
-
     public $menu_data = array();
     public $log = [];
 	// 构造函数 - 检查数据库配置
 	function __construct(){
-		global $db_config,$db,$db_tenant,$conf,$tenant_id,$uri;
-        
+		global $db_config,$db,$tdb,$conf,$tenant_id,$uri; 
         // 确保db_config全局变量已定义并正确加载
         if (!isset($GLOBALS['db_config'])) {
             error_log('数据库配置未找到');
             return;
         }
-
-        $db_config = $GLOBALS['db_config'];
-        // Include the db class definition
         // 初始化数据库连接
         $db = new db($db_config);
-        // 将数据库连接对象存储在全局变量中，以便在其他地方使用
-        $GLOBALS['db'] = $db;
-        
         // 初始化租户数据库连接（如果有当前租户）
-        $tenantId =$tenant_id ?:'default';
-        $_SESSION['route_tenant_id'] = $tenantId;
-        $tenantDbConfig = $GLOBALS['db_config'];
-        // 确保租户数据库配置存在
-        if (!is_array($tenantDbConfig)) {
-            error_log('租户数据库配置不存在');
-            return;
-        }
-        $tenantDbConfig['tenant_id'] = $tenantId;
-        $db_tenant = new db($tenantDbConfig);
-        $GLOBALS['db_tenant'] = $db_tenant;
-        
+
         // 在初始化数据库连接后再检查用户登录状态
         $user = load('m/user_m')->check();
         if(!$user['id']&& $uri!='/default/user/login'){
             redirect(BASE . '/login/', '登录系统');
         }
+
+        if(!isset($_SESSION['current_tenant']))return;
+        $tenant_id = $_SESSION['current_tenant'];
+        $tdb_config = array(
+            'driver' => 'sqlite',        // 数据库类型：mysql 或 sqlite
+            'sqlite' => array(
+                'database' => APP.'../data/'.$tenant_id.'/db.sqlite' // 通用SQLite数据库文件路径
+            )
+        );
+        $tdb = new db($tdb_config);  // $tdb 是 租户数据库
+
         $this->addBreadcrumb('首页', tenant_url('home/'));
         // 读入 conf.json 文件
-        $conf_json = file_get_contents(APP.'../data/'.$tenantId.'/conf.json');
+        $conf_json = file_get_contents(APP.'../data/'.$tenant_id.'/conf.json');
         if ($conf_json === false) {
             error_log('无法读取 conf.json 文件');
             return;
         }
         $conf = json_decode($conf_json, true);
-    
+
         $menu_config_id = null;
         if (isset($conf['type_map']) && isset($conf['type_map']['menu'])) {
             // 获取菜单类型的第一个配置ID
@@ -64,12 +55,10 @@ class base extends c {
                 $menu_config_id = key($menu_configs); // 获取第一个键作为配置ID
             }
         }
-    
         // 从/data/{tenant_id}/conf/中读入菜单配置
         $menu_data = array();
-        if(isset($tenantId) && !empty($menu_config_id)) {
-            $conf_dir = APP . '../data/' . $tenantId . '/conf/';
-            
+        if(isset($tenant_id) && !empty($menu_config_id)) {
+            $conf_dir = APP . '../data/' . $tenant_id . '/conf/';
             // 尝试读取JSON配置文件
             $json_file = $conf_dir . $menu_config_id . '.json';
             if (file_exists($json_file)) {
@@ -95,19 +84,7 @@ class base extends c {
                 }
             }
         }
-        
-        // 如果租户目录下没有菜单文件，则尝试从默认目录加载
-        if(empty($menu_data)) {
-            $default_menu_file = APP . '../data/default/menu.json';
-            if(file_exists($default_menu_file)) {
-                $menu_json = file_get_contents($default_menu_file);
-                $menu_data = json_decode($menu_json, true);
-                // 注意：convert_menu_data函数未定义，暂时使用原始数据
-                // $menu_data = convert_menu_data($menu_data);
-                error_log('警告: convert_menu_data函数未定义，使用原始菜单数据');
-            }
-        }
-        
+
         // 如果仍然没有菜单数据，则使用默认菜单
         if(empty($menu_data)) {
             $menu_data = array(
@@ -119,7 +96,6 @@ class base extends c {
                 array('name' => '配置管理', 'url' => tenant_url('config')),
             );
         }
-
         $this->menu_data = $menu_data;
 	}
 	
@@ -170,6 +146,10 @@ class base extends c {
         
         // 只有在需要显示菜单时才添加菜单数据
         if ($show_menu) {
+            $this->menu_data[] = ['title'=>'当前登录 Brant','type'=>'dir','children'=>
+            ['tenant'=>['title'=>'切换租户'],
+            'logout'=>['title'=>'退出'],
+            ]];
             $param['menu_data'] = $this->menu_data;
             $param['breadcrumb'] = $this->breadcrumb(); 
         } else {

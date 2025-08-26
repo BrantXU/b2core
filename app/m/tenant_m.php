@@ -23,7 +23,7 @@ class tenant_m extends m {
    * @return int
    */
   public function getTotal() {
-    $result = $this->db->query("SELECT COUNT(*) as total FROM {\$this->table}");
+    $result = $this->db->query("SELECT COUNT(*) as total FROM $this->table");
     return isset($result[0]['total']) ? (int)$result[0]['total'] : 0;
   }
 

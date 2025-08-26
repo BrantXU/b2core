@@ -116,7 +116,7 @@ function find_sub_menu_data($menu_data, $path_parts) {
                     $item_mod = isset($sub_item['mod']) ? $sub_item['mod'] : $sub_key;
                     
                     if ($item_mod === $first_part) {
-                        return $sub_item['children'];
+                        return isset($sub_item['children'])?$sub_item['children']:'';
                     }
                 }
             }

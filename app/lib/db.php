@@ -102,7 +102,6 @@ class db {
   function query($query) {
     $ret = array();
     $this->last_query = $query;
-    
     if ($this->driver == 'sqlite') {
       $result = $this->link->query($query);
       if (!$result) {

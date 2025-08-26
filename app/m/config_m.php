@@ -1,13 +1,16 @@
 <?php
 require_once APP . 'lib/yaml.php';
-
 class config_m extends m {
   public $table;
   public $fields;
   
-  public function __construct() {
-    parent::__construct('tb_config');
-   $this->fields = array('id', 'key', 'value', 'config_type', 'description', 'tenant_id', 'created_at', 'updated_at');
+  public function __construct() {    
+    global $tdb;
+    $this->db = $tdb; 
+    $this->table = 'tb_config';
+    $this->conditions = [];
+    $this->key = 'id';    
+    $this->fields = array('id', 'key', 'value', 'config_type', 'description', 'tenant_id', 'created_at', 'updated_at');
   }
 
   /**

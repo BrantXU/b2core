@@ -1,11 +1,11 @@
 <div>
-      <a href="<?= tenant_url($entity_type.'/export/') ?>" class="uk-button uk-button-secondary">导出数据</a>
-      <a href="<?= tenant_url($entity_type.'/import/') ?>" class="uk-button uk-button-primary">导入数据</a>
-      <a href="<?=tenant_url($entity_type.'/add/')?>" class="uk-button uk-button-success">创建</a>
-    </div>
+  <a href="<?= tenant_url($entity_type.'/export/') ?>" class="uk-button uk-button-secondary">导出数据</a>
+  <a href="<?= tenant_url($entity_type.'/import/') ?>" class="uk-button uk-button-primary">导入数据</a>
+  <a href="<?=tenant_url($entity_type.'/add/'.$opt)?>" class="uk-button uk-button-success">创建</a>
+</div>
 
-  <?php if(isset($entities) && !empty($entities)): ?>
-    <table class="uk-table uk-table-striped uk-table-hover" style="width: 100%;">
+<?php if(isset($entities) && !empty($entities)): ?>
+    <table class="uk-table uk-table-striped uk-table-hover" id="table" >
       <?php
       // 从item获取表头字段
       $fields = [];
@@ -73,4 +73,3 @@
       });
     });
   </script>
-</div>
