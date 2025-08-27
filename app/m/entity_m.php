@@ -81,19 +81,11 @@ class entity_m extends m {
    */
   public function createEntity($data) {
     // 创建实体
-    $entityId = $this->add($data);
-    
-    if ($entityId) {
-      // 获取创建的完整实体数据
-      $entityData = $this->getEntity($entityId);
-      
-      if ($entityData) {
-        // 保存实体缓存
-        $this->saveEntityCache($entityData);
-      }
-    }
-    //die($entityId);
-    return $entityId;
+    //$entityId = 
+    $this->add($data);
+    $this->saveEntityCache($data);
+    $this->saveEntityHistory($data);
+    return $data['id'];
   }
 
   /**
@@ -109,10 +101,10 @@ class entity_m extends m {
     if ($result) {
       // 获取更新后的完整实体数据
       $entityData = $this->getEntity($id);
-      
       if ($entityData) {
         // 保存实体缓存
         $this->saveEntityCache($entityData);
+        $this->saveEntityHistory($entityData);
       }
     }
     
@@ -139,6 +131,79 @@ class entity_m extends m {
     
     // 保存实体数据到缓存文件
     return file_put_contents($cacheFilePath, json_encode($entityData, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)) !== false;
+  }
+
+
+  private function saveEntityHistory($entityData) {
+    // 确定租户ID和实体ID
+    $tenantId = $entityData['tenant_id'];
+    $entityId = $entityData['id'];
+    $histId = time();
+    // 创建缓存文件路径
+    $cacheDir = APP . '../data/' . $tenantId . '/hist/'.$entityId.'/';
+    if (!is_dir($cacheDir)) {
+      mkdir($cacheDir, 0755, true);
+    }
+    
+    $cacheFilePath = $cacheDir . $histId . '.json';
+    $logoFilePath = APP . '../data/' . $tenantId . '/log/'.date('Y-m-d').'.log';
+    $wdata = json_encode($entityData, JSON_UNESCAPED_UNICODE);
+    // 保存到日志文件
+    file_put_contents($logoFilePath, date('H:i:s').'  '.$entityId.'  '.$wdata."\n", FILE_APPEND);
+    // 保存实体数据到缓存文件
+    return file_put_contents($cacheFilePath, $wdata) !== false;
+  }
+
+  public function hist($id) {
+    $dir = APP . '../data/' . $this->tenant_id . '/hist/'.$id.'/';
+    // 检查目录是否存在
+    if (!is_dir($dir)) {
+        return [];
+    }
+
+    // 读取目录内容并过滤文件
+    $files = scandir($dir);
+    $files = array_diff($files, ['.', '..']); // 去掉当前目录和上级目录
+
+    $fileList = [];
+
+    foreach ($files as $file) {
+        $filePath = $dir . '/' . $file;
+        if (is_file($filePath)) {
+            $fileList[] = [
+                'name' => $file,
+                'time' => filemtime($filePath) // 获取文件最后修改时间
+            ];
+        }
+    }
+
+    // 按照修改时间倒序排序
+    usort($fileList, function($a, $b) {
+        return $b['time'] - $a['time'];
+    });
+
+    return $fileList;
+  }
+
+  /* view history edititon */
+
+  public function vhist($id,$entity_id) {
+    if (preg_match_all('/[\d]+/', $id, $matches)) {
+      $id = $matches[0][0];// . "<br>";
+    }
+    $hist = APP . '../data/' . $this->tenant_id . '/hist/'.$entity_id.'/'.$id.'.json';
+    $entity = json_decode(file_get_contents($hist),true);
+    $entity['data'] = json_decode($entity['data'],true);
+    if(isset($matches[0][1])){
+      $id = $matches[0][1];
+      $hist = APP . '../data/' . $this->tenant_id . '/hist/'.$entity_id.'/'.$id.'.json';
+      $entity1 = json_decode(file_get_contents($hist),true);
+      $entityData = json_decode($entity1['data'],true);
+      foreach($entityData as $k=>$v){
+        if( $entity['data'][$k]!=$v)$entity['data'][$k.'_compare'] = $v;
+      }
+    }
+    return $entity;
   }
 
   /**

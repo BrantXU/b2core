@@ -15,6 +15,9 @@
    - YAML格式：`data/{tenant_id}/conf/{config_id}.yaml`
 3. 配置清单保存在`data/{tenant_id}/conf.json`文件中，包含Id和key的对应清单以及按type汇总的对应清单。
 4. 实体更新时保存缓存文件：`data/{tenant_id}/entity/{entity_id}.json`，包含实体的所有数据。
+5. 实体版本保存文件: `data/{tenant_id}/hist/{entity_id}/{hist_id}.json`，包含实体的所有数据。
+6. 配置版本保存文件 `data/{tenant_id}/conf_hist/{config_id}/{hist_id}.json`
+7. 日志文件 `data/{tenant_id}/log/{date}/{time}.json` 
 
 ## URI规则
 URI格式遵循以下模式：

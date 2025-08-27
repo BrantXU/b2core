@@ -2,14 +2,6 @@
     <div class="uk-alert uk-alert-danger"><?=$err['general']?></div>
   <?php endif; ?>
   <?php 
-  require_once APP . 'lib/form_render.php';
-  $entityData = [];
-  if (isset($entity['data'])) {
-    $entityData = json_decode($entity['data'], true);
-    if (json_last_error() !== JSON_ERROR_NONE) {
-      $entityData = [];
-    }
-  }
   // 确保name和type字段在表单提交时能正确传递
   $nameValue = isset($entityData['name']) ? htmlspecialchars($entityData['name']) : (isset($val['data']['name']) ? htmlspecialchars($val['data']['name']) : '');
   $typeValue = htmlspecialchars($entity_type);

@@ -14,6 +14,7 @@
   <script src="/static/js/modal.js"></script>
   <style>
     body{background: #f6f6f6;line-height: 1.5;}
+    del{color:#F33;}
     h3.uk-first-column{padding:0 15px;}
     .uk-form{max-width: 800px;}
     *+.uk-grid-margin, .uk-grid+.uk-grid, .uk-grid>.uk-grid-margin{margin-top: 10px;}

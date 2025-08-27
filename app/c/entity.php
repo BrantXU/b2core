@@ -63,9 +63,6 @@ class entity extends base {
     $filter = base64_decode($opt);
     $mod = $this->type;
     // 详细记录表单提交数据
-    if (!empty($_POST)) {
-      error_log('表单提交数据: ' . print_r($_POST, true));
-    }
     
     // $conf = array('name' => 'required');
     // $err = validate($conf,isset($_POST['data'])?$_POST['data']:$_POST);
@@ -85,8 +82,7 @@ class entity extends base {
       $_POST['created_at'] = date('Y-m-d H:i:s');
       $_POST['updated_at'] = date('Y-m-d H:i:s');
       $_POST['data'] = json_encode($_POST['data'], JSON_UNESCAPED_UNICODE);
-
-      error_log('准备保存的数据: ' . print_r($_POST, true));
+      //error_log('准备保存的数据: ' . print_r($_POST, true));
       $result = $this->m->createEntity($_POST);
       error_log('createEntity 结果: ' . ($result ? '成功' : '失败'));
       
@@ -114,6 +110,18 @@ class entity extends base {
   public function edit($id ='',$mod =''): void {
  //   $id = $_GET['id'];
     $entity = $this->m->getEntity($id);
+    $entityData = [];
+    if (isset($entity['data'])) {
+      if(is_array($entity['data'])){
+        $entityData = $entity['data'];
+      }
+      else {
+        $entityData = json_decode($entity['data'], true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+          $entityData = [];
+        }
+      }
+    }
     
     if (!$entity) {
       show_404('不存在');
@@ -141,11 +149,28 @@ class entity extends base {
     $param['entity'] = $entity;
     $param['item'] = $this->m->getItem($mod?:$this->type);
     $param['entity_type'] = $this->type;
+    $param['entityData'] = $entityData;
     $param['val'] = $_POST;
     $param['err'] = is_array($err) ? $err : array();
     $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = '编辑';
     $this->display('v/entity/edit', $param);
   }
+
+  // public function vhist($histid): void{
+  //   $this->show($id);
+  // }
+
+  public function hist($id ='',$mod =''): void {
+    //   $id = $_GET['id'];
+
+    $param['hist'] = $this->m->hist($id);
+    $param['item'] = $this->m->getItem($mod?:$this->type);
+    $param['entity_type'] = $this->type;
+    
+    $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = '编辑';
+    $this->display('v/entity/hist', $param);
+  }
+
 
   /**
    * 删除
@@ -159,7 +184,8 @@ class entity extends base {
     }
   }
   
-  public function view($action = 'about',$id ='',$action2 = '') {
+  /* view 是个核心方法， 它包含了一部分路由的功能 */
+  public function view($action = 'about',$id ='',$action2 = '',$hist = '') {
     if (empty($id)) {
       redirect(tenant_url(seg(1)), 'ID不存在');
       return;
@@ -179,53 +205,70 @@ class entity extends base {
         isset($this->menu_data[seg(1)]['children']['view']['children'][$action])) { 
         $objmenu = $this->menu_data[seg(1)]['children']['view']['children'][$action];
       }
-        if(isset($objmenu['type'])){
-          $action2 = $action2?:$objmenu['type'];
-          switch($action2){
-            case 'data':
-              $objmenu['eid'] = $id;
-              $this->list($objmenu['mod'],$objmenu);
-              break;
-            case 'add':
-              $this->create($objmenu['mod']);
-              break;
-            case 'edit':
-              $this->edit($id,$objmenu['mod']);
-              break;
-            case 'delete':
-              $this->delete($id);
-              break;
-            case 'ext':
-              $this->show($entity,$objmenu['mod']); 
-              break;
-            default:
-              $this->show($entity);
-              break;
-          }
-        }
-        else {
-          // 如果菜单配置不存在，默认调用show方法
-          if($action2 =='edit'){
-            $this->edit($id);
-          } else {
-            $this->show($entity);
-          }
-        }
-
-
+    if(isset($objmenu['type'])){
+      $action2 = $action2?:$objmenu['type'];
+      switch($action2){
+        case 'data':
+          $objmenu['eid'] = $id;
+          $this->list($objmenu['mod'],$objmenu);
+          break;
+        case 'add':
+          $this->create($objmenu['mod']);
+          break;
+        case 'edit':
+          $this->edit($id,$objmenu['mod']);
+          break;
+        case 'delete':
+          $this->delete($id);
+          break;
+        case 'ext':
+          $this->show($entity,$objmenu['mod']); 
+          break;
+        default:
+          $this->show($entity);
+          break;
+      }
+    }
+    else {
+      // 如果菜单配置不存在，默认调用show方法
+      if($action2 =='edit'){
+        $this->edit($id);
+      } elseif($action2 =='hist'){
+        $this->hist($id);
+      } elseif($action2 == 'vhist'){
+        $entity = $this->m->vhist($hist,$id);
+        $this->show($entity);
+      }
+      else {
+        $this->show($entity);
+      }
+    }
   }
   
   // view 是视图， 如果定义了就用视图来渲染数据，否则用类型来渲染数据
   private function show($entity,$view = '') {
     global $seg;
     $id = $entity['id'];
+
+    $entityData = [];
+    if (isset($entity['data'])) {
+      if(is_array($entity['data'])){
+        $entityData = $entity['data'];
+      }
+      else {
+        $entityData = json_decode($entity['data'], true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+          $entityData = [];
+        }
+      }
+    }
     $item = $view?$this->m->getItem($view):$this->m->getItem($entity['type']);
-    //$this->log($item); 
     // 构建面包屑 
     $param = [
       'page_title' => '展示',
       'entity' => $entity,
       'entity_type' => $entity['type'],
+      'entityData' => $entityData,
       'item' => $item,
       'action' => $seg[3]?:'about',
       // 设置对象菜单所需变量
@@ -239,105 +282,103 @@ class entity extends base {
    * 导入数据
    */
   public function import(): void {
-      if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['import_file'])) {
-          $file = $_FILES['import_file'];
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['import_file'])) {
+        $file = $_FILES['import_file'];
+        
+        // 验证文件类型
+        if ($file['type'] !== 'text/csv' && !in_array(pathinfo($file['name'], PATHINFO_EXTENSION), ['csv'])) {
+            redirect(tenant_url('entity/'), '请上传CSV格式文件', 'error');
+            return;
+        }
+        
+        // 读取CSV文件
+        $handle = fopen($file['tmp_name'], 'r');
+        $header = fgetcsv($handle);
+        $success = 0;
+        $error = 0;
+        while (($row = fgetcsv($handle)) !== false) {
+          $data = array_combine($header, $row);
           
-          // 验证文件类型
-          if ($file['type'] !== 'text/csv' && !in_array(pathinfo($file['name'], PATHINFO_EXTENSION), ['csv'])) {
-              redirect(tenant_url('entity/'), '请上传CSV格式文件', 'error');
-              return;
+          // 验证必要字段
+          if (empty($data['name'])) {
+              $error++;
+              continue;
           }
           
-          // 读取CSV文件
-          $handle = fopen($file['tmp_name'], 'r');
-          $header = fgetcsv($handle);
-          $success = 0;
-          $error = 0;
+          // 准备数据
+          $entity_data = [
+              'name' => $data['name'],
+              'type' => $this->type,
+              'data' => json_encode($data, JSON_UNESCAPED_UNICODE),
+              'created_at' => date('Y-m-d H:i:s'),
+              'updated_at' => date('Y-m-d H:i:s'),
+              'id' => randstr(8)
+          ];
           
-          while (($row = fgetcsv($handle)) !== false) {
-              $data = array_combine($header, $row);
-              
-              // 验证必要字段
-              if (empty($data['name'])) {
-                  $error++;
-                  continue;
-              }
-              
-              // 准备数据
-              $entity_data = [
-                  'name' => $data['name'],
-                  'type' => $this->type,
-                  'data' => json_encode($data, JSON_UNESCAPED_UNICODE),
-                  'created_at' => date('Y-m-d H:i:s'),
-                  'updated_at' => date('Y-m-d H:i:s'),
-                  'id' => randstr(8)
-              ];
-              
-              // 保存
-              if ($this->m->createEntity($entity_data)) {
-                  $success++;
-              } else {
-                  $error++;
-              }
+          // 保存
+          if ($this->m->createEntity($entity_data)) {
+              $success++;
+          } else {
+              $error++;
           }
-          
-          fclose($handle);
-          redirect(tenant_url('entity/'), "导入完成：成功{$success}条，失败{$error}条");
-      }
-      
-      $this->display('v/entity/import', ['page_title' => '导入']);
+        }
+        
+        fclose($handle);
+        redirect(tenant_url('entity/'), "导入完成：成功{$success}条，失败{$error}条");
+    }
+    
+    $this->display('v/entity/import', ['page_title' => '导入']);
   }
 
   /**
    * 导出数据，导出的数据应该是 数据表中 data 字段中的 json 数据，表头的内容在 item 配置中。
    */
   public function export(): void {
-      // 获取所有数据
-      $entities = $this->m->getAllEntities($this->type);
-      
-      // 设置CSV响应头
-      header('Content-Type: text/csv; charset=utf-8');
-      header('Content-Disposition: attachment; filename="entities_' . date('YmdHis') . '.csv"');
-      
-      $output = fopen('php://output', 'w');
-      
-      // 写入CSV头部 - 从item配置中获取
-      $header = [];
-      $item = $this->m->getItem($this->type);
-      if (is_array($item) && !empty($item)) {
-          // 使用item配置中的字段名称作为表头
-          $header = array_map(function($field) {
-              return $field['name'] ?? '';
-          }, array_values($item));
-      } else {
-          // 如果没有有效的item配置，使用默认表头
-          $header = ['ID', 'Name', 'Type', 'Created At', 'Updated At'];
-      }
-      fputcsv($output, $header, ',', '"', '\\');
-      
-      // 写入数据行
-      foreach ($entities as $entity) {
-          // 解码data字段中的JSON数据
-          $data = json_decode($entity['data'], true) ?? [];
+    // 获取所有数据
+    $entities = $this->m->getAllEntities($this->type);
+    // 设置CSV响应头
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="entities_' . date('YmdHis') . '.csv"');
+    
+    $output = fopen('php://output', 'w');
+    
+    // 写入CSV头部 - 从item配置中获取
+    $header = [];
+    $item = $this->m->getItem($this->type);
+    if (is_array($item) && !empty($item)) {
+        // 使用item配置中的字段名称作为表头
+        $header = array_map(function($field) {
+            return $field['name'] ?? '';
+        }, array_values($item));
+    } else {
+        // 如果没有有效的item配置，使用默认表头
+        $header = ['ID', 'Name', 'Type', 'Created At', 'Updated At'];
+    }
+    fputcsv($output, $header, ',', '"', '\\');
+    
+    // 写入数据行
+    foreach ($entities as $entity) {
+        // 解码data字段中的JSON数据
+        $data = json_decode($entity['data'], true) ?? [];
 
-          $row = [];
-          if (is_array($item) && !empty($item)) {
-              // 根据item配置中的字段导出对应的数据
-              foreach ($item as $fieldId => $field) {
-                  // 从data中获取对应字段的值，如果不存在则为空字符串
-                  $row[] = $data[$fieldId] ?? '';
-              }
-          } else {
-              // 使用默认字段
-              $row = [
-                  $entity['id'] ?? '',
-                  $data['name'] ?? '',
-                  $entity['type'] ?? '',
-                  $entity['created_at'] ?? '',
-                  $entity['updated_at'] ?? ''
-              ];
-          }
-          fputcsv($output, $row, ',', '"', '\\');
+        $row = [];
+        if (is_array($item) && !empty($item)) {
+            // 根据item配置中的字段导出对应的数据
+            foreach ($item as $fieldId => $field) {
+                // 从data中获取对应字段的值，如果不存在则为空字符串
+                $row[] = $data[$fieldId] ?? '';
+            }
+        } else {
+            // 使用默认字段
+            $row = [
+                $entity['id'] ?? '',
+                $data['name'] ?? '',
+                $entity['type'] ?? '',
+                $entity['created_at'] ?? '',
+                $entity['updated_at'] ?? ''
+            ];
+        }
+        fputcsv($output, $row, ',', '"', '\\');
       }
       
       fclose($output);

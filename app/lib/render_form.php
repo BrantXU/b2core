@@ -51,7 +51,8 @@ class FormRenderer {
             $tips = isset($config['tips']) ? '<small class="help-text">'.htmlspecialchars($config['tips']).'</small>' : '';
 
             // 获取标签值
-            $label = isset($entityData[$field.'_label']) ? $entityData[$field.'_label'] : '';
+            $label = isset($entityData[$field.'_label']) ? $entityData[$field.'_label'] : null;
+            $compare = isset($entityData[$field.'_compare']) ? $entityData[$field.'_compare'] : null;
 
             // 调用渲染控件的方法
             $controlConfig = [
@@ -63,7 +64,7 @@ class FormRenderer {
                 'view' => $view,
                 'props' => $config['props'] ?? []
             ];
-            $html .= self::renderControl($value, $controlConfig, $label);
+            $html .= self::renderControl($value, $controlConfig, $label , $compare);
 
             // 添加错误信息
             $errorMsg = isset($err['data'][$field]) ? $err['data'][$field] : '';
@@ -99,7 +100,7 @@ class FormRenderer {
      * @param string $label 标签值
      * @return string 渲染后的HTML
      */
-    public static function renderControl($value, $config, $label) {
+    public static function renderControl($value, $config, $label,$compare = null) {
         $type = $config['type'];
         $field = $config['id'] ?? '';
         $readonly = isset($config['readonly']) && $config['readonly'] ? 'readonly' : '';
@@ -196,7 +197,7 @@ class FormRenderer {
                     $html .= $tips;
                 }
         }
-
+        if($compare) $html .= ' <div class="uk-text-muted"><del>'.$compare.'</del></div>';
         return $html;
     }
 
