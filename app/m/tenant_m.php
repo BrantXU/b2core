@@ -53,11 +53,41 @@ class tenant_m extends m {
   public function createTenant($data) {
     $result = $this->add($data);
     
-    // 如果租户创建成功，创建以租户ID命名的文件夹
+    // 如果租户创建成功，创建以租户ID命名的文件夹及所需的子目录和文件
     if ($result && isset($data['id'])) {
-      $tenantDir = APP . '../data/' . $data['id'];
+      $tenantId = $data['id'];
+      $tenantDir = APP . '../data/' . $tenantId;
+      
+      // 创建主目录
       if (!is_dir($tenantDir)) {
         mkdir($tenantDir, 0777, true);
+      }
+      
+      // 创建所需的子目录
+      $subDirs = array(
+        'conf',  // 配置文件目录
+        'entity', // 实体文件目录
+        'hist',   // 历史记录目录
+        'log'     // 日志文件目录
+      );
+      
+      foreach ($subDirs as $subDir) {
+        $dirPath = $tenantDir . '/' . $subDir;
+        if (!is_dir($dirPath)) {
+          mkdir($dirPath, 0777, true);
+        }
+      }
+      
+      // 创建配置清单文件 conf.json
+      $confJsonPath = $tenantDir . '/conf.json';
+      $defaultConfJson = array(
+        'ids' => array(),  // ID和key的对应清单
+        'types' => array() // 按type汇总的对应清单
+      );
+      
+      // 写入默认的conf.json文件
+      if (!file_exists($confJsonPath)) {
+        file_put_contents($confJsonPath, json_encode($defaultConfJson, JSON_PRETTY_PRINT));
       }
     }
     
