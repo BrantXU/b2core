@@ -13,7 +13,6 @@
     <table class="uk-table uk-table-divider uk-table-striped" style="width: 100%;" id="configTable">
       <thead>
         <tr>
-          <th><input type="checkbox" id="selectAll"></th>
           <th>键名</th>
           <th>类别</th>
           <th>描述</th>
@@ -24,7 +23,6 @@
       <tbody>
         <?php foreach ($configs as $config): ?>
           <tr>
-            <td><input type="checkbox" name="ids[]" value="<?=$config['id']?>" class="configCheckbox"></td>
             <td><?=$config['key']?></td>
             <td><?=$config['config_type']?></td>
             <td><?=$config['description']?></td>
@@ -100,7 +98,14 @@
     const enhancer = new TableEnhancer('configTable', {
       pageSize: 10,
       searchable: true,
-      sortable: true
+      sortable: true,
+      enableCheckbox: true,
+      showExport: true,
+      showImport: true,
+      showCreate: true,
+      exportUrl: '<?= tenant_url($entity_type.'/export/') ?>',
+      importUrl: '<?= tenant_url($entity_type.'/import/') ?>',
+      createUrl: '<?= tenant_url($entity_type.'/add/') ?>'
     });
     
   </script>

@@ -12,6 +12,7 @@
   <script src="/static/js/base.js"></script>
   <script src="/static/js/tableEnhancer.js"></script>
   <script src="/static/js/modal.js"></script>
+  <link href="https://unpkg.com/ionicons@4.5.10-0/dist/css/ionicons.min.css" rel="stylesheet">
   <style>
     body{background: #f6f6f6;line-height: 1.5;}
     del{color:#F33;}

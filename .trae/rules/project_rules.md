@@ -34,3 +34,12 @@ URI格式遵循以下模式：
 4. 代码应有适当的缩进和格式。
 5. 避免SQL注入，使用db.php中的escape()方法处理输入值。
 6. 日志记录时，使用log()方法并确保能处理字符串、数组和对象类型的输入。
+
+## 组件规范
+前端 css 采用 uikit 框架 和 ionicons 图标集 ，位置在 www/static/js 目录下
+   www/static/js/uikit.min.js
+   www/static/css/uikit.min.css
+   www/static/css/ionicons.min.css
+
+可以用的图标如下
+  www/static/css/ionlist.md

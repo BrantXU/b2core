@@ -1,9 +1,3 @@
-<div>
-  <a href="<?= tenant_url($entity_type.'/export/') ?>" class="uk-button uk-button-secondary">导出数据</a>
-  <a href="<?= tenant_url($entity_type.'/import/') ?>" class="uk-button uk-button-primary">导入数据</a>
-  <a href="<?=tenant_url($entity_type.'/add/'.$opt)?>" class="uk-button uk-button-success">创建</a>
-</div>
-
 <?php if(isset($entities) && !empty($entities)): ?>
     <table class="uk-table uk-table-striped uk-table-hover" id="table" >
       <?php
@@ -47,29 +41,3 @@
   <?php else: ?>
     <div class="uk-alert uk-alert-warning">暂无实体数据</div>
   <?php endif; ?>
-  <div class="uk-flex uk-flex-between uk-margin">
-    <div>
-      <a href="<?= tenant_url($entity_type.'/export/') ?>" class="uk-button uk-button-secondary">导出数据</a>
-      <a href="<?= tenant_url($entity_type.'/import/') ?>" class="uk-button uk-button-primary">导入数据</a>
-      <a href="<?=tenant_url($entity_type.'/add/')?>" class="uk-button uk-button-success model-create">创建</a>
-    </div>
-  </div>
-
-  <script>
-    // 添加表格行点击事件
-    document.addEventListener('DOMContentLoaded', function() {
-      const rows = document.querySelectorAll('.clickable-row');
-      rows.forEach(row => {
-        row.addEventListener('click', function(e) {
-          // 检查点击的是否是链接或按钮，如果是则不触发行点击事件
-          if (e.target.closest('a, button')) {
-            return;
-          }
-          const id = this.getAttribute('data-id');
-          window.location.href = '<?=tenant_url( $entity_type.'/view/about/')?>' + id;
-        });
-        // 添加悬停效果
-        row.style.cursor = 'pointer';
-      });
-    });
-  </script>

@@ -45,6 +45,7 @@ function createModal(content, options = {}) {
   closeBtn.style.right = '10px';
   closeBtn.style.fontSize = '18px';
   closeBtn.style.cursor = 'pointer';
+  closeBtn.setAttribute('uk-tooltip', 'title: 关闭; pos: left;');
 
   // 添加关闭事件
   closeBtn.addEventListener('click', () => {
