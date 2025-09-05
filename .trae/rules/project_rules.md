@@ -43,3 +43,8 @@ URI格式遵循以下模式：
 
 可以用的图标如下
   www/static/css/ionlist.md
+
+
+## 浏览器测试
+可以参考这个地址测试
+http://localhost:8080/default/company/list

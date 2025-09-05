@@ -95,18 +95,15 @@
 
 
 
-    const enhancer = new TableEnhancer('configTable', {
+    const enhancer = new TableRender('configTable', {
       pageSize: 10,
       searchable: true,
       sortable: true,
       enableCheckbox: true,
       showExport: true,
       showImport: true,
-      showCreate: true,
-      exportUrl: '<?= tenant_url($entity_type.'/export/') ?>',
-      importUrl: '<?= tenant_url($entity_type.'/import/') ?>',
-      createUrl: '<?= tenant_url($entity_type.'/add/') ?>'
-    });
+      showCreate: true
+    }, '<?= tenant_url($entity_type.'/') ?>');
     
   </script>
 </div>

@@ -176,7 +176,14 @@ class entity extends base {
    * 删除
    */
   public function delete($id): void {
-    $result = $this->m->deleteEntity($id);
+    if (empty($id)) {
+      redirect(tenant_url(seg(1)), 'ID不存在');
+      return;
+    }
+    $ids = explode(',',$id);
+    foreach($ids as $id){
+      $result = $this->m->deleteEntity($id);
+    }
     if ($result) {
       redirect(tenant_url(seg(1)), '删除成功。');
     } else {

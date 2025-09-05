@@ -1,24 +1,36 @@
-/*
- * 表格增强器 - 将传统表格转换为支持分页、搜索和排序的表格
- * @author B2Core
- * @version 1.0.0
- */
-
 /**
- * TableEnhancer类 - 表格增强器，提供分页、搜索、排序、复选框选择和批量操作功能
+ * TableRender类 - 表格渲染器，提供分页、搜索、排序、复选框选择和批量操作功能
  */
-class TableEnhancer {
+class TableRender {
     /**
      * 构造函数
      * @param {string} tableId - 表格元素的ID
      * @param {Object} options - 配置选项
+     * @param {string} baseUrl - 基础URL，所有操作URL都基于此生成
      */
-    constructor(tableId, options = {}) {
+    constructor(tableId, options = {}, baseUrl = '') {
         // 表格引用
-        this.table = dom.gid(tableId);
-        if (!this.table) {
-            throw new Error(`Table with id "${tableId}" not found`);
+        this.container = dom.gid(tableId);
+        if (!this.container) {
+            throw new Error(`Element with id "${tableId}" not found`);
         }
+        
+        // 检查是否是表格元素，如果不是则创建表格
+        if (this.container.tagName === 'TABLE') {
+            this.table = this.container;
+        } else {
+            // 创建表格元素
+            this.table = document.createElement('table');
+            this.table.className = 'uk-table uk-table-small uk-table-striped uk-table-hover';
+            this.table.id = tableId + '-table';
+            
+            // 创建thead和tbody
+            this.table.innerHTML = '<thead></thead><tbody></tbody>';
+            this.container.appendChild(this.table);
+        }
+        
+        // 基础URL
+        this.baseUrl = baseUrl;
         
         // 配置选项
         this.options = this._getDefaultOptions(options);
@@ -68,11 +80,6 @@ class TableEnhancer {
             showCreate: true, // 是否显示创建按钮
             showEdit: true, // 是否显示编辑按钮
             showDelete: true, // 是否显示删除按钮
-            exportUrl: '', // 导出URL
-            importUrl: '', // 导入URL
-            createUrl: '', // 创建URL
-            editUrl: '', // 编辑URL
-            deleteUrl: '', // 删除URL
             ...customOptions
         };
     }
@@ -89,26 +96,19 @@ class TableEnhancer {
     }
 
     /**
-     * 从表格中提取数据
+     * 从表格中提取数据或使用提供的JS数组数据
      */
     extractData() {
-        const tbody = dom.qs('tbody', this.table);
-        const rows = tbody.querySelectorAll('tr');
-        
-        // 清空原始数据
-        this.originalData = [];
-        
-        // 遍历表格行，提取数据
-        rows.forEach((row, index) => {
-            const cells = row.querySelectorAll('td');
-            const data = {
-                id: row.dataset.rowId || `row_${index}`, // 为每行数据添加唯一ID
-                element: row, // 原始DOM元素引用
-                cells: Array.from(cells).map(cell => cell.textContent.trim()) // 单元格文本内容数组
-            };
-            this.originalData.push(data);
-        });
-        
+        if (this.options.data && Array.isArray(this.options.data)) {
+            // 使用提供的JS数组数据
+            this.originalData = this.options.data.map((item, index) => ({
+                id: item.id || `row_${index}`,
+                element: null,
+                cells: this.options.fields ? 
+                    Object.keys(this.options.fields).map(fieldName => item[fieldName] || '') :
+                    Object.values(item)
+            }));
+        } 
         // 初始化过滤数据为原始数据
         this.filteredData = [...this.originalData];
     }
@@ -117,15 +117,20 @@ class TableEnhancer {
      * 创建表格上方的控制面板
      */
     createControls() {
-        const container = this.table.parentElement;
+        const container = this.container;
         
         // 创建控制面板
         const controlPanel = document.createElement('div');
         controlPanel.className = 'table-enhancer-controls uk-margin';
         controlPanel.innerHTML = this._getControlPanelHtml();
         
-        // 将控制面板插入到表格之前
-        container.insertBefore(controlPanel, this.table);
+        // 将控制面板插入到容器中表格之前
+        if (this.table.parentNode === container) {
+            container.insertBefore(controlPanel, this.table);
+        } else {
+            // 如果表格还没有添加到容器，先添加控制面板
+            container.appendChild(controlPanel);
+        }
         
         // 创建信息面板
         if (this.options.showInfo) {
@@ -203,21 +208,21 @@ class TableEnhancer {
     _getImportExportButtonsHtml() {
         return (this.options.showExport || this.options.showImport || this.options.showCreate) ? `
             <div class="uk-flex uk-flex-middle uk-button-group uk-margin-left">
-                ${this.options.showExport && this.options.exportUrl ? `
-                    <a href="${this.options.exportUrl}" class="uk-button uk-button-secondary uk-button-small" uk-tooltip="title: 导出数据; pos: bottom;">
-                        导出
+                ${this.options.showExport && this.baseUrl ? `
+                    <a href="${this.baseUrl.endsWith('/') ? this.baseUrl + 'export' : this.baseUrl + '/export'}" class="uk-button uk-button-secondary uk-button-small" uk-tooltip="title: 导出数据; pos: bottom;">
+                        <i class="icon ion-md-download"></i>
                     </a>
-                ` : ''}
-                ${this.options.showImport && this.options.importUrl ? `
-                    <a href="${this.options.importUrl}" class="uk-button uk-button-primary uk-button-small" uk-tooltip="title: 导入数据; pos: bottom;">
-                        导入
+                    ` : ''}
+                    ${this.options.showImport && this.baseUrl ? `
+                    <a href="${this.baseUrl.endsWith('/') ? this.baseUrl + 'import' : this.baseUrl + '/import'}" class="uk-button uk-button-primary uk-button-small" uk-tooltip="title: 导入数据; pos: bottom;">
+                        <i class="icon ion-md-cloud-upload"></i>
                     </a>
-                ` : ''}
-                ${this.options.showCreate && this.options.createUrl ? `
-                    <a href="${this.options.createUrl}" class="uk-button uk-button-default uk-button-small" uk-tooltip="title: 创建新记录; pos: bottom;">
-                        创建
+                    ` : ''}
+                    ${this.options.showCreate && this.baseUrl ? `
+                    <a href="${this.baseUrl.endsWith('/') ? this.baseUrl + 'add' : this.baseUrl + '/add'}" class="uk-button uk-button-default uk-button-small" uk-tooltip="title: 创建新记录; pos: bottom;">
+                        <i class="icon ion-md-add"></i>
                     </a>
-                ` : ''}
+                    ` : ''}
             </div>
         ` : '';
     }
@@ -268,7 +273,12 @@ class TableEnhancer {
         const infoPanel = document.createElement('div');
         infoPanel.className = 'table-enhancer-info uk-margin uk-text-center';
         infoPanel.innerHTML = `<span id="${this.table.id}-info"></span>`;
-        container.insertBefore(infoPanel, this.table.nextSibling);
+        
+        if (this.table.parentNode === container && this.table.nextSibling) {
+            container.insertBefore(infoPanel, this.table.nextSibling);
+        } else {
+            container.appendChild(infoPanel);
+        }
     }
     
     /**
@@ -280,7 +290,12 @@ class TableEnhancer {
         const pagination = document.createElement('div');
         pagination.className = 'table-enhancer-pagination uk-margin uk-flex uk-flex-center';
         pagination.innerHTML = `<ul class="uk-pagination" id="${this.table.id}-pagination"></ul>`;
-        container.insertBefore(pagination, this.table.nextSibling);
+        
+        if (this.table.parentNode === container && this.table.nextSibling) {
+            container.insertBefore(pagination, this.table.nextSibling);
+        } else {
+            container.appendChild(pagination);
+        }
     }
 
     /**
@@ -292,6 +307,7 @@ class TableEnhancer {
         this._bindSortEvent(); // 绑定排序事件
         this._bindCheckboxEvents(); // 绑定复选框相关事件
         this._bindEditDeleteEvents(); // 绑定编辑删除按钮事件
+        this._bindRowClickEvents(); // 绑定行点击事件
     }
     
     /**
@@ -329,14 +345,24 @@ class TableEnhancer {
     _bindSortEvent() {
         if (this.options.sortable) {
             const headers = this.table.querySelectorAll('thead th');
+            let dataColumnIndex = 0; // 数据列索引，不包含复选框列
+            
             headers.forEach((header, index) => {
+                // 跳过复选框列
+                if (header.className === 'checkbox-header') {
+                    header.style.cursor = 'default'; // 复选框列不可点击
+                    return;
+                }
+                
                 header.style.cursor = 'pointer';
                 
                 // 初始化时不添加图标，只在排序时添加
                 dom.off(header, 'click'); // 先移除旧事件
                 dom.on(header, 'click', () => {
-                    this.sort(index);
+                    this.sort(dataColumnIndex); // 传递数据列索引，不包含复选框列
                 });
+                
+                dataColumnIndex++; // 只增加数据列的索引
             });
         }
     }
@@ -394,6 +420,36 @@ class TableEnhancer {
                     this.handleDelete();
                 });
             }
+        }
+    }
+
+    /**
+     * 绑定行点击事件
+     * 当用户点击表格行时跳转到展示页面
+     * 根据系统URI规则：{tenant_id}/{entity_type}/view/{entity_id}
+     * @private
+     */
+    _bindRowClickEvents() {
+        const tbody = this.table.querySelector('tbody');
+        if (tbody) {
+            tbody.addEventListener('click', (e) => {
+                // 找到被点击的行元素
+                let row = e.target;
+                while (row && row.tagName !== 'TR') {
+                    row = row.parentElement;
+                }
+                
+                if (row && row.tagName === 'TR') {
+                    // 获取行ID
+                    const rowId = row.getAttribute('data-row-id');
+                    if (rowId) {
+                        // 阻止事件冒泡，避免与复选框点击冲突
+                        if (e.target.tagName !== 'INPUT' && e.target.type !== 'checkbox') {
+                            this.handleRowClick(rowId);
+                        }
+                    }
+                }
+            });
         }
     }
 
@@ -490,16 +546,26 @@ class TableEnhancer {
     /**
      * 处理编辑操作
      * 当选中一行时触发编辑功能，跳转到编辑页面
+     * 根据系统URI规则：{tenant_id}/{entity_type}/edit/{entity_id}
      */
     handleEdit() {
         const selectedCount = this.selectedRowIds.size;
         if (selectedCount === 1) {
             const rowId = Array.from(this.selectedRowIds)[0];
-            if (this.options.editUrl) {
-                window.location.href = this.options.editUrl + rowId;
+            if (this.baseUrl) {
+            // 基于baseUrl生成编辑URL
+            const editPath = this.baseUrl.endsWith('/') ?
+                `${this.baseUrl}edit/` :
+                `${this.baseUrl}/edit/`;
+                window.location.href = editPath + rowId;
             } else {
-                // 默认编辑URL格式
-                window.location.href = `${window.location.pathname}edit/${rowId}`;
+                // 根据系统URI规则生成编辑URL
+                // 格式：当前路径/edit/{entity_id}
+                const currentPath = window.location.pathname;
+                const editUrl = currentPath.endsWith('/') ? 
+                    `${currentPath}edit/${rowId}` : 
+                    `${currentPath}/edit/${rowId}`;
+                window.location.href = editUrl;
             }
         }
     }
@@ -507,19 +573,53 @@ class TableEnhancer {
     /**
      * 处理删除操作
      * 当选中一行或多行时触发删除功能，显示确认对话框后执行删除
+     * 根据系统URI规则：{tenant_id}/{entity_type}/delete?ids={entity_ids}
      */
     handleDelete() {
         const selectedCount = this.selectedRowIds.size;
         if (selectedCount > 0) {
             if (confirm(`确定要删除选中的 ${selectedCount} 条记录吗？`)) {
                 const rowIds = Array.from(this.selectedRowIds).join(',');
-                if (this.options.deleteUrl) {
-                    window.location.href = `${this.options.deleteUrl}?ids=${rowIds}`;
+                if (this.baseUrl) {
+            // 基于baseUrl生成删除URL
+            const deletePath = this.baseUrl.endsWith('/') ?
+                `${this.baseUrl}delete` :
+                `${this.baseUrl}/delete`;
+                    window.location.href = `${deletePath}/${rowIds}`;
                 } else {
-                    // 默认删除URL格式
-                    window.location.href = `${window.location.pathname}delete?ids=${rowIds}`;
+                    // 根据系统URI规则生成删除URL
+                    // 格式：当前路径/delete?ids={entity_ids}
+                    const currentPath = window.location.pathname;
+                    const deleteUrl = currentPath.endsWith('/') ? 
+                        `${currentPath}delete/${rowIds}` : 
+                        `${currentPath}/delete/${rowIds}`;
+                    window.location.href = deleteUrl;
                 }
             }
+        }
+    }
+
+    /**
+     * 处理行点击操作
+     * 当用户点击表格行时跳转到展示页面
+     * 根据系统URI规则：{tenant_id}/{entity_type}/view/{entity_id}
+     * @param {string} rowId - 行ID
+     */
+    handleRowClick(rowId) {
+        if (this.baseUrl) {
+            // 基于baseUrl生成查看URL
+            const viewPath = this.baseUrl.endsWith('/') ?
+                `${this.baseUrl}view/about/`+ rowId :
+                `${this.baseUrl}/view/about/`+ rowId;
+            window.location.href = viewPath ;
+        } else {
+            // 根据系统URI规则生成查看URL
+            // 格式：当前路径/view/{entity_id}
+            const currentPath = window.location.pathname;
+            const viewUrl = currentPath.endsWith('/') ? 
+                `${currentPath}view/${rowId}` : 
+                `${currentPath}/view/${rowId}`;
+            window.location.href = viewUrl;
         }
     }
 
@@ -577,11 +677,19 @@ class TableEnhancer {
         
         // 只为当前排序的列添加图标
         if (this.sortColumn !== null && this.sortColumn >= 0) {
-            // 考虑复选框列的影响
-            // 如果启用了复选框，this.sortColumn对应的表头索引需要+1（跳过复选框列）
+            // 计算实际的表头索引（考虑复选框列）
             let headerIndex = this.sortColumn;
-            if (this.options.enableCheckbox) {
-                headerIndex += 1;
+            
+            // 遍历表头，跳过复选框列，找到对应的数据列索引
+            let dataColumnIndex = 0;
+            for (let i = 0; i < headers.length && dataColumnIndex <= this.sortColumn; i++) {
+                if (headers[i].className !== 'checkbox-header') {
+                    if (dataColumnIndex === this.sortColumn) {
+                        headerIndex = i;
+                        break;
+                    }
+                    dataColumnIndex++;
+                }
             }
             
             // 确保索引在有效范围内
@@ -686,6 +794,9 @@ class TableEnhancer {
         // 更新信息和分页
         this.updateInfo();
         this.renderPagination();
+        
+        // 更新排序图标，确保表头更新后排序图标也能正确显示
+        this.updateSortIcons();
     }
     
     /**
@@ -705,34 +816,71 @@ class TableEnhancer {
      */
     _updateTableHeader() {
         const thead = this.table.querySelector('thead');
-        const headerRow = thead.querySelector('tr');
-        
-        // 确保表头内容不被折叠
-        const headerCells = thead.querySelectorAll('th');
-        headerCells.forEach(cell => {
-            // 跳过复选框列
-            if (cell.className !== 'checkbox-header') {
-                cell.style.whiteSpace = 'nowrap'; // 防止文本换行
-                cell.style.overflow = 'visible'; // 确保内容完全显示
-                cell.style.minWidth = '100px'; // 设置最小宽度
+        let headerRow = thead.querySelector('tr');
+
+        // 如果表头行不存在，则创建
+        if (!headerRow) {
+            headerRow = document.createElement('tr');
+            thead.appendChild(headerRow);
+        }
+
+        // 清空现有表头内容（保留复选框列）
+        const existingCheckboxHeader = headerRow.querySelector('.checkbox-header');
+        headerRow.innerHTML = '';
+        if (existingCheckboxHeader) {
+            headerRow.appendChild(existingCheckboxHeader);
+        }
+
+        // 如果提供了fields配置，则从数组数据渲染表头
+        if (this.options.fields) {
+            // 添加复选框列（如果启用）
+            if (this.options.enableCheckbox && !headerRow.querySelector('.checkbox-header')) {
+                const checkboxHeader = document.createElement('th');
+                checkboxHeader.className = 'checkbox-header';
+                checkboxHeader.style.width = '40px';
+                headerRow.appendChild(checkboxHeader);
             }
-        });
-        
-        // 如果启用了复选框，但表头还没有复选框列，则添加
-        if (this.options.enableCheckbox && !headerRow.querySelector('.checkbox-header')) {
-            const checkboxHeader = document.createElement('th');
-            checkboxHeader.className = 'checkbox-header';
-            checkboxHeader.style.width = '40px';
-            headerRow.insertBefore(checkboxHeader, headerRow.firstChild);
+
+            // 添加数据列表头
+            Object.values(this.options.fields).forEach(fieldConfig => {
+                const th = document.createElement('th');
+                th.textContent = fieldConfig.label || fieldConfig.name || '';
+                th.style.whiteSpace = 'nowrap';
+                th.style.overflow = 'visible';
+                th.style.minWidth = '100px';
+                headerRow.appendChild(th);
+            });
+        } else {
+            // 从DOM表格中提取表头
+            const headerCells = thead.querySelectorAll('th');
+            headerCells.forEach(cell => {
+                // 跳过复选框列
+                if (cell.className !== 'checkbox-header') {
+                    cell.style.whiteSpace = 'nowrap'; // 防止文本换行
+                    cell.style.overflow = 'visible'; // 确保内容完全显示
+                    cell.style.minWidth = '100px'; // 设置最小宽度
+                }
+            });
+
+            // 如果启用了复选框，但表头还没有复选框列，则添加
+            if (this.options.enableCheckbox && !headerRow.querySelector('.checkbox-header')) {
+                const checkboxHeader = document.createElement('th');
+                checkboxHeader.className = 'checkbox-header';
+                checkboxHeader.style.width = '40px';
+                headerRow.insertBefore(checkboxHeader, headerRow.firstChild);
+            }
+
+            // 如果禁用了复选框，但表头有复选框列，则移除
+            if (!this.options.enableCheckbox) {
+                const checkboxHeader = headerRow.querySelector('.checkbox-header');
+                if (checkboxHeader) {
+                    checkboxHeader.remove();
+                }
+            }
         }
         
-        // 如果禁用了复选框，但表头有复选框列，则移除
-        if (!this.options.enableCheckbox) {
-            const checkboxHeader = headerRow.querySelector('.checkbox-header');
-            if (checkboxHeader) {
-                checkboxHeader.remove();
-            }
-        }
+        // 重新绑定排序事件，确保表头更新后排序功能依然有效
+        this._bindSortEvent();
     }
     
     /**
@@ -747,7 +895,49 @@ class TableEnhancer {
         // 渲染当前页的数据行
         for (let i = startIndex; i < endIndex; i++) {
             const rowData = this.filteredData[i];
-            const row = rowData.element.cloneNode(true);
+            let row;
+            
+            if (rowData.element) {
+                // 使用现有的DOM元素
+                row = rowData.element.cloneNode(true);
+            } else {
+                // 创建新的行元素
+                row = document.createElement('tr');
+                row.className = 'clickable-row';
+                
+                // 创建单元格 - 支持两种数据格式：
+                // 1. 旧格式：包含cells数组的对象
+                // 2. 新格式：包含字段名和对应值的对象
+                if (rowData.cells) {
+                    // 旧格式：使用cells数组
+                    rowData.cells.forEach(cellContent => {
+                        const cell = document.createElement('td');
+                        // 处理HTML内容
+                        if (typeof cellContent === 'string' && cellContent.includes('<')) {
+                            cell.innerHTML = cellContent;
+                        } else {
+                            cell.textContent = cellContent;
+                        }
+                        row.appendChild(cell);
+                    });
+                } else if (this.options.fields) {
+                    // 新格式：根据fields配置提取值
+                    Object.values(this.options.fields).forEach(fieldConfig => {
+                        const fieldName = fieldConfig.name || '';
+                        const cellValue = rowData[fieldName] || '';
+                        const cell = document.createElement('td');
+                        
+                        // 处理HTML内容
+                        if (typeof cellValue === 'string' && cellValue.includes('<')) {
+                            cell.innerHTML = cellValue;
+                        } else {
+                            cell.textContent = cellValue;
+                        }
+                        row.appendChild(cell);
+                    });
+                }
+            }
+            
             row.dataset.rowId = rowData.id;
             
             // 如果启用了复选框，为每行添加复选框
@@ -910,7 +1100,7 @@ class TableEnhancer {
 }
 
 // 使用示例：
-// const enhancer = new TableEnhancer('myTable', {
+// const enhancer = new TableRender('myTable', {
 //     pageSize: 20,
 //     searchable: true,
 //     sortable: true
@@ -918,5 +1108,5 @@ class TableEnhancer {
 
 // 全局注册
 if (typeof window !== 'undefined') {
-    window.TableEnhancer = TableEnhancer;
+    window.TableRender = TableRender;
 }
