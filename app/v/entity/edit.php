@@ -8,7 +8,7 @@
   ?>
   <form method="post" class="uk-padding uk-form uk-form-stacked" enctype="multipart/form-data">
     <div class="uk-grid uk-child-width-1-1" uk-grid>
-      <?php echo FormRenderer::renderFormFields($item, $entityData, $val, $err); ?>
+      <?php echo FormRenderer::renderFormFields($item, isset($entityData)?$entityData:[], $val, $err); ?>
       <div class="uk-width-1-1 uk-padding-small uk-grid-margin uk-first-column" >
         <input type="hidden" name="redirect_url" value="<?=isset($_SERVER['HTTP_REFERER']) ? htmlspecialchars($_SERVER['HTTP_REFERER']) : ''?>">
         <button type="submit" class="uk-button uk-button-primary uk-margin-right"><?=isset($entity['id']) ? '更新' : '创建'?></button>

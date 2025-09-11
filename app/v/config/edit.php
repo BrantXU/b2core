@@ -6,6 +6,7 @@
   <?php endif; ?>
   
   <form method="post" class="uk-form uk-form-stacked">
+
     <div class="uk-margin">
       <label class="uk-form-label">键名</label>
       <div class="uk-form-controls">
@@ -14,6 +15,17 @@
         <span class="uk-text-danger"><?=isset($err['key']) ? $err['key'] : ''?></span>
       </div>
     </div>
+    
+    <div class="uk-margin">
+      <label class="uk-form-label">描述</label>
+      <div class="uk-form-controls">
+        <input type="text" name="description" class="uk-input" 
+          value="<?=isset($val['description']) ? htmlspecialchars($val['description']) : (isset($config['description']) ? htmlspecialchars($config['description']) : '')?>" />
+        <span class="uk-text-danger"><?=isset($err['description']) ? $err['description'] : ''?></span>
+      </div>
+    </div>
+
+
 
     <div class="uk-margin">
       <label class="uk-form-label">值</label>
@@ -34,14 +46,7 @@ settings:
       </div>
     </div>
 
-    <div class="uk-margin">
-      <label class="uk-form-label">描述</label>
-      <div class="uk-form-controls">
-        <input type="text" name="description" class="uk-input" 
-          value="<?=isset($val['description']) ? htmlspecialchars($val['description']) : (isset($config['description']) ? htmlspecialchars($config['description']) : '')?>" />
-        <span class="uk-text-danger"><?=isset($err['description']) ? $err['description'] : ''?></span>
-      </div>
-    </div>
+
 
     <div class="uk-margin">
       <label class="uk-form-label">类别</label>

@@ -45,6 +45,14 @@ URI格式遵循以下模式：
   www/static/css/ionlist.md
 
 
+## 这是一个 aPaas 平台 ，entity 是数据管理模块， 支持多种展示方式： 列表、看板、日程等。 分别用 entity 下不同的方法实现。
+   列表：list()
+   看板：kanban()
+   日程：calendar()
+
 ## 浏览器测试
 可以参考这个地址测试
 http://localhost:8080/default/company/list
+
+测试时使用租户下的数据库 data/default/db.sqlite
+测试时使用租户下的配置文件 data/default/conf.json

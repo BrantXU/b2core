@@ -1,0 +1,95 @@
+
+<!DOCTYPE html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <title>展示</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="keywords" content="">
+  <meta name="description" content="">
+  <link href="/static/css/uikit.min.css" rel="stylesheet" type="text/css">
+  <link href="/static/css/base.css" rel="stylesheet" type="text/css">
+  <link href="/static/css/ionicons.min.css" rel="stylesheet">
+  <link href="/static/css/kanban.css" rel="stylesheet" type="text/css">
+  <link href="/static/css/calendar.css" rel="stylesheet" type="text/css">
+  <script src="/static/js/uikit.min.js"></script>
+  <script src="/static/js/base.js"></script>
+  <script src="/static/js/tableRender.js"></script>
+  <script src="/static/js/modal.js"></script>
+  <script src="/static/js/dom.js"></script>
+  <script src="/static/js/calendarRender.js"></script>
+</head>
+<body>
+  <div> 
+    <!-- 顶部主菜单 -->
+  <nav class="uk-navbar-container top-menu" uk-navbar>
+    <div class="uk-navbar-left">
+      <ul class="uk-navbar-nav"><li class=""><a href="/default/home" class="" >首页</a></li><li class=""><a href="/default/calendar" class="" >日程</a></li><li class=""><a href="/default/fund" class="" >基金管理</a></li><li class=""><a href="/default/company" class="" >企业管理</a></li><li class=""><a href="/default/deal" class="" >交易明细</a></li><li class=""><a href="/default/position" class="" >投资组合</a></li><li class="uk-parent"><a href="#" class="" >投资人<span uk-icon="icon: chevron-down; ratio: 0.7" class="uk-margin-remove"></span></a><div class="uk-dropdown uk-dropdown-navbar" data-uk-dropdown><ul class="uk-nav uk-nav-navbar"><li class=""><a href="/default/investor">投资人</a></li><li class=""><a href="/default/funddeal">出资分配</a></li><li class=""><a href="/default/fundposition">投资人份额</a></li><li class=""><a href="/default/cf_notice">Call款&amp;分配</a></li></ul></div></li><li class="uk-parent"><a href="#" class="" >股票市场<span uk-icon="icon: chevron-down; ratio: 0.7" class="uk-margin-remove"></span></a><div class="uk-dropdown uk-dropdown-navbar" data-uk-dropdown><ul class="uk-nav uk-nav-navbar"><li class=""><a href="/default/mktprice">股票市场</a></li><li class=""><a href="/default/stock">股价</a></li><li class=""><a href="/default/fx">汇率</a></li></ul></div></li><li class=""><a href="/default/charts" class="" >图表</a></li><li class="uk-parent"><a href="#" class="" >配置<span uk-icon="icon: chevron-down; ratio: 0.7" class="uk-margin-remove"></span></a><div class="uk-dropdown uk-dropdown-navbar" data-uk-dropdown><ul class="uk-nav uk-nav-navbar"><li class=""><a href="/default/trash">回收站</a></li><li class=""><a href="/default/config">配置</a></li><li class=""><a href="/default/account">账户</a></li><li class=""><a href="/default/logout">退出</a></li></ul></div></li><li class="uk-parent"><a href="#" class="" >当前登录 Brant<span uk-icon="icon: chevron-down; ratio: 0.7" class="uk-margin-remove"></span></a><div class="uk-dropdown uk-dropdown-navbar" data-uk-dropdown><ul class="uk-nav uk-nav-navbar"><li class=""><a href="/default/tenant">切换租户</a></li><li class=""><a href="/default/logout">退出</a></li></ul></div></li></ul>    </div>
+  </nav>
+  
+  <!-- 附菜单 -->
+  <nav class="uk-navbar-container sub-menu" uk-navbar>
+    <div class="uk-navbar-left">
+      <ul class="uk-navbar-nav"><li><a href="/default/fund/index">浏览</a></li><li><a href="/default/fund/add">新增</a></li></ul>    </div>
+  </nav>
+  </div>
+<div class="container"> 
+  <div class="canvas">
+        <nav >
+      <ul class="uk-breadcrumb">
+                  <li><a href="/default/home/" class="uk-link-reset">首页</a></li>
+                  <li><a href="/default/fund/" class="uk-link-reset">基金管理</a></li>
+                  <li><span>梓川一号</span></li>
+              </ul>
+    </nav>
+
+
+    
+    <!-- 渲染对象菜单 -->
+          <ul class="uk-tab" data-uk-tab><li class="uk-active"><a href="/default/fund/view/about/k0img9d0">概况</a></li><li class=""><a href="/default/fund/view/position/k0img9d0">投资组合</a></li><li class=""><a href="/default/fund/view/deal/k0img9d0">交易明细</a></li><li class=""><a href="/default/fund/view/fundposition/k0img9d0">投资人</a></li><li class=""><a href="/default/fund/view/cashflow/k0img9d0">现金流</a></li><li class=""><a href="/default/fund/view/report/k0img9d0">基金报告</a></li></ul>    
+    
+  <div class="uk-padding uk-form uk-form-stacked">
+    <div class="uk-grid uk-child-width-1-1" uk-grid>
+      <h3 class="uk-width-1-1">概况</h3><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">名称<span style="color: red;">*</span></label><div class="uk-form-controls"><div class="uk-text-muted">梓川一号</div><span class="help-inline"></span></div></div><div class="uk-width-2-3@m uk-padding-small"><label class="uk-form-label">基金全称</label><div class="uk-form-controls"><div class="uk-text-muted">上海梓川一期有限合伙企业</div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">成立日期</label><div class="uk-form-controls"><div class="uk-text-muted">2025-08-08</div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">基金期限</label><div class="uk-form-controls"><div class="uk-text-muted">2022/7/22+5年</div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">基金阶段</label><div class="uk-form-controls"><div class="uk-text-muted">设立中</div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">基金认缴规模<span style="color: red;">*</span></label><div class="uk-form-controls"><div class="uk-text-muted">¥11000000</div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">基金实缴规模</label><div class="uk-form-controls"><div class="uk-text-muted">¥</div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">缴款进度</label><div class="uk-form-controls"><div class="uk-text-muted">%</div><span class="help-inline"></span></div></div><h3 class="uk-width-1-1">投资情况</h3><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">投资企业数量</label><div class="uk-form-controls"><div class="uk-text-muted"></div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">累计出资金额</label><div class="uk-form-controls"><div class="uk-text-muted"></div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">投资进度</label><div class="uk-form-controls"><div class="uk-text-muted">%</div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">累计回收金额</label><div class="uk-form-controls"><div class="uk-text-muted">¥123</div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">累计分配金额</label><div class="uk-form-controls"><div class="uk-text-muted">¥</div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">账面现金</label><div class="uk-form-controls"><div class="uk-text-muted">¥</div><span class="help-inline"></span></div></div><h3 class="uk-width-1-1">项目口径绩效指标</h3><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">项目未实现价值</label><div class="uk-form-controls"><div class="uk-text-muted">¥123</div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">项目已实现价值</label><div class="uk-form-controls"><div class="uk-text-muted">¥123</div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">项目总价值</label><div class="uk-form-controls"><div class="uk-text-muted">¥</div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">TVPI</label><div class="uk-form-controls"><div class="uk-text-muted"></div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">DPI</label><div class="uk-form-controls"><div class="uk-text-muted"></div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">Gross IRR</label><div class="uk-form-controls"><div class="uk-text-muted">%</div><span class="help-inline"></span></div></div><h3 class="uk-width-1-1">基金口径绩效指标</h3><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">基金未实现价值</label><div class="uk-form-controls"><div class="uk-text-muted">¥</div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">基金已实现价值</label><div class="uk-form-controls"><div class="uk-text-muted">¥</div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">基金总价值</label><div class="uk-form-controls"><div class="uk-text-muted">¥</div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">门槛收益合计</label><div class="uk-form-controls"><div class="uk-text-muted">¥</div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">追补金额</label><div class="uk-form-controls"><div class="uk-text-muted">¥</div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">管理费</label><div class="uk-form-controls"><div class="uk-text-muted">¥</div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">基金TVPI</label><div class="uk-form-controls"><div class="uk-text-muted"></div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">基金DPI</label><div class="uk-form-controls"><div class="uk-text-muted"></div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">基金IRR</label><div class="uk-form-controls"><div class="uk-text-muted">%</div><span class="help-inline"></span></div></div><h3 class="uk-width-1-1">投资人口径绩效指标</h3><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">投资人未实现价值</label><div class="uk-form-controls"><div class="uk-text-muted">¥</div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">投资人已实现价值</label><div class="uk-form-controls"><div class="uk-text-muted">¥</div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">投资人总价值</label><div class="uk-form-controls"><div class="uk-text-muted">¥</div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">业绩报酬</label><div class="uk-form-controls"><div class="uk-text-muted">¥</div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">TVPI</label><div class="uk-form-controls"><div class="uk-text-muted"></div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">DPI</label><div class="uk-form-controls"><div class="uk-text-muted"></div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">Net IRR</label><div class="uk-form-controls"><div class="uk-text-muted">%</div><span class="help-inline"></span></div></div><h3 class="uk-width-1-1">核心条款</h3><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">管理费率</label><div class="uk-form-controls"><div class="uk-text-muted">%</div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">管理费收取年限</label><div class="uk-form-controls"><div class="uk-text-muted"></div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">门槛收益<span style="color: red;">*</span></label><div class="uk-form-controls"><div class="uk-text-muted">12%</div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">单利复利<span style="color: red;">*</span></label><div class="uk-form-controls"><div class="uk-text-muted">单利</div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">业绩报酬比例<span style="color: red;">*</span></label><div class="uk-form-controls"><div class="uk-text-muted">12%</div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">追补业绩报酬</label><div class="uk-form-controls"><div class="uk-text-muted">是</div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">GP追补比例</label><div class="uk-form-controls"><div class="uk-text-muted">%</div><span class="help-inline"></span></div></div><div class="uk-width-1-1 uk-padding-small"><label class="uk-form-label">核心条款明细</label><div class="uk-form-controls"><div class="uk-text-muted">12</div><span class="help-inline"></span></div></div><div class="uk-width-1-3@m uk-padding-small"><label class="uk-form-label">xx</label><div class="uk-form-controls"><div class="uk-text-muted"></div><span class="help-inline"></span></div></div>      <div class="uk-width-1-1 uk-padding-small uk-grid-margin uk-first-column">
+        <a href="/default/fund/view/about/k0img9d0/edit" class="uk-button uk-button-primary">编辑</a>
+        <a href="/default/fund/view/about/" class="uk-button">返回列表</a>
+        <a href="/default/fund/view/about/k0img9d0/hist" class="uk-button">修订记录</a>
+      </div>
+    </div>
+  </div>
+      </div>
+
+  <script>
+  // 在页面加载完成后统一渲染所有表格
+  document.addEventListener('DOMContentLoaded', function() {
+    // 检查是否存在表格配置
+    if (typeof window.tableConfigs !== 'undefined' && Array.isArray(window.tableConfigs)) {
+      // 遍历所有表格配置并初始化
+      window.tableConfigs.forEach(function(config) {
+        try {
+          // 检查必要的配置项
+          if (config.containerId && config.baseUrl) {
+            // 创建TableRender实例
+            const enhancer = new TableRender(
+              config.containerId,
+              {
+                pageSize: config.pageSize || 10,
+                searchable: config.searchable || true,
+                data: config.data || [],
+                fields: config.fields || []
+              },
+              config.baseUrl
+            );
+          }
+        } catch (error) {
+          console.error('Error initializing table:', config.containerId, error);
+        }
+      });
+      
+      // 清理配置数组，防止重复初始化
+      window.tableConfigs = [];
+    }
+  });
+  </script>
+</body>
+</html>

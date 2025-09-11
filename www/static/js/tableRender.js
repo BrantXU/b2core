@@ -237,11 +237,9 @@ class TableRender {
             <div class="uk-flex uk-flex-middle uk-button-group uk-margin-left">
                 <button id="${this.table.id}-edit" class="uk-button uk-button-primary uk-button-small" style="display: none;" uk-tooltip="title: 编辑选中记录; pos: bottom;">
                     <i class="icon ion-md-create"></i>
-                    编辑
                 </button>
                 <button id="${this.table.id}-delete" class="uk-button uk-button-danger uk-button-small" style="display: none;" uk-tooltip="title: 删除选中记录; pos: bottom;">
                     <i class="icon ion-md-trash"></i>
-                    删除
                 </button>
             </div>
         ` : '';
@@ -443,8 +441,18 @@ class TableRender {
                     // 获取行ID
                     const rowId = row.getAttribute('data-row-id');
                     if (rowId) {
-                        // 阻止事件冒泡，避免与复选框点击冲突
-                        if (e.target.tagName !== 'INPUT' && e.target.type !== 'checkbox') {
+                        // 检查是否点击了复选框单元格
+                        const isCheckboxCell = e.target.closest('td.checkbox-cell');
+                        
+                        // 如果点击了复选框单元格但不是checkbox本身，触发复选框点击而不是页面跳转
+                        if (isCheckboxCell && e.target.tagName !== 'INPUT' && e.target.type !== 'checkbox') {
+                            const checkbox = row.querySelector('input[type="checkbox"]');
+                            if (checkbox) {
+                                checkbox.checked = !checkbox.checked;
+                                this.toggleRowSelection(rowId);
+                            }
+                        } else if (e.target.tagName !== 'INPUT' && e.target.type !== 'checkbox') {
+                            // 阻止事件冒泡，避免与复选框点击冲突
                             this.handleRowClick(rowId);
                         }
                     }
@@ -837,7 +845,6 @@ class TableRender {
             if (this.options.enableCheckbox && !headerRow.querySelector('.checkbox-header')) {
                 const checkboxHeader = document.createElement('th');
                 checkboxHeader.className = 'checkbox-header';
-                checkboxHeader.style.width = '40px';
                 headerRow.appendChild(checkboxHeader);
             }
 
@@ -847,7 +854,6 @@ class TableRender {
                 th.textContent = fieldConfig.label || fieldConfig.name || '';
                 th.style.whiteSpace = 'nowrap';
                 th.style.overflow = 'visible';
-                th.style.minWidth = '100px';
                 headerRow.appendChild(th);
             });
         } else {
@@ -858,7 +864,6 @@ class TableRender {
                 if (cell.className !== 'checkbox-header') {
                     cell.style.whiteSpace = 'nowrap'; // 防止文本换行
                     cell.style.overflow = 'visible'; // 确保内容完全显示
-                    cell.style.minWidth = '100px'; // 设置最小宽度
                 }
             });
 
@@ -866,7 +871,6 @@ class TableRender {
             if (this.options.enableCheckbox && !headerRow.querySelector('.checkbox-header')) {
                 const checkboxHeader = document.createElement('th');
                 checkboxHeader.className = 'checkbox-header';
-                checkboxHeader.style.width = '40px';
                 headerRow.insertBefore(checkboxHeader, headerRow.firstChild);
             }
 
@@ -943,7 +947,7 @@ class TableRender {
             // 如果启用了复选框，为每行添加复选框
             if (this.options.enableCheckbox) {
                 const checkboxCell = document.createElement('td');
-                checkboxCell.style.width = '40px';
+                checkboxCell.className = 'checkbox-cell';
                 checkboxCell.innerHTML = `
                     <input type="checkbox" class="uk-checkbox table-checkbox" data-row-id="${rowData.id}" ${this.selectedRowIds.has(rowData.id) ? 'checked' : ''} uk-tooltip="title: 选择行; pos: right;">
                 `;

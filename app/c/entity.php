@@ -27,6 +27,138 @@ class entity extends base {
     $this->list($this->type);
   }
 
+
+  public function kanban(): void {
+    $this->m = load('m/entity_m');
+    $this->m->type = $this->type;
+    
+    if(isset($opt['filter']) && is_array($opt['filter'])) {
+      foreach($opt['filter'] as $key => $value) {
+        // Store the key and value separately for proper escaping in the model
+        $value = $value=='eid'?$opt['eid']:$value;
+        $this->m->conditions["json_filter_{$key}"] = $value;
+      }
+    }
+    
+    // 获取实体数据
+    $entities = $this->m->entitylist();
+    
+    // 获取实体配置
+    $item = $this->m->getItem($this->type);
+    
+    // 自动检测状态字段
+    $statusFields = [];
+    $selectedStatusField = '';
+    
+    if (isset($item['fields']) && is_array($item['fields'])) {
+        foreach ($item['fields'] as $fieldName => $fieldConfig) {
+            // 通过字段名关键词检测状态字段
+            if (strpos(strtolower($fieldName), 'status') !== false || 
+                strpos(strtolower($fieldName), 'state') !== false ||
+                strpos(strtolower($fieldName), 'stage') !== false) {
+                $statusFields[$fieldName] = $fieldConfig;
+                if (empty($selectedStatusField)) {
+                    $selectedStatusField = $fieldName;
+                }
+            }
+        }
+    }
+    
+    // 如果没有找到状态字段，使用第一个字段
+    if (empty($selectedStatusField) && !empty($item['fields'])) {
+        $firstField = array_key_first($item['fields']);
+        $selectedStatusField = $firstField;
+    }
+    
+    // 处理实体数据，提取JSON字段
+    $processedEntities = [];
+    foreach ($entities as $entity) {
+        $entityData = [];
+        if (isset($entity['data'])) {
+            if(is_array($entity['data'])){
+                $entityData = $entity['data'];
+            }
+            else {
+                $entityData = json_decode($entity['data'], true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    $entityData = [];
+                }
+            }
+        }
+        
+        $processedEntities[] = [
+            'id' => $entity['id'],
+            'fields' => $entityData,
+            'name' => $entity['name'],
+            'description' => $entity['description'],
+            'created_at' => $entity['created_at'],
+            'updated_at' => $entity['updated_at']
+        ];
+    }
+    
+    $param['entities'] = $processedEntities;
+    $param['item'] = $item;
+    $param['statusFields'] = $statusFields;
+    $param['selectedStatusField'] = $selectedStatusField;
+    $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = '看板视图';
+    $param['entity_type'] = $this->type;
+    $param['object_menu_key'] = $this->object_menu_key;
+    $param['object_id'] = $this->object_id;
+    $param['base_url'] = tenant_url($this->type . '/');
+    
+    $this->display('v/entity/kanban', $param);
+  }
+
+  public function calendar(): void {
+    $this->m = load('m/entity_m');
+    $this->m->type = $this->type;
+    
+    // 获取实体数据
+    $entities = $this->m->entitylist();
+    
+    // 获取实体配置
+    $item = $this->m->getItem($this->type);
+    
+    // 自动检测日期字段
+    $dateFields = [];
+    $selectedDateField = '';
+    
+    if (isset($item['fields']) && is_array($item['fields'])) {
+        foreach ($item['fields'] as $fieldName => $fieldConfig) {
+            // 通过字段类型检测日期字段
+            if (isset($fieldConfig['type']) && 
+                (strpos(strtolower($fieldConfig['type']), 'date') !== false || 
+                 strpos(strtolower($fieldConfig['type']), 'time') !== false)) {
+                $dateFields[$fieldName] = $fieldConfig;
+                if (empty($selectedDateField)) {
+                    $selectedDateField = $fieldName;
+                }
+            }
+            
+            // 通过字段名关键词检测日期字段
+            elseif (strpos(strtolower($fieldName), 'date') !== false || 
+                    strpos(strtolower($fieldName), 'time') !== false) {
+                $dateFields[$fieldName] = $fieldConfig;
+                if (empty($selectedDateField)) {
+                    $selectedDateField = $fieldName;
+                }
+            }
+        }
+    }
+    
+    $param['entities'] = $entities;
+    $param['item'] = $item;
+    $param['dateFields'] = $dateFields;
+    $param['selectedDateField'] = $selectedDateField;
+    $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = '日历视图';
+    $param['entity_type'] = $this->type;
+    $param['object_menu_key'] = $this->object_menu_key;
+    $param['object_id'] = $this->object_id;
+    
+    $this->display('v/entity/calendar', $param);
+  }
+
+
   public function list(string $entity_type,$opt = []): void {
     $this->m = load('m/entity_m');
     $this->m->type = $entity_type;
@@ -220,7 +352,7 @@ class entity extends base {
           $this->list($objmenu['mod'],$objmenu);
           break;
         case 'add':
-          $this->create($objmenu['mod']);
+          $this->add($objmenu['mod']);
           break;
         case 'edit':
           $this->edit($id,$objmenu['mod']);

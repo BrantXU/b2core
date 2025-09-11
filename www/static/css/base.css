@@ -2,7 +2,7 @@ body{background: #f6f6f6;line-height: 1.5;}
 del{color:#F33;}
 h3.uk-first-column{padding:0 15px;}
 .uk-form{max-width: 800px;}
-*+.uk-grid-margin, .uk-grid+.uk-grid, .uk-grid>.uk-grid-margin{margin-top: 10px;}
+/* 移除网格间距覆盖，使用UKit默认间距 */
 .canvas{background: #fff;padding: 20px;}
 .container{padding: 0 10px;}
 a{color: #000;}

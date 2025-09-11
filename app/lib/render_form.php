@@ -179,7 +179,7 @@ class FormRenderer {
                     $tr_filter = array($filter[0] => $filter[1]);
                     foreach($tr_filter as $key => $value) {
                         // Store the key and value separately for proper escaping in the model
-                        $value = $value=='eid'?$opt['eid']:$value;
+                        $value = $value=='eid'?$value['eid']:$value;
                         $conditions["json_filter_{$key}"] = $value;
                     }
                 }

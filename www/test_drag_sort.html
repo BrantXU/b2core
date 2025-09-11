@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>拖动排序功能测试</title>
+    <link rel="stylesheet" href="/static/css/uikit.min.css">
+    <link rel="stylesheet" href="/static/css/ionicons.min.css">
+    <script src="/static/js/uikit.min.js"></script>
+</head>
+<body>
+    <div class="uk-container uk-margin-top">
+        <h2>拖动排序功能测试</h2>
+        
+        <div id="widgetList" class="uk-grid uk-grid-small uk-child-width-1-3@m" uk-grid>
+            <div class="uk-sortable-item" data-widget-id="widget1">
+                <div class="uk-card uk-card-small uk-card-default uk-card-body widget-item">
+                    <div class="uk-flex uk-flex-middle">
+                        <div class="uk-sortable-handle uk-margin-small-right">☰</div>
+                        <div>
+                            <div class="uk-text-bold">控件1</div>
+                            <div class="uk-text-meta">文本输入 · 1列</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="uk-sortable-item" data-widget-id="widget2">
+                <div class="uk-card uk-card-small uk-card-default uk-card-body widget-item">
+                    <div class="uk-flex uk-flex-middle">
+                        <div class="uk-sortable-handle uk-margin-small-right" uk-icon="icon: menu"></div>
+                        <div>
+                            <div class="uk-text-bold">控件2</div>
+                            <div class="uk-text-meta">数字输入 · 1列</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="uk-sortable-item" data-widget-id="widget3">
+                <div class="uk-card uk-card-small uk-card-default uk-card-body widget-item">
+                    <div class="uk-flex uk-flex-middle">
+                        <div class="uk-sortable-handle uk-margin-small-right" uk-icon="icon: menu"></div>
+                        <div>
+                            <div class="uk-text-bold">控件3</div>
+                            <div class="uk-text-meta">日期选择 · 1列</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="uk-margin-top">
+            <button class="uk-button uk-button-primary" onclick="testSortable()">测试拖拽排序</button>
+            <button class="uk-button uk-button-secondary" onclick="getOrder()">获取当前顺序</button>
+        </div>
+        
+        <div id="result" class="uk-margin-top"></div>
+    </div>
+
+    <script>
+        // 初始化UIkit拖拽排序
+        const sortable = UIkit.sortable(document.getElementById('widgetList'), {
+            handle: '.uk-sortable-handle',
+            animation: 150
+        });
+        
+        function testSortable() {
+            UIkit.notification('拖拽排序功能已初始化，请尝试拖动控件', {status: 'success'});
+        }
+        
+        function getOrder() {
+            const widgetIds = Array.from(document.querySelectorAll('.uk-sortable-item')).map(
+                item => item.dataset.widgetId
+            );
+            
+            document.getElementById('result').innerHTML = `
+                <div class="uk-alert uk-alert-info">
+                    <p>当前控件顺序：${widgetIds.join(' → ')}</p>
+                    <p>排序功能状态：${sortable ? '正常' : '异常'}</p>
+                </div>
+            `;
+        }
+        
+        // 直接绑定拖拽结束事件
+        if (sortable) {
+            sortable.$el.addEventListener('stop', () => {
+                const widgetIds = Array.from(document.querySelectorAll('.uk-sortable-item')).map(
+                    item => item.dataset.widgetId
+                );
+                
+                UIkit.notification(`排序已更新：${widgetIds.join(' → ')}`, {status: 'success'});
+                
+                // 更新全局config对象的排序（如果存在）
+                if (typeof config !== 'undefined') {
+                    config.widget_order = widgetIds;
+                    console.log('全局排序已更新:', config.widget_order);
+                }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -8,8 +8,8 @@ class entity_m extends m {
 
   public function __construct($table = null) 
   {
-    global $tdb;
-    $this->db = $tdb; 
+    global $db;
+    $this->db = $db; 
     $this->table = 'tb_entity';
     $this->conditions = [];
     $this->key = 'id';    

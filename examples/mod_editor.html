@@ -1,0 +1,307 @@
+
+<!DOCTYPE html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <title></title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="keywords" content="">
+  <meta name="description" content="">
+  <link href="/static/css/uikit.min.css" rel="stylesheet" type="text/css">
+  <link href="/static/css/base.css" rel="stylesheet" type="text/css">
+  <link href="/static/css/ionicons.min.css" rel="stylesheet">
+  <link href="/static/css/kanban.css" rel="stylesheet" type="text/css">
+  <link href="/static/css/calendar.css" rel="stylesheet" type="text/css">
+  <script src="/static/js/uikit.min.js"></script>
+  <script src="/static/js/base.js"></script>
+  <script src="/static/js/tableRender.js"></script>
+  <script src="/static/js/modal.js"></script>
+  <script src="/static/js/dom.js"></script>
+  <script src="/static/js/calendarRender.js"></script>
+</head>
+<body>
+  <div> 
+    <!-- 顶部主菜单 -->
+  <nav class="uk-navbar-container top-menu" uk-navbar>
+    <div class="uk-navbar-left">
+      <ul class="uk-navbar-nav"><li class=""><a href="/default/home" class="" >首页</a></li><li class=""><a href="/default/calendar" class="" >日程</a></li><li class=""><a href="/default/fund" class="" >基金管理</a></li><li class=""><a href="/default/company" class="" >企业管理</a></li><li class=""><a href="/default/deal" class="" >交易明细</a></li><li class=""><a href="/default/position" class="" >投资组合</a></li><li class="uk-parent"><a href="#" class="" >投资人<span uk-icon="icon: chevron-down; ratio: 0.7" class="uk-margin-remove"></span></a><div class="uk-dropdown uk-dropdown-navbar" data-uk-dropdown><ul class="uk-nav uk-nav-navbar"><li class=""><a href="/default/investor">投资人</a></li><li class=""><a href="/default/funddeal">出资分配</a></li><li class=""><a href="/default/fundposition">投资人份额</a></li><li class=""><a href="/default/cf_notice">Call款&amp;分配</a></li></ul></div></li><li class="uk-parent"><a href="#" class="" >股票市场<span uk-icon="icon: chevron-down; ratio: 0.7" class="uk-margin-remove"></span></a><div class="uk-dropdown uk-dropdown-navbar" data-uk-dropdown><ul class="uk-nav uk-nav-navbar"><li class=""><a href="/default/mktprice">股票市场</a></li><li class=""><a href="/default/stock">股价</a></li><li class=""><a href="/default/fx">汇率</a></li></ul></div></li><li class=""><a href="/default/charts" class="" >图表</a></li><li class="uk-parent"><a href="#" class="" >配置<span uk-icon="icon: chevron-down; ratio: 0.7" class="uk-margin-remove"></span></a><div class="uk-dropdown uk-dropdown-navbar" data-uk-dropdown><ul class="uk-nav uk-nav-navbar"><li class=""><a href="/default/trash">回收站</a></li><li class=""><a href="/default/config">配置</a></li><li class=""><a href="/default/account">账户</a></li><li class=""><a href="/default/logout">退出</a></li></ul></div></li><li class="uk-parent"><a href="#" class="" >当前登录 Brant<span uk-icon="icon: chevron-down; ratio: 0.7" class="uk-margin-remove"></span></a><div class="uk-dropdown uk-dropdown-navbar" data-uk-dropdown><ul class="uk-nav uk-nav-navbar"><li class=""><a href="/default/tenant">切换租户</a></li><li class=""><a href="/default/logout">退出</a></li></ul></div></li></ul>    </div>
+  </nav>
+  
+  <!-- 附菜单 -->
+  <nav class="uk-navbar-container sub-menu" uk-navbar>
+    <div class="uk-navbar-left">
+      <ul class="uk-navbar-nav"><li><a href="/default/config/setting">配置</a></li><li><a href="/default/config/space_script">脚本</a></li><li><a href="/default/config/space">空间设置</a></li><li><a href="/default/config/_role">角色</a></li><li><a href="/default/config/usr_analytics">访问统计</a></li><li><a href="/default/config/devtools">调试工具</a></li><li><a href="/default/config/trace">日志</a></li><li><a href="/default/config/usr">用户</a></li></ul>    </div>
+  </nav>
+  </div>
+<div class="container"> 
+  <div class="canvas">
+        <nav >
+      <ul class="uk-breadcrumb">
+                  <li><a href="/default/home/" class="uk-link-reset">首页</a></li>
+              </ul>
+    </nav>
+
+
+    
+    <!-- 渲染对象菜单 -->
+    
+    <div class="uk-grid uk-grid-divider" uk-grid>
+   <!-- 左侧控件列表 -->
+   <div class="uk-width-3-4@m">
+    <div class="uk-margin uk-flex uk-flex-between uk-flex-middle">
+      <div>
+        <button id="batchDeleteBtn" class="uk-button uk-button-danger" disabled>批量删除</button>
+        <a href="/default/config/edit/?action=create" class="uk-button uk-button-primary" style="margin-left: 10px;">创建配置</a>
+        <a href="/default/config/yaml/607980" class="uk-button uk-button-secondary" style="margin-left: 10px;">专家模式</a>
+      </div>
+    </div>
+    
+    <h3>控件列表</h3>
+    <div id="widgetList" class="uk-grid uk-grid-small uk-child-width-1-1" uk-grid>
+                                  <div class="uk-width-1-1@m uk-sortable-item" data-widget-id="hg10t4qyann">
+            <div class="uk-card uk-card-small uk-card-default uk-card-body widget-item" 
+                 onclick="selectWidget('hg10t4qyann')">
+              <div class="uk-flex uk-flex-middle">
+                <div class="uk-sortable-handle uk-margin-small-right" uk-icon="icon: menu"></div>
+                <div>
+                  <div class="uk-text-bold">TrackRecordAnalysis</div>
+                  <div class="uk-text-meta">title · 3列</div>
+                </div>
+              </div>
+            </div>
+          </div>
+                            <div class="uk-width-1-3@m uk-sortable-item" data-widget-id="hg10w4sdzyy">
+            <div class="uk-card uk-card-small uk-card-default uk-card-body widget-item" 
+                 onclick="selectWidget('hg10w4sdzyy')">
+              <div class="uk-flex uk-flex-middle">
+                <div class="uk-sortable-handle uk-margin-small-right" uk-icon="icon: menu"></div>
+                <div>
+                  <div class="uk-text-bold">季报收益情况</div>
+                  <div class="uk-text-meta">section · 1列</div>
+                </div>
+              </div>
+            </div>
+          </div>
+                            <div class="uk-width-1-1@m uk-sortable-item" data-widget-id="hg17dqy077yy">
+            <div class="uk-card uk-card-small uk-card-default uk-card-body widget-item" 
+                 onclick="selectWidget('hg17dqy077yy')">
+              <div class="uk-flex uk-flex-middle">
+                <div class="uk-sortable-handle uk-margin-small-right" uk-icon="icon: menu"></div>
+                <div>
+                  <div class="uk-text-bold">基金分析</div>
+                  <div class="uk-text-meta">charts · 3列</div>
+                </div>
+              </div>
+            </div>
+          </div>
+                            <div class="uk-width-1-3@m uk-sortable-item" data-widget-id="hg10tuowk88">
+            <div class="uk-card uk-card-small uk-card-default uk-card-body widget-item" 
+                 onclick="selectWidget('hg10tuowk88')">
+              <div class="uk-flex uk-flex-middle">
+                <div class="uk-sortable-handle uk-margin-small-right" uk-icon="icon: menu"></div>
+                <div>
+                  <div class="uk-text-bold">基金季报概览</div>
+                  <div class="uk-text-meta">section · 1列</div>
+                </div>
+              </div>
+            </div>
+          </div>
+                            <div class="uk-width-1-3@m uk-sortable-item" data-widget-id="hg10ut7e7ww">
+            <div class="uk-card uk-card-small uk-card-default uk-card-body widget-item" 
+                 onclick="selectWidget('hg10ut7e7ww')">
+              <div class="uk-flex uk-flex-middle">
+                <div class="uk-sortable-handle uk-margin-small-right" uk-icon="icon: menu"></div>
+                <div>
+                  <div class="uk-text-bold">基金季报</div>
+                  <div class="uk-text-meta">data · 1列</div>
+                </div>
+              </div>
+            </div>
+          </div>
+                            <div class="uk-width-1-3@m uk-sortable-item" data-widget-id="_rel">
+            <div class="uk-card uk-card-small uk-card-default uk-card-body widget-item" 
+                 onclick="selectWidget('_rel')">
+              <div class="uk-flex uk-flex-middle">
+                <div class="uk-sortable-handle uk-margin-small-right" uk-icon="icon: menu"></div>
+                <div>
+                  <div class="uk-text-bold">系统_关联</div>
+                  <div class="uk-text-meta">hidden · 1列</div>
+                </div>
+              </div>
+            </div>
+          </div>
+                            <div class="uk-width-1-3@m uk-sortable-item" data-widget-id="_rel_view">
+            <div class="uk-card uk-card-small uk-card-default uk-card-body widget-item" 
+                 onclick="selectWidget('_rel_view')">
+              <div class="uk-flex uk-flex-middle">
+                <div class="uk-sortable-handle uk-margin-small-right" uk-icon="icon: menu"></div>
+                <div>
+                  <div class="uk-text-bold">系统_关联视图</div>
+                  <div class="uk-text-meta">hidden · 1列</div>
+                </div>
+              </div>
+            </div>
+          </div>
+                  </div>
+  </div>
+
+  <!-- 右侧属性菜单 -->
+   <div class="uk-width-1-4@m">
+    <div id="propertyPanel">
+      <div class="uk-alert uk-alert-primary">
+        <p>请从左侧选择一个控件来编辑其属性</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 属性编辑表单模板 -->
+<template id="propertyTemplate">
+  <div class="uk-card uk-card-default uk-card-body">
+    <h3 class="uk-card-title">{widgetName} 属性</h3>
+    
+    <form id="propertyForm" class="uk-form-stacked">
+      <div class="uk-margin">
+        <label class="uk-form-label">控件ID</label>
+        <div class="uk-form-controls">
+          <input class="uk-input" type="text" name="id" value="{widgetId}" readonly>
+        </div>
+      </div>
+
+      <div class="uk-margin">
+        <label class="uk-form-label">控件名称</label>
+        <div class="uk-form-controls">
+          <input class="uk-input" type="text" name="name" value="{name}" required>
+        </div>
+      </div>
+
+      <div class="uk-margin">
+        <label class="uk-form-label">控件类型</label>
+        <div class="uk-form-controls">
+          <select class="uk-select" name="type" onchange="updatePropertyFields()">
+            <option value="text">文本输入</option>
+            <option value="number">数字输入</option>
+            <option value="datepicker">日期选择</option>
+            <option value="select">下拉选择</option>
+            <option value="textarea">文本区域</option>
+            <option value="section">分区标题</option>
+            <option value="tab">标签页</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="uk-margin">
+        <label class="uk-form-label">列宽</label>
+        <div class="uk-form-controls">
+          <select class="uk-select" name="width">
+            <option value="1">1列</option>
+            <option value="2">2列</option>
+            <option value="3">3列</option>
+            <option value="4">4列</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="uk-margin">
+        <label class="uk-form-label">是否在列表中显示</label>
+        <div class="uk-form-controls">
+          <input type="checkbox" name="listed" value="1" {listedChecked}>
+        </div>
+      </div>
+
+      <div class="uk-margin">
+        <label class="uk-form-label">是否必填</label>
+        <div class="uk-form-controls">
+          <input type="checkbox" name="required" value="1" {requiredChecked}>
+        </div>
+      </div>
+
+      <!-- 动态属性区域 -->
+      <div id="dynamicProperties">
+        <!-- 不同类型控件的特定属性将在这里动态生成 -->
+      </div>
+
+      <div class="uk-margin">
+        <button type="submit" class="uk-button uk-button-primary">保存属性</button>
+        <button type="button" class="uk-button uk-button-default" onclick="deleteWidget()">删除控件</button>
+      </div>
+    </form>
+  </div>
+</template>
+
+<!-- 引入控件编辑器JS -->
+ <script src="/static/js/widgetEditor.js"></script>
+ 
+ <script>
+
+  config = {"diycol_pc":"","diycol_iphone":"","bi_counting":"","bi_condition":"","bi_filter":"","openlink":"0","name_rule":"","monitor_condition":"","monitor_update":"","top_btn":"1","title_field":"","stepbar":[],"dynform":[],"collect":[],"calc":[],"css":"","js":"","script":[],"ext":{"dashboard":{"block":{"Dashboard2":{"type":"ajax","class":"block1","url":"charts\/view\/bireport\/hfrv3bh5gt\/showindex"}}}},"sms_template":[],"openlink_title":"","openlink_button":"","email_notify":[""],"email_notify_tem":"","openlink_content":"","pre_commit_content":"","_pm_deadline":"0","tab_listen_key":"","tab_listen_rule":[],"def_submit_btn_text":"","submit_redirect":"0","submit_redirect_url":"","word_export":{"word_custom_func":"","word_export_name":"","word_file":[""],"word_file_label":[""]},"api_address":"","api_list_key":"","api_request_key":"","api_response_key":"","api_display":"match","comment":{"target":"_self","doctype":"","up_folder":"","root_uid":"","eid_link":"","formats":"","position":"1","attached_mod":"","comment_title_tpl":"","field_newest":"","field_count":""},"modbox":{"position":"1","ext":[]},"notify_default":"","notify":{"url_template":""},"inherit_priv":"","privilege":{"list":"","import":"","export":"","detail":"","edit":"","delete":"","docx":"","pdf":"","history":"","openlink":"","block_view_hg10t4qyann":"","block_edit_hg10t4qyann":"","block_view_hg10w4sdzyy":"","block_edit_hg10w4sdzyy":"","block_view_hg10tuowk88":"","block_edit_hg10tuowk88":"","block_view_hg10ut7e7ww":"","block_edit_hg10ut7e7ww":""},"diycol_back_list":"","list_count_block_fields":"","order_priority":"","page_size":"","fixed_col":"","fixed_col_mobile":"","addon_url":"","list_style":"list_ajax","link_type":"canvas","list_count":"","list_style_mobile":"list_mobile","py_search":"no_more","secondary_link_type":"modal","list_mobile_mod":"default","diycard_config":[],"button_config":[],"feed_tpl":"","feed_mobile_tpl":"","feed_tpl_css":"","feed_tpl_js":"","css_config":"","js_config":"","merged_cell_key":"","merged_cell_list":"","merge_exclude_code":"","list_img_name":"","list_img_img":"","list_img_date":"","list_img_content":"","super_object":"","replace_comment_update_col":"","replace_comment_max_col":"","replace_comment_notify":"3","created_sth":"","filter":"","always_show":"","filter_mobile":"","item":{"hg10t4qyann":{"id":"hg10t4qyann","name":"TrackRecordAnalysis","type":"title","num_range":{"range":"default","start":"","end":"","contain":"all"},"label_width":"1","val_width":"def","list_align":"def","width":"3","kid":"hg10t4qyann"},"hg10w4sdzyy":{"id":"hg10w4sdzyy","name":"季报收益情况","type":"section","width":"1","num_range":{"range":"default","start":"","end":"","contain":"all"},"label_width":"1","val_width":"def","list_align":"def","kid":"hg10w4sdzyy"},"hg17dqy077yy":{"id":"hg17dqy077yy","name":"基金分析","type":"charts","num_range":{"range":"default","start":"","end":"","contain":"all"},"label_width":"0","val_width":"def","ext":{"uuid":"hg16vxlr21","data_source":{"fund":{"op":"=","val":"eid"}},"order":{"1":"asc"}},"list_align":"def","width":"3"},"hg10tuowk88":{"id":"hg10tuowk88","name":"基金季报概览","type":"section","width":"1","num_range":{"range":"default","start":"","end":"","contain":"all"},"label_width":"1","val_width":"def","list_align":"def","kid":"hg10tuowk88"},"hg10ut7e7ww":{"id":"hg10ut7e7ww","name":"基金季报","type":"data","num_range":{"range":"default","start":"","end":"","contain":"all"},"label_width":"1","val_width":"def","list_align":"def","width":"1","props":{"type_optgroup":"","type_label":"模块","type":"mod","data_source":"mod: fundreport\r\nfilter:\r\n  fund:eid","page_size":"0","layout_optgroup":"","layout_label":"列表(new)","layout":"data_list_easy","layout_mobile_optgroup":"","layout_mobile_label":"","layout_mobile":"","data_list_card_title":"","rel_display":"","rel_display_max":"0","download_no_space":"否","use_top_scroll_bar":"否","view_page_add":"否","view_page_edit":"否","link_type_optgroup":"","link_type_label":"","link_type":"","show_checkbox":"否","feed_more_optgroup":"","feed_more_label":"","feed_more":"","feed_more_mobile_optgroup":"","feed_more_mobile_label":"","feed_more_mobile":"","feed_page_size":"0","feed_mobile_page_size":"0","feed_tpl":"","feed_mobile_tpl":"","feed_tpl_css":"","feed_tpl_js":"","check_require_flag":"否","editlist":"否","editlist_new":"否","auto_add_item":"","editlist_add_position_optgroup":"","editlist_add_position_label":"","editlist_add_position":""},"kid":"hg10ut7e7ww"},"_rel":{"id":"_rel","type":"hidden","index":"1","name":"系统_关联","kid":"_rel","width":"1","label_width":"1"},"_rel_view":{"id":"_rel_view","type":"hidden","index":"1","name":"系统_关联视图","kid":"_rel_view","width":"1","label_width":"1","num_range":{"range":"default","start":"","end":"","contain":"all"},"val_width":"def","list_align":"def"}},"import":[],"pre_order":[],"bi":{"counting":[],"condition":[],"monitor_condition":[],"monitor_update":[],"filter":[]}};
+ // 初始化控件编辑器
+ document.addEventListener('DOMContentLoaded', function() {
+     // 从URL获取configId
+     const pathParts = window.location.pathname.split('/');
+     const configId = pathParts[pathParts.length - 1];
+     
+     if (configId && configId !== 'mod') {
+         widgetEditor = new WidgetEditor({
+             configId: configId,
+             tenantId: 'default'
+         });
+     }
+ });
+ </script>
+
+<style>
+.widget-item {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.widget-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.uk-sortable-handle {
+  cursor: move;
+}
+
+#propertyPanel {
+  position: sticky;
+  top: 20px;
+}
+</style>      </div>
+
+  <script>
+  // 在页面加载完成后统一渲染所有表格
+  document.addEventListener('DOMContentLoaded', function() {
+    // 检查是否存在表格配置
+    if (typeof window.tableConfigs !== 'undefined' && Array.isArray(window.tableConfigs)) {
+      // 遍历所有表格配置并初始化
+      window.tableConfigs.forEach(function(config) {
+        try {
+          // 检查必要的配置项
+          if (config.containerId && config.baseUrl) {
+            // 创建TableRender实例
+            const enhancer = new TableRender(
+              config.containerId,
+              {
+                pageSize: config.pageSize || 10,
+                searchable: config.searchable || true,
+                data: config.data || [],
+                fields: config.fields || []
+              },
+              config.baseUrl
+            );
+          }
+        } catch (error) {
+          console.error('Error initializing table:', config.containerId, error);
+        }
+      });
+      
+      // 清理配置数组，防止重复初始化
+      window.tableConfigs = [];
+    }
+  });
+  </script>
+</body>
+</html>

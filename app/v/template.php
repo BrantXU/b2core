@@ -8,11 +8,15 @@
   <meta name="description" content="<?php echo $meta_description ?? ''; ?>">
   <link href="/static/css/uikit.min.css" rel="stylesheet" type="text/css">
   <link href="/static/css/base.css" rel="stylesheet" type="text/css">
+  <link href="/static/css/ionicons.min.css" rel="stylesheet">
+  <link href="/static/css/kanban.css" rel="stylesheet" type="text/css">
+  <link href="/static/css/calendar.css" rel="stylesheet" type="text/css">
   <script src="/static/js/uikit.min.js"></script>
   <script src="/static/js/base.js"></script>
   <script src="/static/js/tableRender.js"></script>
   <script src="/static/js/modal.js"></script>
-  <link href="https://unpkg.com/ionicons@4.5.10-0/dist/css/ionicons.min.css" rel="stylesheet">
+  <script src="/static/js/dom.js"></script>
+  <script src="/static/js/calendarRender.js"></script>
 </head>
 <body>
   <div> 

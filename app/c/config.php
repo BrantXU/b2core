@@ -5,12 +5,17 @@ class config extends base {
   public function __construct() {
     parent::__construct();
     $this->m = load('m/config_m');
+    $this->addBreadcrumb('配置管理', tenant_url('config/'));
   }
 
   /**
    * 配置列表页面 - 前端分页版本
    */
   public function index(): void {
+    $this->setting();
+  }
+
+  public function setting(): void {
     // 获取所有配置数据
     $configs = $this->m->getAll();
     // 设置默认每页显示数量
@@ -30,7 +35,7 @@ class config extends base {
     $param['configs'] = $configs;
     $param['pagination'] = $pagination;
     $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = '配置列表';
-    $this->addBreadcrumb('配置管理', tenant_url('config/'));
+
     $this->addBreadcrumb('配置列表', '', true);
     $this->display('v/config/list', $param);
   }
@@ -38,6 +43,11 @@ class config extends base {
   /**
    * 创建配置页面
    */
+
+  public function add() : void {
+    $this->create();
+  }
+
   public function create(): void {
     // 载入YAML处理类
     require_once(APP . 'lib/yaml.php');
@@ -81,7 +91,6 @@ class config extends base {
     $param['val'] = $_POST;
     $param['err'] = is_array($err) ? $err : array();
     $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = '创建配置';
-    $this->addBreadcrumb('配置管理', tenant_url('config/'));
     $this->addBreadcrumb('创建配置', '', true);
     // 获取租户列表用于显示
     $tenant_m = load('m/tenant_m');
@@ -89,15 +98,43 @@ class config extends base {
     $this->display('v/config/edit', $param);
   }
 
+
   /**
    * 编辑配置页面
    */
-  public function edit(): void {
+
+   public function view( $action, $id):void{
+    $this->edit($id);
+   }
+
+   public function edit($id,$fid = ''): void{
+    //根据配置的类别用不同的方法进行渲染 
+      $config = $this->m->getConfig($id);
+      //print_r($config);
+      switch($config['config_type']){
+        case 'mod':
+          $this->mod($config,$fid);
+          break;
+        default:
+          $this->yaml($id);
+      }
+   }
+
+  public function mod($config,$fid): void {
+    // $data =  json_decode($config['value'],true);
+    // $data['id'] = $config['id'];
+    // $data['fid'] = $fid;
+    // $param = $data;
+    // $param['config'] = $config['value'];
+    $param['config'] = $config;
+    $this->display('v/config/mod',$param);
+  }
+
+  public function yaml($id): void {
     // 检查是否是创建操作
     $isCreate = isset($_GET['action']) && $_GET['action'] == 'create';
     
     if (!$isCreate) {
-      $id = $_GET['id'];
       $config = $this->m->getConfig($id);
       
       if (!$config) {
@@ -175,12 +212,59 @@ class config extends base {
     $param['val'] = $_POST;
     $param['err'] = is_array($err) ? $err : array();
     $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = $isCreate ? '创建配置' : '编辑配置';
-    $this->addBreadcrumb('配置管理', tenant_url('config/'));
     $this->addBreadcrumb($isCreate ? '创建配置' : '编辑：'.$config['key'], '', true);
     // 获取租户列表用于显示
     $tenant_m = load('m/tenant_m');
     $param['tenants'] = $tenant_m->tenantlist();
     $this->display('v/config/edit', $param);
+  }
+
+  /**
+   * 更新配置API接口
+   * 用于接收完整的配置数据更新
+   */
+  public function update(): void {
+    // 检查是否为POST请求
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+      $this->jsonResponse(false, null, '只支持POST请求');
+      return;
+    }
+    
+    // 获取JSON请求体
+    $input = json_decode(file_get_contents('php://input'), true);
+    $configId = $input['config_id'];
+    
+    // 执行更新
+    $input['value'] = json_encode($input, JSON_UNESCAPED_UNICODE);
+  //  $input['config_type'] = $input['config_type'] ?? '';
+  //  $input['tenant_id'] = $input['tenant_id'] ?? 'default';
+  //  $input['created_at'] = $input['created_at'] ?? date('Y-m-d H:i:s');
+    $input['updated_at'] = $input['updated_at'] ?? date('Y-m-d H:i:s');
+ //   $input['key'] = $input['key'] ?? '';
+ //   $input['name'] = $input['name'] ?? '';
+ //   $input['description'] = $input['description'] ?? '';
+    
+
+    $result = $this->m->updateConfig($configId, $input);
+    
+    if ($result) {
+      $this->jsonResponse(true, ['updated_at' => $input['updated_at']], '配置更新成功');
+    } else {
+      $this->jsonResponse(false, null, '配置更新失败');
+    }
+  }
+  
+  /**
+   * JSON响应辅助方法
+   */
+  private function jsonResponse($success, $data, $message): void {
+    header('Content-Type: application/json');
+    echo json_encode([
+      'success' => $success,
+      'data' => $data,
+      'message' => $message
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
   }
 
   /**
@@ -403,5 +487,84 @@ class config extends base {
       $d = json_decode($c['value'],true);
       print_r($d);
     } 
+  }
+
+  /**
+   * 查看配置历史版本列表
+   */
+  public function hist($id): void {
+    $config = $this->m->getConfig($id);
+    if (!$config) {
+      show_404('配置不存在');
+    }
+    
+    $param['hist'] = $this->m->hist($id);
+    $param['config'] = $config;
+    $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = '配置历史版本';
+    $this->addBreadcrumb('配置历史版本', '', true);
+    $this->display('v/config/hist', $param);
+  }
+
+  /**
+   * 查看特定历史版本内容
+   */
+  public function vhist($id, $config_id): void {
+    $config = $this->m->getConfig($config_id);
+    if (!$config) {
+      show_404('配置不存在');
+    }
+    
+    $histData = $this->m->vhist($id, $config_id);
+    if (empty($histData)) {
+      show_404('历史版本不存在');
+    }
+    
+    $param['hist'] = $histData;
+    $param['config'] = $config;
+    $param['hist_id'] = $id;
+    $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = '历史版本详情';
+    $this->addBreadcrumb('配置历史版本', tenant_url('config/hist/' . $config_id));
+    $this->addBreadcrumb('历史版本详情', '', true);
+    $this->display('v/config/vhist', $param);
+  }
+
+  /**
+   * 恢复历史版本到当前配置
+   */
+  public function restore($hist_id, $config_id): void {
+    $config = $this->m->getConfig($config_id);
+    if (!$config) {
+      show_404('配置不存在');
+    }
+    
+    $result = $this->m->restoreConfig($hist_id, $config_id);
+    
+    if ($result) {
+      header('Location: ' . tenant_url('config/vhist/' . $hist_id . '/' . $config_id) . '?success=配置恢复成功');
+      exit;
+    } else {
+      header('Location: ' . tenant_url('config/vhist/' . $hist_id . '/' . $config_id) . '?error=配置恢复失败');
+      exit;
+    }
+  }
+}
+
+
+function renderConfigType($key){
+  switch($key){
+    case 'mod':
+      return '模块 mod';
+      break;
+    case 'view':  
+      return '视图 view';
+      break;
+    case 'layout':
+      return '排版 layout';
+
+    case 'menu':
+      return '菜单 menu';
+
+    default:
+      return $key;
   }
 }
