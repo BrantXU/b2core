@@ -8,53 +8,22 @@ class config extends base {
     $this->addBreadcrumb('配置管理', tenant_url('config/'));
   }
 
-  /**
-   * 配置列表页面 - 前端分页版本
-   */
   public function index(): void {
     $this->setting();
   }
 
   public function setting(): void {
-    // 获取所有配置数据
     $configs = $this->m->getAll();
-    // 设置默认每页显示数量
-    $limit = 10;
-    // 计算总记录数
-    $total = count($configs);
-    // 计算总页数
-    $totalPages = max(1, ceil($total / $limit));
-    
-    // 准备分页数据
-    $pagination = [
-      'total_items' => $total,
-      'limit' => $limit,
-      'total_pages' => $totalPages
-    ];
-    
     $param['configs'] = $configs;
-    $param['pagination'] = $pagination;
-    $param['page_title'] = $param['meta_keywords'] = $param['meta_description'] = '配置列表';
-
-    $this->addBreadcrumb('配置列表', '', true);
     $this->display('v/config/list', $param);
   }
 
-  /**
-   * 创建配置页面
-   */
-
-  public function add() : void {
-    $this->create();
-  }
-
+  public function add() : void { $this->create(); }
   public function create(): void {
     // 载入YAML处理类
     require_once(APP . 'lib/yaml.php');
-    
     $conf = array('key' => 'required', 'value' => 'required', 'config_type' => 'required');
     $err = validate($conf);
-    
     if (!empty($_POST) && $err === TRUE) {
       // 将YAML转换为JSON格式保存
       if (isset($_POST['value'])) {
@@ -107,25 +76,24 @@ class config extends base {
     $this->edit($id);
    }
 
-   public function edit($id,$fid = ''): void{
+   public function edit($id): void{
     //根据配置的类别用不同的方法进行渲染 
       $config = $this->m->getConfig($id);
-      //print_r($config);
+      $this->addBreadcrumb( $config['description'].'-'.$config['key'], tenant_url('config/view/about/'.$id), true);
       switch($config['config_type']){
         case 'mod':
-          $this->mod($config,$fid);
+        case 'view':
+        case 'form':
+        case 'npt':
+        case 'sys':
+          $this->mod($config);
           break;
         default:
           $this->yaml($id);
       }
    }
 
-  public function mod($config,$fid): void {
-    // $data =  json_decode($config['value'],true);
-    // $data['id'] = $config['id'];
-    // $data['fid'] = $fid;
-    // $param = $data;
-    // $param['config'] = $config['value'];
+  public function mod($config): void {
     $param['config'] = $config;
     $this->display('v/config/mod',$param);
   }
@@ -560,10 +528,25 @@ function renderConfigType($key){
       break;
     case 'layout':
       return '排版 layout';
-
+      break;
     case 'menu':
       return '菜单 menu';
-
+      break;
+    case 'script':
+      return '脚本 script';
+      break;
+    case 'form':
+      return '表单 form';
+      break;
+    case 'flow_tree':
+      return '流程树 flow_tree';
+      break;
+    case 'npt':
+      return '控件 npt';
+      break;
+    case 'sys':
+      return '系统 sys';
+      break;
     default:
       return $key;
   }

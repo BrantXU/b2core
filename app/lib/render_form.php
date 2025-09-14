@@ -166,6 +166,33 @@ class FormRenderer {
                     $html .= $tips;
                 }
                 break;
+
+            case 'radio':
+                if ($view) {
+                    $html .= '<div class="uk-text-muted">' . htmlspecialchars($value) . '</div>';
+                } else {
+                    // 解析选项列表
+                    $options = isset($props['options']) ? explode("\n", $props['options']) : [];
+                    foreach ($options as $option) {
+                        $option = trim($option);
+                        if (!empty($option)) {
+                            $checked = $value == $option ? 'checked' : '';
+                            $html .= '<label class="uk-form-label"><input type="radio" class="uk-radio" name="data['.$field.']" value="'.htmlspecialchars($option).'" '.$checked.' '.$readonly.' '.$required.'> '.htmlspecialchars($option).'</label><br>';
+                        }
+                    }
+                    $html .= $tips;
+                }
+                break;
+
+            case 'checkbox':
+                if ($view) {
+                    $html .= '<div class="uk-text-muted">' . ($value ? '是' : '否') . '</div>';
+                } else {
+                    $checked = $value ? 'checked' : '';
+                    $html .= '<label class="uk-form-label"><input type="checkbox" class="uk-checkbox" name="data['.$field.']" value="1" '.$checked.' '.$readonly.' '.$required.'> 是</label>';
+                    $html .= $tips;
+                }
+                break;
             case 'puretext':
                 $html .= '<div class="uk-text-muted">' .$props['tpl'] . '</div>';
                 break;

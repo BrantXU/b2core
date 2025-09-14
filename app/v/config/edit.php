@@ -31,17 +31,6 @@
       <label class="uk-form-label">值</label>
       <div class="uk-form-controls">
         <textarea name="value" rows="10" cols="50" class="uk-textarea"><?=isset($val['value']) ? htmlspecialchars($val['value']) : (isset($config['value']) ? htmlspecialchars($config['value']) : '')?></textarea>
-        <div class="uk-text-meta">可以使用YAML格式输入，系统会自动转换为JSON格式保存。例如：
-<pre>
-name: 示例配置
-items:
-  - item1
-  - item2
-settings:
-  debug: true
-  timeout: 30
-</pre>
-</div>
         <span class="uk-text-danger"><?=isset($err['value']) ? $err['value'] : ''?></span>
       </div>
     </div>
@@ -57,6 +46,12 @@ settings:
           <option value="menu" <?=isset($val['config_type']) && $val['config_type'] == 'menu' ? 'selected' : (isset($config['config_type']) && $config['config_type'] == 'menu' ? 'selected' : '')?>>菜单(menu)</option>
           <option value="layout" <?=isset($val['config_type']) && $val['config_type'] == 'layout' ? 'selected' : (isset($config['config_type']) && $config['config_type'] == 'layout' ? 'selected' : '')?>>排版(layout)</option>
           <option value="doc" <?=isset($val['config_type']) && $val['config_type'] == 'doc' ? 'selected' : (isset($config['config_type']) && $config['config_type'] == 'doc' ? 'selected' : '')?>>文档(doc)</option>
+          <option value="view" <?=isset($val['config_type']) && $val['config_type'] == 'view' ? 'selected' : (isset($config['config_type']) && $config['config_type'] == 'view' ? 'selected' : '')?>>视图(view)</option>
+          <option value="script" <?=isset($val['config_type']) && $val['config_type'] == 'script' ? 'selected' : (isset($config['config_type']) && $config['config_type'] == 'script' ? 'selected' : '')?>>脚本(script)</option>
+          <option value="form" <?=isset($val['config_type']) && $val['config_type'] == 'form' ? 'selected' : (isset($config['config_type']) && $config['config_type'] == 'form' ? 'selected' : '')?>>表单(form)</option>
+          <option value="flow_tree" <?=isset($val['config_type']) && $val['config_type'] == 'flow_tree' ? 'selected' : (isset($config['config_type']) && $config['config_type'] == 'flow_tree' ? 'selected' : '')?>>流程树(flow_tree)</option>
+          <option value="npt" <?=isset($val['config_type']) && $val['config_type'] == 'npt' ? 'selected' : (isset($config['config_type']) && $config['config_type'] == 'npt' ? 'selected' : '')?>>控件(npt)</option>
+          <option value="sys" <?=isset($val['config_type']) && $val['config_type'] == 'sys' ? 'selected' : (isset($config['config_type']) && $config['config_type'] == 'sys' ? 'selected' : '')?>>系统(sys)</option>
         </select>
       </div>
     </div>

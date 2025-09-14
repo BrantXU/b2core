@@ -62,6 +62,14 @@ class WidgetEditor {
             'amount': [
                 {name: 'precision', label: '小数精度', type: 'number', value: 2},
                 {name: 'min', label: '最小值', type: 'number', value: 0}
+            ],
+            'radio': [
+                {name: 'options', label: '选项列表', type: 'textarea', 
+                 placeholder: '每行一个选项，格式：值|显示文本'}
+            ],
+            'checkbox': [
+                {name: 'defaultValue', label: '默认值', type: 'checkbox', 
+                 placeholder: '是否默认选中'}
             ]
         };
     }
@@ -125,7 +133,9 @@ class WidgetEditor {
             'tab': '标签页',
             'yuan': '金额(元)',
             'percent': '百分比',
-            'amount': '数量'
+            'amount': '数量',
+            'radio': '单选框',
+            'checkbox': '复选框'
         };
         return typeNames[type] || type;
     }
@@ -141,7 +151,9 @@ class WidgetEditor {
             'tab': '<i class="icon ion-ios-folder"></i>',
             'yuan': '<input class="uk-input uk-form-small" disabled> ¥',
             'percent': '<input class="uk-input uk-form-small" disabled> %',
-            'amount': '<input class="uk-input uk-form-small" disabled> '
+            'amount': '<input class="uk-input uk-form-small" disabled> ',
+            'radio': '<input type="radio" disabled class="uk-radio">',
+            'checkbox': '<input type="checkbox" disabled class="uk-checkbox">'
         };
         return typeIcons[type] || '<input class="uk-input uk-form-small" disabled>';
     }
@@ -159,6 +171,8 @@ class WidgetEditor {
         let html = '';
         Object.entries(widgets).forEach(([widgetId, widget]) => {
             // 根据宽度设置对应的网格类
+            if(!widget)return;
+            widget.width =widget.width?widget.width:3;
             let widthClass = 'uk-width-1-3@m'; // 默认1列宽度
             if (widget.width == 2) {
                 widthClass = 'uk-width-2-3@m';
@@ -266,6 +280,8 @@ class WidgetEditor {
                                 <option value="yuan" ${widget.type === 'yuan' ? 'selected' : ''}>金额(元)</option>
                                 <option value="percent" ${widget.type === 'percent' ? 'selected' : ''}>百分比</option>
                                 <option value="amount" ${widget.type === 'amount' ? 'selected' : ''}>数量</option>
+                                <option value="radio" ${widget.type === 'radio' ? 'selected' : ''}>单选框</option>
+                                <option value="checkbox" ${widget.type === 'checkbox' ? 'selected' : ''}>复选框</option>
                             </select>
                         </div>
                     </div>
@@ -370,10 +386,23 @@ class WidgetEditor {
             case 'textarea':
                 return `<textarea class="uk-textarea" name="props[${prop.name}]" 
                           placeholder="${prop.placeholder || ''}" rows="4">${value}</textarea>`;
+            case 'checkbox':
+                return `<input type="checkbox" class="uk-checkbox" name="props[${prop.name}]" 
+                         value="1" ${value ? 'checked' : ''}>`;
             default:
                 return `<input class="uk-input" type="${prop.type}" name="props[${prop.name}]" 
                          value="${value}" placeholder="${prop.placeholder || ''}">`;
         }
+    }
+
+    /**
+     * 根据属性名获取属性类型
+     */
+    getPropertyTypeByName(propName) {
+        const type = document.querySelector('select[name="type"]').value;
+        const properties = this.widgetProperties[type] || [];
+        const prop = properties.find(p => p.name === propName);
+        return prop ? prop.type : 'text';
     }
 
     /**
@@ -397,7 +426,13 @@ class WidgetEditor {
             for (let [key, value] of formData.entries()) {
                 if (key.startsWith('props[')) {
                     const propName = key.match(/props\[(.*?)\]/)[1];
-                    props[propName] = value;
+                    // 处理复选框类型的属性
+                    const propType = this.getPropertyTypeByName(propName);
+                    if (propType === 'checkbox') {
+                        props[propName] = formData.has(key);
+                    } else {
+                        props[propName] = value;
+                    }
                 }
             }
             data.props = props;
@@ -463,69 +498,6 @@ class WidgetEditor {
             UIkit.notification('加载数据失败', {status: 'danger'});
         }
     }
-
-    /**
-     * 保存属性 - 双向绑定实现
-     * 在编辑控件属性时实时更新config对象和左侧渲染界面
-     */
-    async saveProperties(form) {
-        try {
-            const formData = new FormData(form);
-            const data = Object.fromEntries(formData.entries());
-            
-            // 处理复选框值
-            data.listed = formData.has('listed');
-            data.required = formData.has('required');
-            data.readonly = formData.has('readonly');
-            
-            // 处理props
-            const props = {};
-            for (let [key, value] of formData.entries()) {
-                if (key.startsWith('props[')) {
-                    const propName = key.match(/props\[(.*?)\]/)[1];
-                    props[propName] = value;
-                }
-            }
-            data.props = props;
-
-            const response = await this.apiRequest('POST', 'config/update_widget', data);
-            
-            if (response.success) {
-                UIkit.notification('属性保存成功', {status: 'success'});
-                
-                // 双向绑定机制：实时更新左侧页面
-                if (typeof config !== 'undefined' && config.item && data.widget_id) {
-                    // 更新全局config对象中的控件数据 - 双向绑定的核心
-                    config.item[data.widget_id] = {
-                        ...config.item[data.widget_id],
-                        name: data.name,
-                        type: data.type,
-                        width: parseInt(data.width),
-                        listed: data.listed,
-                        required: data.required,
-                        readonly: data.readonly,
-                        tips: data.tips,
-                        ...props
-                    };
-                    
-                    // 实时刷新左侧控件列表 - 双向绑定的UI更新
-                    this.renderWidgetList(config.item);
-                    
-                    // 重新选择当前控件以保持高亮状态
-                    this.selectWidget(data.widget_id);
-                } else {
-                    // 如果全局config不存在，则重新加载所有数据
-                    this.loadInitialData();
-                }
-            } else {
-                UIkit.notification(response.message || '保存失败', {status: 'danger'});
-            }
-        } catch (error) {
-            console.error('保存属性失败:', error);
-            UIkit.notification('保存失败', {status: 'danger'});
-        }
-    }
-
     /**
      * 保存控件排序
      * 仅更新本地config变量，不请求服务器
@@ -535,12 +507,8 @@ class WidgetEditor {
             const widgetIds = Array.from(document.querySelectorAll('.uk-sortable-item')).map(
                 item => item.dataset.widgetId
             );
-
             // 更新全局config对象的排序
             if (typeof config !== 'undefined') {
-                config.widget_order = widgetIds;
-                
-                // 同时更新config.item的顺序以保持一致性
                 const sortedWidgets = {};
                 widgetIds.forEach(widgetId => {
                     if (config.item && config.item[widgetId]) {
@@ -562,8 +530,7 @@ class WidgetEditor {
     async addWidget() {
         try {
             // 生成唯一ID
-            const newWidgetId = 'widget_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-            
+            const newWidgetId = Math.random().toString(36).substr(2, 6);
             // 创建默认控件数据
             const newWidget = {
                 id: newWidgetId,
@@ -585,14 +552,10 @@ class WidgetEditor {
                 
                 // 添加到全局config对象
                 config.item[newWidgetId] = newWidget;
-                
                 // 实时刷新左侧控件列表
                 this.renderWidgetList(config.item);
-                
                 // 自动选择新添加的控件
                 this.selectWidget(newWidgetId);
-                
-                UIkit.notification('新控件已添加', {status: 'success'});
             } else {
                 UIkit.notification('无法添加控件：配置数据未初始化', {status: 'danger'});
             }
@@ -622,8 +585,6 @@ class WidgetEditor {
                     // 如果全局config不存在，则重新加载所有数据
                     this.loadInitialData();
                 }
-                
-                UIkit.notification('控件已删除', {status: 'success'});
                 this.selectedWidgetId = null;
                 
                 // 清空属性面板
@@ -644,18 +605,19 @@ class WidgetEditor {
      */
     async apiRequest(method, endpoint, data = null) {
         const url = `/${this.tenantId}/${endpoint}`;
-        
         const options = {
             method: method,
             headers: {
                 'Content-Type': 'application/json',
             }
         };
-
-        if (data && method !== 'GET') {
+        
+        // 如果有数据，将其转换为JSON字符串
+        if (data !== null) {
             options.body = JSON.stringify(data);
         }
-
+        
+        console.log(options);
         try {
             const response = await fetch(url, options);
             return await response.json();
@@ -708,9 +670,7 @@ window.updateConfig = async function() {
     
     try {
         config.config_id = widgetEditor.configId;
-        // 显示加载状态
-        //UIkit.notification('正在更新配置...', {status: 'primary'});
-        console.log(config);
+        
         // 发送到服务器
         const response = await widgetEditor.apiRequest('POST', 'config/update', config);
         

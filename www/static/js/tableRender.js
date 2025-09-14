@@ -580,28 +580,89 @@ class TableRender {
 
     /**
      * 处理删除操作
-     * 当选中一行或多行时触发删除功能，显示确认对话框后执行删除
+     * 当选中一行或多行时触发删除功能，显示确认对话框后执行异步删除
      * 根据系统URI规则：{tenant_id}/{entity_type}/delete?ids={entity_ids}
      */
-    handleDelete() {
+    async handleDelete() {
         const selectedCount = this.selectedRowIds.size;
         if (selectedCount > 0) {
             if (confirm(`确定要删除选中的 ${selectedCount} 条记录吗？`)) {
                 const rowIds = Array.from(this.selectedRowIds).join(',');
+                let deleteUrl;
+                
                 if (this.baseUrl) {
-            // 基于baseUrl生成删除URL
-            const deletePath = this.baseUrl.endsWith('/') ?
-                `${this.baseUrl}delete` :
-                `${this.baseUrl}/delete`;
-                    window.location.href = `${deletePath}/${rowIds}`;
+                    // 基于baseUrl生成删除URL
+                    const deletePath = this.baseUrl.endsWith('/') ?
+                        `${this.baseUrl}delete` :
+                        `${this.baseUrl}/delete`;
+                    deleteUrl = `${deletePath}/${rowIds}`;
                 } else {
                     // 根据系统URI规则生成删除URL
                     // 格式：当前路径/delete?ids={entity_ids}
                     const currentPath = window.location.pathname;
-                    const deleteUrl = currentPath.endsWith('/') ? 
+                    deleteUrl = currentPath.endsWith('/') ? 
                         `${currentPath}delete/${rowIds}` : 
                         `${currentPath}/delete/${rowIds}`;
-                    window.location.href = deleteUrl;
+                }
+                
+                try {
+                    // 显示加载状态
+                    if (this.deleteBtn) {
+                        const originalText = this.deleteBtn.innerHTML;
+                        this.deleteBtn.innerHTML = '<i class="icon ion-md-refresh uk-spin"></i> 删除中...';
+                        this.deleteBtn.disabled = true;
+                    }
+                    
+                    // 发送异步删除请求
+                    const response = await fetch(deleteUrl, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        if (result.success) {
+                            // 删除成功，显示提示信息并刷新表格
+                            UIkit.notification({
+                                message: result.message || '删除成功',
+                                status: 'success',
+                                pos: 'top-center',
+                                timeout: 3000
+                            });
+                            
+                            // 重新渲染表格并清除选择
+                            this.render();
+                            this.clearSelection();
+                        } else {
+                            // 删除失败
+                            UIkit.notification({
+                                message: result.message || '删除失败',
+                                status: 'danger',
+                                pos: 'top-center',
+                                timeout: 5000
+                            });
+                        }
+                    } else {
+                        // HTTP错误
+                        throw new Error(`HTTP错误: ${response.status}`);
+                    }
+                } catch (error) {
+                    // 网络错误或其他异常
+                    console.error('删除操作失败:', error);
+                    UIkit.notification({
+                        message: '删除失败: ' + error.message,
+                        status: 'danger',
+                        pos: 'top-center',
+                        timeout: 5000
+                    });
+                } finally {
+                    // 恢复按钮状态
+                    if (this.deleteBtn) {
+                        this.deleteBtn.innerHTML = '<i class="icon ion-md-trash"></i> 删除';
+                        this.deleteBtn.disabled = false;
+                    }
                 }
             }
         }
