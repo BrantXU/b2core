@@ -80,6 +80,7 @@ class TableRender {
             showCreate: true, // 是否显示创建按钮
             showEdit: true, // 是否显示编辑按钮
             showDelete: true, // 是否显示删除按钮
+            showChart: true, // 是否显示图表按钮
             ...customOptions
         };
     }
@@ -206,7 +207,7 @@ class TableRender {
      * @private
      */
     _getImportExportButtonsHtml() {
-        return (this.options.showExport || this.options.showImport || this.options.showCreate) ? `
+        return (this.options.showExport || this.options.showImport || this.options.showCreate || this.options.showChart) ? `
             <div class="uk-flex uk-flex-middle uk-button-group uk-margin-left">
                 ${this.options.showExport && this.baseUrl ? `
                     <a href="${this.baseUrl.endsWith('/') ? this.baseUrl + 'export' : this.baseUrl + '/export'}" class="uk-button uk-button-secondary uk-button-small" uk-tooltip="title: 导出数据; pos: bottom;">
@@ -222,6 +223,11 @@ class TableRender {
                     <a href="${this.baseUrl.endsWith('/') ? this.baseUrl + 'add' : this.baseUrl + '/add'}" class="uk-button uk-button-default uk-button-small" uk-tooltip="title: 创建新记录; pos: bottom;">
                         <i class="icon ion-md-add"></i>
                     </a>
+                    ` : ''}
+                    ${this.options.showChart ? `
+                    <button id="${this.table.id}-chart" class="uk-button uk-button-default uk-button-small" uk-tooltip="title: 图表分析; pos: bottom;">
+                        <i class="icon ion-md-stats"></i>
+                    </button>
                     ` : ''}
             </div>
         ` : '';
@@ -306,6 +312,7 @@ class TableRender {
         this._bindCheckboxEvents(); // 绑定复选框相关事件
         this._bindEditDeleteEvents(); // 绑定编辑删除按钮事件
         this._bindRowClickEvents(); // 绑定行点击事件
+        this._bindChartEvent(); // 绑定图表事件
     }
     
     /**
@@ -587,7 +594,7 @@ class TableRender {
         const selectedCount = this.selectedRowIds.size;
         if (selectedCount > 0) {
             if (confirm(`确定要删除选中的 ${selectedCount} 条记录吗？`)) {
-                const rowIds = Array.from(this.selectedRowIds).join(',');
+                const rowIds = Array.from(this.selectedRowIds);
                 let deleteUrl;
                 
                 if (this.baseUrl) {
@@ -595,14 +602,14 @@ class TableRender {
                     const deletePath = this.baseUrl.endsWith('/') ?
                         `${this.baseUrl}delete` :
                         `${this.baseUrl}/delete`;
-                    deleteUrl = `${deletePath}/${rowIds}`;
+                    deleteUrl = deletePath;
                 } else {
                     // 根据系统URI规则生成删除URL
-                    // 格式：当前路径/delete?ids={entity_ids}
+                    // 格式：当前路径/delete
                     const currentPath = window.location.pathname;
                     deleteUrl = currentPath.endsWith('/') ? 
-                        `${currentPath}delete/${rowIds}` : 
-                        `${currentPath}/delete/${rowIds}`;
+                        `${currentPath}delete` : 
+                        `${currentPath}/delete`;
                 }
                 
                 try {
@@ -615,18 +622,70 @@ class TableRender {
                     
                     // 发送异步删除请求
                     const response = await fetch(deleteUrl, {
-                        method: 'DELETE',
+                        method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                        }
+                        },
+                        body: JSON.stringify({
+                            ids: rowIds,
+                            _method: 'DELETE' // 兼容性处理
+                        })
                     });
                     
                     if (response.ok) {
-                        const result = await response.json();
-                        if (result.success) {
-                            // 删除成功，显示提示信息并刷新表格
+                        try {
+                            const contentType = response.headers.get('content-type');
+                            let result;
+                            
+                            if (contentType && contentType.includes('application/json')) {
+                                result = await response.json();
+                                console.log(result);
+                                
+                                if (result.success) {
+                                    // 删除成功，显示提示信息
+                                    UIkit.notification({
+                                        message: result.message || '删除成功',
+                                        status: 'success',
+                                        pos: 'top-center',
+                                        timeout: 3000
+                                    });
+                                    
+                                    // 从数据中移除已删除的行
+                                    this._removeDeletedRows(this.selectedRowIds);
+                                    
+                                    // 重新渲染表格并清除选择
+                                    this.render();
+                                    this.clearSelection();
+                                } else {
+                                    // 删除失败
+                                    UIkit.notification({
+                                        message: result.message || '删除失败',
+                                        status: 'danger',
+                                        pos: 'top-center',
+                                        timeout: 5000
+                                    });
+                                }
+                            } else {
+                                // 非JSON响应，直接视为成功
+                                const text = await response.text();
+                                console.log('非JSON响应:', text);
+                                
+                                UIkit.notification({
+                                    message: '删除成功',
+                                    status: 'success',
+                                    pos: 'top-center',
+                                    timeout: 3000
+                                });
+                                
+                                // 重新渲染表格并清除选择
+                                this.render();
+                                this.clearSelection();
+                            }
+                        } catch (parseError) {
+                            console.error('响应解析失败:', parseError);
+                            // 即使解析失败也视为成功，刷新表格
                             UIkit.notification({
-                                message: result.message || '删除成功',
+                                message: '删除成功',
                                 status: 'success',
                                 pos: 'top-center',
                                 timeout: 3000
@@ -635,14 +694,6 @@ class TableRender {
                             // 重新渲染表格并清除选择
                             this.render();
                             this.clearSelection();
-                        } else {
-                            // 删除失败
-                            UIkit.notification({
-                                message: result.message || '删除失败',
-                                status: 'danger',
-                                pos: 'top-center',
-                                timeout: 5000
-                            });
                         }
                     } else {
                         // HTTP错误
@@ -840,6 +891,19 @@ class TableRender {
     }
 
     /**
+     * 从数据中移除已删除的行
+     * @param {Set} deletedRowIds - 已删除的行ID集合
+     * @private
+     */
+    _removeDeletedRows(deletedRowIds) {
+        // 从原始数据中移除已删除的行
+        this.originalData = this.originalData.filter(row => !deletedRowIds.has(row.id));
+        
+        // 从过滤数据中移除已删除的行
+        this.filteredData = this.filteredData.filter(row => !deletedRowIds.has(row.id));
+    }
+
+    /**
      * 渲染表格数据
      */
     render() {
@@ -986,18 +1050,30 @@ class TableRender {
                         row.appendChild(cell);
                     });
                 } else if (this.options.fields) {
-                    // 新格式：根据fields配置提取值
-                    Object.values(this.options.fields).forEach(fieldConfig => {
-                        const fieldName = fieldConfig.name || '';
+                    // 新格式：根据fields配置提取值，使用WidgetRenderer渲染
+                    Object.entries(this.options.fields).forEach(([fieldName, fieldConfig]) => {
                         const cellValue = rowData[fieldName] || '';
+                        const labelValue = rowData[fieldName + '_label'] || null;
                         const cell = document.createElement('td');
                         
-                        // 处理HTML内容
-                        if (typeof cellValue === 'string' && cellValue.includes('<')) {
-                            cell.innerHTML = cellValue;
-                        } else {
-                            cell.textContent = cellValue;
-                        }
+                        // 使用WidgetRenderer渲染控件（view模式）
+                        const controlConfig = {
+                            type: fieldConfig.type,
+                            id: fieldName,
+                            readonly: !!fieldConfig.readonly,
+                            required: !!fieldConfig.required,
+                            tips: fieldConfig.tips,
+                            view: true, // 列表页面使用view模式
+                            props: fieldConfig.props || {}
+                        };
+                        
+                        const renderedControl = WidgetRenderer.renderControl(
+                            cellValue, 
+                            controlConfig, 
+                            labelValue
+                        );
+                        
+                        cell.innerHTML = renderedControl;
                         row.appendChild(cell);
                     });
                 }
@@ -1162,14 +1238,341 @@ class TableRender {
             this.render();
         }
     }
-}
 
-// 使用示例：
-// const enhancer = new TableRender('myTable', {
-//     pageSize: 20,
-//     searchable: true,
-//     sortable: true
-// });
+    /**
+     * 绑定图表事件
+     * @private
+     */
+    _bindChartEvent() {
+        if (this.options.showChart) {
+            const chartBtn = dom.gid(`${this.table.id}-chart`);
+            if (chartBtn) {
+                dom.on(chartBtn, 'click', () => {
+                    this.toggleChartModal();
+                });
+            }
+        }
+    }
+
+    /**
+     * 切换图表面板显示状态
+     */
+    toggleChartModal() {
+        const existingContainer = dom.gid(`${this.table.id}-chart-container`);
+        const chartBtn = dom.gid(`${this.table.id}-chart`);
+        
+        if (existingContainer) {
+            // 如果图表容器已存在，则移除并清除图表
+            existingContainer.remove();
+            if (this.currentChart) {
+                this.currentChart.destroy();
+                this.currentChart = null;
+            }
+            // 恢复按钮默认样式
+            if (chartBtn) {
+                chartBtn.className = 'uk-button uk-button-default uk-button-small';
+            }
+        } else {
+            // 如果图表容器不存在，则创建并显示
+            this.showChartModal();
+            // 设置按钮为激活状态样式
+            if (chartBtn) {
+                chartBtn.className = 'uk-button uk-button-primary uk-button-small';
+            }
+        }
+    }
+
+    /**
+     * 显示图表面板（在表格上方）
+     */
+    showChartModal() {
+        // 过滤文本类字段（用于X轴）
+        const textFields =  this._getTextFields();
+        
+        // 过滤数值类字段（用于Y轴）
+        const numericFields = this._getNumericFields();
+        
+        console.log(textFields,numericFields);
+        // 移除现有的图表容器（如果存在）
+        const existingContainer = dom.gid(`${this.table.id}-chart-container`);
+        if (existingContainer) {
+            existingContainer.remove();
+        }
+        
+        // 获取表格宽度
+        const tableWidth = this.table.offsetWidth;
+        
+        // 创建图表容器HTML（插入到表格上方）
+        const containerHtml = `
+            <div id="${this.table.id}-chart-container" class="uk-card uk-card-default uk-card-body uk-margin-bottom" style="width: ${tableWidth}px;">
+                <div class="uk-grid-small" uk-grid>
+                    <div class="uk-width-1-4">
+                        <select class="uk-select uk-form-small" id="${this.table.id}-chart-type">
+                            <option value="bar">柱状图</option>
+                            <option value="line">折线图</option>
+                            <option value="pie">饼图</option>
+                        </select>
+                    </div>
+                    
+                    <div class="uk-width-1-4">
+                        <select class="uk-select uk-form-small" id="${this.table.id}-chart-x">
+                            ${textFields.map(fieldLabel => `<option value="${fieldLabel}">${fieldLabel}</option>`).join('')}
+                        </select>
+                    </div>
+                    
+                    <div class="uk-width-1-4">
+                        <select class="uk-select uk-form-small" id="${this.table.id}-chart-y">
+                            ${numericFields.map(fieldLabel => `<option value="${fieldLabel}">${fieldLabel}</option>`).join('')}
+                        </select>
+                    </div>
+                    
+                    <div class="uk-width-1-4 uk-flex uk-flex-bottom">
+                        <button type="button" class="uk-button uk-button-primary uk-button-small" id="${this.table.id}-chart-generate">生成图表</button>
+                    </div>
+                </div>
+                
+                <div class="uk-margin-top">
+                    <canvas id="${this.table.id}-chart-canvas" width="${tableWidth - 40}" height="300"></canvas>
+                </div>
+            </div>
+        `;
+        
+        // 在表格前方插入图表容器
+        this.table.insertAdjacentHTML('beforebegin', containerHtml);
+        
+        // 绑定生成图表事件
+        const generateBtn = dom.gid(`${this.table.id}-chart-generate`);
+        if (generateBtn) {
+            dom.on(generateBtn, 'click', () => {
+                this.generateChart();
+            });
+        }
+    }
+
+    /**
+     * 获取表头字段
+     * @returns {Array} 字段名称数组
+     * @private
+     */
+    _getTableHeaders() {
+        // 优先从配置参数中获取字段信息
+        if (this.options.fields) {
+            return Object.values(this.options.fields).map(fieldConfig => 
+                fieldConfig.label || fieldConfig.name || ''
+            );
+        }
+    }
+
+    /**
+     * 获取字段类型信息
+     * @returns {Object} 字段名到类型的映射
+     * @private
+     */
+
+    _getTextFields(){        
+        const fields = [];
+        if (this.options.fields) {
+            console.log(this.options.fields);
+            Object.entries(this.options.fields).forEach(([fieldName, fieldConfig]) => {
+                if( this._isTextField(fieldConfig.type)) fields.push(fieldConfig.label || fieldConfig.name);
+            });
+        }
+        return fields;
+    }
+
+    _getNumericFields(){
+        const fields = [];
+        if (this.options.fields) {
+            Object.entries(this.options.fields).forEach(([fieldName, fieldConfig]) => {
+                if( this._isNumericField(fieldConfig.type)) fields.push(fieldConfig.label || fieldConfig.name);
+            });
+        }
+        return fields;
+    }
+    /**
+     * 判断字段是否为文本类型
+     * @param {string} fieldType - 字段类型
+     * @returns {boolean} 是否为文本类型
+     * @private
+     */
+    _isTextField(fieldType) {
+        // 文本类字段：text、select、radio、checkbox、muti、textarea等
+        const textTypes = ['text', 'select', 'select_new', 'radio', 'checkbox', 'muti', 'textarea'];
+        return textTypes.includes(fieldType);
+    }
+
+    /**
+     * 判断字段是否为数值类型
+     * @param {string} fieldType - 字段类型
+     * @returns {boolean} 是否为数值类型
+     * @private
+     */
+    _isNumericField(fieldType) {
+        // 数值类字段：number、yuan、percent、amount等
+        const numericTypes = ['number', 'yuan', 'percent', 'amount'];
+        return numericTypes.includes(fieldType);
+    }
+
+    /**
+     * 生成图表
+     */
+    generateChart() {
+        const chartType = dom.gid(`${this.table.id}-chart-type`).value;
+        const xField = dom.gid(`${this.table.id}-chart-x`).value;
+        const yField = dom.gid(`${this.table.id}-chart-y`).value;
+        
+        // 准备图表数据
+        const chartData = this._prepareChartData(xField, yField);
+        console.log('chartdata',chartData);
+        
+        // 渲染图表
+        this._renderChart(chartType, chartData, xField, yField);
+    }
+
+    /**
+     * 准备图表数据
+     * @param {string} xField - X轴字段
+     * @param {string} yField - Y轴字段
+     * @returns {Object} 图表数据
+     * @private
+     */
+    _prepareChartData(xField, yField) {
+        const labels = [];
+        const data = [];
+        
+        // 获取字段名到标签的映射
+        const fieldLabelToName = {};
+        if (this.options.fields) {
+            Object.entries(this.options.fields).forEach(([fieldName, fieldConfig]) => {
+                const fieldLabel = fieldConfig.label || fieldName;
+                fieldLabelToName[fieldLabel] = fieldName;
+            });
+        }
+        // 获取字段标签数组
+        const headers = this._getTableHeaders();
+        // 获取字段索引（向后兼容）
+        const xIndex = headers.indexOf(xField);
+        const yIndex = headers.indexOf(yField);
+        if (xIndex === -1 || yIndex === -1) {
+            UIkit.notification('字段不存在', {status: 'danger'});
+            return { labels: [], data: [] };
+        }
+        
+        // 提取数据
+        this.filteredData.forEach(row => {
+            let xValue, yValue;
+            
+            if (this.options.fields) {
+                // 新格式：从字段对象中提取值
+                const xFieldName = fieldLabelToName[xField];
+                const yFieldName = fieldLabelToName[yField];
+                
+                // 获取字段索引
+                const fieldNames = Object.keys(this.options.fields);
+                const xFieldIndex = fieldNames.indexOf(xFieldName);
+                const yFieldIndex = fieldNames.indexOf(yFieldName);
+                
+                // 从cells数组中提取值
+                xValue = row.cells[xFieldIndex] || '';
+                yValue = parseFloat(row.cells[yFieldIndex]) || 0;
+            } else {
+                // 旧格式：从cells数组中提取值
+                xValue = row.cells[xIndex];
+                yValue = parseFloat(row.cells[yIndex]) || 0;
+            }
+            
+            // 修复：允许空字符串的xValue，但确保yValue是有效数字
+            if (xValue !== undefined && xValue !== null && !isNaN(yValue)) {
+                labels.push(xValue.toString());
+                data.push(yValue);
+            }
+        });
+        
+        return { labels, data };
+    }
+
+    /**
+     * 渲染图表
+     * @param {string} chartType - 图表类型
+     * @param {Object} chartData - 图表数据
+     * @param {string} xField - X轴字段
+     * @param {string} yField - Y轴字段
+     * @private
+     */
+    _renderChart(chartType, chartData, xField, yField) {
+        const canvas = dom.gid(`${this.table.id}-chart-canvas`);
+        if (!canvas) return;
+        
+        // 清除之前的图表
+        if (this.currentChart) {
+            this.currentChart.destroy();
+        }
+        
+        // 创建新图表
+        this.currentChart = new Chart(canvas.getContext('2d'), {
+            type: chartType,
+            data: {
+                labels: chartData.labels,
+                datasets: [{
+                    label: yField,
+                    data: chartData.data,
+                    backgroundColor: this._getChartColors(chartType, chartData.data.length),
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: `${xField} - ${yField} 分析图表`,
+                        font: {
+                            size: 16
+                        }
+                    },
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: chartType !== 'pie' ? {
+                    y: {
+                        beginAtZero: true
+                    }
+                } : {}
+            }
+        });
+    }
+
+    /**
+     * 获取图表颜色
+     * @param {string} chartType - 图表类型
+     * @param {number} count - 数据点数量
+     * @returns {Array} 颜色数组
+     * @private
+     */
+    _getChartColors(chartType, count) {
+        const colors = [
+            'rgba(255, 99, 132, 0.6)',
+            'rgba(54, 162, 235, 0.6)',
+            'rgba(255, 206, 86, 0.6)',
+            'rgba(75, 192, 192, 0.6)',
+            'rgba(153, 102, 255, 0.6)',
+            'rgba(255, 159, 64, 0.6)',
+            'rgba(199, 199, 199, 0.6)',
+            'rgba(83, 102, 255, 0.6)',
+            'rgba(40, 159, 64, 0.6)',
+            'rgba(210, 105, 30, 0.6)'
+        ];
+        
+        if (chartType === 'pie') {
+            return colors.slice(0, count);
+        } else {
+            return [colors[3]]; // 柱状图和折线图使用单一颜色
+        }
+    }
+}
 
 // 全局注册
 if (typeof window !== 'undefined') {

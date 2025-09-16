@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图表数据调试</title>
+    <link rel="stylesheet" href="/static/css/uikit.min.css">
+    <link rel="stylesheet" href="/static/css/ionicons.min.css">
+    <script src="/static/js/uikit.min.js"></script>
+    <script src="/static/js/dom.js"></script>
+    <script src="/static/js/tableRender.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .debug-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>图表数据调试页面</h1>
+        
+        <div class="debug-info" id="debug-output">
+            等待图表数据调试信息...
+        </div>
+
+        <table id="debug-table" class="uk-table uk-table-striped uk-table-hover">
+            <thead>
+                <tr>
+                    <th>姓名</th>
+                    <th>年龄</th>
+                    <th>薪资</th>
+                    <th>部门</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>张三</td>
+                    <td>28</td>
+                    <td>8000</td>
+                    <td>技术部</td>
+                </tr>
+                <tr>
+                    <td>李四</td>
+                    <td>32</td>
+                    <td>12000</td>
+                    <td>市场部</td>
+                </tr>
+                <tr>
+                    <td>王五</td>
+                    <td>25</td>
+                    <td>6000</td>
+                    <td>人事部</td>
+                </tr>
+                <tr>
+                    <td>赵六</td>
+                    <td>35</td>
+                    <td>15000</td>
+                    <td>技术部</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="uk-margin-top">
+            <button id="debug-button" class="uk-button uk-button-primary">显示调试信息</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化表格渲染器
+            const tableRenderer = new TableRender(document.getElementById('debug-table'), {
+                showChart: true,
+                fields: {
+                    name: { name: 'name', label: '姓名', type: 'text' },
+                    age: { name: 'age', label: '年龄', type: 'number' },
+                    salary: { name: 'salary', label: '薪资', type: 'yuan' },
+                    department: { name: 'department', label: '部门', type: 'select' }
+                }
+            });
+
+            // 保存原始方法用于调试
+            const originalPrepareChartData = tableRenderer._prepareChartData.bind(tableRenderer);
+            tableRenderer._prepareChartData = function(xField, yField) {
+                const result = originalPrepareChartData(xField, yField);
+                
+                // 输出调试信息
+                const debugInfo = `
+图表数据准备调试信息：
+=====================
+X轴字段: ${xField}
+Y轴字段: ${yField}
+
+字段配置信息:
+${JSON.stringify(this.options.fields, null, 2)}
+
+文本字段列表: ${JSON.stringify(this._getTextFields())}
+数值字段列表: ${JSON.stringify(this._getNumericFields())}
+
+表头字段: ${JSON.stringify(this._getTableHeaders())}
+
+字段标签到名称映射:
+${JSON.stringify((() => {
+    const mapping = {};
+    if (this.options.fields) {
+        Object.entries(this.options.fields).forEach(([fieldName, fieldConfig]) => {
+            const fieldLabel = fieldConfig.label || fieldName;
+            mapping[fieldLabel] = fieldName;
+        });
+    }
+    return mapping;
+})(), null, 2)}
+
+最终图表数据:
+标签: ${JSON.stringify(result.labels)}
+数据: ${JSON.stringify(result.data)}
+                `;
+                
+                document.getElementById('debug-output').textContent = debugInfo;
+                return result;
+            };
+
+            // 绑定调试按钮
+            document.getElementById('debug-button').addEventListener('click', function() {
+                const chartBtn = document.getElementById('debug-table-chart');
+                if (chartBtn) {
+                    chartBtn.click();
+                }
+            });
+
+            console.log('图表调试页面已加载完成');
+        });
+    </script>
+</body>
+</html>

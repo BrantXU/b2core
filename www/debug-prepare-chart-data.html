@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>调试 _prepareChartData 方法</title>
+    <script src="/static/js/uikit.min.js"></script>
+    <script src="/static/js/uikit-icons.min.js"></script>
+    <link rel="stylesheet" href="/static/css/uikit.min.css">
+    <script src="/static/js/dom.js"></script>
+    <script src="/static/js/tableRender.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="uk-container uk-margin-top">
+        <h1>调试 _prepareChartData 方法</h1>
+        
+        <div class="uk-margin">
+            <button class="uk-button uk-button-primary" onclick="initTable()">初始化表格</button>
+            <button class="uk-button uk-button-secondary" onclick="testPrepareChartData()">测试 _prepareChartData</button>
+        </div>
+        
+        <div id="table-container"></div>
+        
+        <div class="uk-margin">
+            <h3>调试信息：</h3>
+            <pre id="debug-info" class="uk-padding uk-background-muted"></pre>
+        </div>
+    </div>
+
+    <script>
+        let tableRender;
+        
+        // 测试数据
+        const testData = [
+            { id: '1', cells: ['产品A', '1000', '2023-01-01'] },
+            { id: '2', cells: ['产品B', '2000', '2023-01-02'] },
+            { id: '3', cells: ['产品C', '1500', '2023-01-03'] },
+            { id: '4', cells: ['产品D', '3000', '2023-01-04'] }
+        ];
+        
+        // 字段配置
+        const fields = {
+            name: { label: '产品名称', type: 'text' },
+            amount: { label: '销售金额', type: 'number' },
+            date: { label: '销售日期', type: 'text' }
+        };
+        
+        function initTable() {
+            const debugInfo = document.getElementById('debug-info');
+            debugInfo.textContent = '正在初始化表格...';
+            
+            const tableContainer = document.getElementById('table-container');
+            tableContainer.innerHTML = '<div id="test-table"></div>';
+            
+            tableRender = new TableRender('test-table', {
+                data: testData,
+                fields: fields,
+                showSearch: true,
+                showCheckbox: true,
+                showChart: true
+            });
+            
+            debugInfo.textContent = '表格初始化完成！';
+            debugInfo.textContent += '\n\n字段配置：' + JSON.stringify(fields, null, 2);
+            debugInfo.textContent += '\n\n测试数据：' + JSON.stringify(testData, null, 2);
+        }
+        
+        function testPrepareChartData() {
+            if (!tableRender) {
+                alert('请先初始化表格！');
+                return;
+            }
+            
+            const debugInfo = document.getElementById('debug-info');
+            debugInfo.textContent = '正在测试 _prepareChartData 方法...';
+            
+            // 测试不同的字段组合
+            const testCases = [
+                { xField: '产品名称', yField: '销售金额' },
+                { xField: '销售日期', yField: '销售金额' }
+            ];
+            
+            let result = '';
+            
+            testCases.forEach((testCase, index) => {
+                result += `\n=== 测试用例 ${index + 1} ===\n`;
+                result += `X轴字段: ${testCase.xField}, Y轴字段: ${testCase.yField}\n`;
+                
+                try {
+                    const chartData = tableRender._prepareChartData(testCase.xField, testCase.yField);
+                    result += `返回的chartData: ${JSON.stringify(chartData, null, 2)}\n`;
+                    
+                    // 检查内部处理过程
+                    result += '\n--- 内部处理详情 ---\n';
+                    
+                    // 获取字段映射
+                    const fieldLabelToName = {};
+                    Object.entries(fields).forEach(([fieldName, fieldConfig]) => {
+                        const fieldLabel = fieldConfig.label || fieldName;
+                        fieldLabelToName[fieldLabel] = fieldName;
+                    });
+                    result += `字段映射: ${JSON.stringify(fieldLabelToName, null, 2)}\n`;
+                    
+                    // 获取表头
+                    const headers = tableRender._getTableHeaders();
+                    result += `表头字段: ${JSON.stringify(headers, null, 2)}\n`;
+                    
+                    // 获取字段索引
+                    const xIndex = headers.indexOf(testCase.xField);
+                    const yIndex = headers.indexOf(testCase.yField);
+                    result += `X轴索引: ${xIndex}, Y轴索引: ${yIndex}\n`;
+                    
+                    // 检查filteredData
+                    result += `filteredData长度: ${tableRender.filteredData.length}\n`;
+                    if (tableRender.filteredData.length > 0) {
+                        result += `第一行数据: ${JSON.stringify(tableRender.filteredData[0], null, 2)}\n`;
+                    }
+                    
+                } catch (error) {
+                    result += `错误: ${error.message}\n`;
+                    result += `堆栈: ${error.stack}\n`;
+                }
+                
+                result += '\n';
+            });
+            
+            debugInfo.textContent += result;
+        }
+    </script>
+</body>
+</html>

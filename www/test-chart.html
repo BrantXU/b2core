@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图表功能测试</title>
+    <link rel="stylesheet" href="static/css/uikit.min.css">
+    <link rel="stylesheet" href="static/css/ionicons.min.css">
+</head>
+<body>
+    <div class="uk-container uk-container-expand uk-margin-top">
+        <h1>图表功能测试</h1>
+        
+        <!-- 测试表格 -->
+        <table id="testTable" class="uk-table uk-table-divider uk-table-hover">
+            <thead>
+                <tr>
+                    <th>姓名</th>
+                    <th>年龄</th>
+                    <th>薪资</th>
+                    <th>部门</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>张三</td>
+                    <td>25</td>
+                    <td>8000</td>
+                    <td>技术部</td>
+                </tr>
+                <tr>
+                    <td>李四</td>
+                    <td>30</td>
+                    <td>12000</td>
+                    <td>销售部</td>
+                </tr>
+                <tr>
+                    <td>王五</td>
+                    <td>28</td>
+                    <td>9500</td>
+                    <td>市场部</td>
+                </tr>
+                <tr>
+                    <td>赵六</td>
+                    <td>35</td>
+                    <td>15000</td>
+                    <td>管理层</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <button class="uk-button uk-button-primary uk-margin-top" onclick="testChart()">测试图表功能</button>
+    </div>
+
+    <script src="static/js/uikit.min.js"></script>
+    <script src="static/js/uikit-icons.min.js"></script>
+    <script src="static/js/dom.js"></script>
+    <script src="static/js/widgetRender.js"></script>
+    <script src="static/js/tableRender.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+    function testChart() {
+        // 初始化表格增强器
+        const enhancer = new TableRender('testTable', {
+            pageSize: 10,
+            searchable: true,
+            sortable: true,
+            enableCheckbox: true,
+            showExport: true,
+            showImport: true,
+            showCreate: true,
+            showChart: true,
+            fields: {
+                '姓名': { type: 'text', label: '姓名' },
+                '年龄': { type: 'number', label: '年龄' },
+                '薪资': { type: 'yuan', label: '薪资' },
+                '部门': { type: 'select', label: '部门' }
+            }
+        });
+        
+        // 显示图表模态框
+        enhancer.showChartModal();
+        
+        // 检查字段过滤是否正确
+        const xFieldSelect = document.getElementById('testTable-chart-x');
+        const yFieldSelect = document.getElementById('testTable-chart-y');
+        
+        console.log('X轴字段选项:', Array.from(xFieldSelect.options).map(opt => opt.text));
+        console.log('Y轴字段选项:', Array.from(yFieldSelect.options).map(opt => opt.text));
+        
+        // 自动选择测试数据
+        setTimeout(() => {
+            if (xFieldSelect.options.length > 0) {
+                xFieldSelect.value = xFieldSelect.options[0].value;
+            }
+            if (yFieldSelect.options.length > 0) {
+                yFieldSelect.value = yFieldSelect.options[0].value;
+            }
+            
+            // 生成图表
+            enhancer.generateChart();
+        }, 100);
+    }
+    </script>
+</body>
+</html>
