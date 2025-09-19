@@ -588,6 +588,12 @@ function renderConfigType($key){
     case 'sys':
       return '系统 sys';
       break;
+    case 'flow':
+      return '流程 flow';
+      break;
+    case 'doc':
+      return '文档 doc';
+      break;
     default:
       return $key;
   }

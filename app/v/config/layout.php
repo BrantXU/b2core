@@ -95,7 +95,7 @@
 <!-- 引入控件编辑器JS -->
 <script src="/static/js/widgetEditor.js"></script>
 <script>
-  config = <?=$config['value']?:'[]'?>;
+  config = <?=$config['value']?:'{}'?>;
   // 初始化控件编辑器
   document.addEventListener('DOMContentLoaded', function() {
     widgetEditor = new WidgetEditor({
