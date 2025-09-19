@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图表控制面板宽度测试</title>
+    <link rel="stylesheet" href="../static/css/uikit.min.css">
+    <link rel="stylesheet" href="../static/css/ionicons.min.css">
+    <script src="../static/js/uikit.min.js"></script>
+    <style>
+        .test-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .width-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 10;
+        }
+        .chart-placeholder {
+            position: relative;
+            height: 300px;
+            background: #f8f8f8;
+            border: 1px dashed #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h2>图表控制面板宽度测试</h2>
+        <p>此页面用于测试图表控制面板展开/收起时的宽度变化。</p>
+        
+        <!-- 图表容器 -->
+        <div id="test-chart-container" class="uk-card uk-card-default uk-margin-bottom" style="width: 100%; position: relative;">
+            <div class="width-indicator" id="width-indicator">图表区域宽度: 75%</div>
+            <div class="uk-card-body">
+                <div class="uk-grid-small" uk-grid>
+                    <!-- 图表区域 -->
+                    <div id="chart-area" class="uk-width-3-4">
+                        <div class="chart-placeholder">
+                            <span>图表区域</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 控制面板区域 -->
+                    <div id="control-area" class="uk-width-1-4">
+                        <button id="chart-toggle-control" class="uk-button uk-button-default uk-button-small" title="收起控制面板">
+                            <i class="icon ion-md-arrow-forward"></i>
+                        </button>
+                        <div class="uk-form-stacked" id="chart-control-panel">
+                            <div class="uk-margin-small">
+                                <label class="uk-form-label">图表类型</label>
+                                <select class="uk-select uk-form-small">
+                                    <option value="bar">柱状图</option>
+                                    <option value="line">折线图</option>
+                                    <option value="pie">饼图</option>
+                                </select>
+                            </div>
+                            
+                            <div class="uk-margin-small">
+                                <label class="uk-form-label">X轴字段</label>
+                                <select class="uk-select uk-form-small">
+                                    <option value="基金名称">基金名称</option>
+                                    <option value="基金代码">基金代码</option>
+                                </select>
+                            </div>
+                            
+                            <div class="uk-margin-small">
+                                <label class="uk-form-label">Y轴字段</label>
+                                <select class="uk-select uk-form-small">
+                                    <option value="单位净值">单位净值</option>
+                                    <option value="日增长率">日增长率</option>
+                                    <option value="持仓占比">持仓占比</option>
+                                </select>
+                            </div>
+                            
+                            <div class="uk-margin-small">
+                                <button type="button" class="uk-button uk-button-primary uk-button-small uk-width-1-1">更新</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="uk-card uk-card-default">
+            <div class="uk-card-body">
+                <h3>测试说明</h3>
+                <p>1. 点击右侧控制面板上的箭头按钮可以展开/收起控制面板</p>
+                <p>2. 展开时：图表区域应占75%宽度，控制面板区域占25%宽度</p>
+                <p>3. 收起时：图表区域应占95%宽度，控制面板区域占5%宽度</p>
+                <p>4. 页面右上角会显示当前图表区域的实际宽度百分比</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟dom工具类
+        const dom = {
+            gid: function(id) {
+                return document.getElementById(id);
+            },
+            on: function(element, event, handler) {
+                element.addEventListener(event, handler);
+            }
+        };
+
+        /**
+         * 图表控制面板切换功能
+         */
+        function initChartToggle() {
+            const toggleBtn = dom.gid('chart-toggle-control');
+            const controlPanel = dom.gid('chart-control-panel');
+            const chartArea = dom.gid('chart-area');
+            const controlArea = dom.gid('control-area');
+            const widthIndicator = dom.gid('width-indicator');
+            const chartContainer = dom.gid('test-chart-container');
+            
+            if (!toggleBtn || !controlPanel || !chartArea || !controlArea || !widthIndicator || !chartContainer) {
+                console.error('缺少必要的DOM元素');
+                return;
+            }
+            
+            // 更新宽度指示器
+            function updateWidthIndicator() {
+                // 获取图表容器的实际宽度
+                const containerWidth = chartContainer.offsetWidth;
+                // 获取图表区域的实际宽度
+                const areaWidth = chartArea.offsetWidth;
+                // 计算百分比
+                const percentage = Math.round((areaWidth / containerWidth) * 100);
+                // 更新指示器文本
+                widthIndicator.textContent = `图表区域宽度: ${percentage}%`;
+            }
+            
+            // 切换控制面板显示状态
+            function toggleChartControlPanel() {
+                // 获取控制面板的当前显示状态
+                const isHidden = controlPanel.style.display === 'none';
+                
+                if (isHidden) {
+                    // 展开控制面板
+                    controlPanel.style.display = 'block';
+                    toggleBtn.innerHTML = '<i class="icon ion-md-arrow-forward"></i>';
+                    toggleBtn.title = '收起控制面板';
+                    
+                    // 恢复图表区域和控制区域的宽度
+                    chartArea.className = 'uk-width-3-4';
+                    controlArea.className = 'uk-width-1-4';
+                } else {
+                    // 收起控制面板
+                    controlPanel.style.display = 'none';
+                    toggleBtn.innerHTML = '<i class="icon ion-md-arrow-back"></i>';
+                    toggleBtn.title = '展开控制面板';
+                    
+                    // 调整图表区域宽度为95%，控制区域隐藏
+                    chartArea.className = 'uk-width-9-10';
+                    controlArea.className = 'uk-width-1-10';
+                }
+                
+                // 更新宽度指示器
+                setTimeout(updateWidthIndicator, 10);
+            }
+            
+            // 绑定事件
+            dom.on(toggleBtn, 'click', toggleChartControlPanel);
+            
+            // 初始化宽度指示器
+            updateWidthIndicator();
+            
+            // 监听窗口大小变化
+            window.addEventListener('resize', updateWidthIndicator);
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initChartToggle();
+        });
+    </script>
+</body>
+</html>

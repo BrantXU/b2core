@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图表控制面板展开/收起功能测试</title>
+    <!-- 引入UIkit样式 -->
+    <link rel="stylesheet" href="../static/css/uikit.min.css">
+    <link rel="stylesheet" href="../static/css/ionicons.min.css">
+    <script src="../static/js/uikit.min.js"></script>
+    <script src="../static/js/chart.min.js"></script>
+</head>
+<body>
+    <div class="uk-container uk-margin-top">
+        <h1>图表控制面板展开/收起功能测试</h1>
+        
+        <!-- 测试数据表格 -->
+        <table class="uk-table uk-table-divider uk-table-striped" id="test-table">
+            <thead>
+                <tr>
+                    <th>基金名称</th>
+                    <th>基金代码</th>
+                    <th>单位净值</th>
+                    <th>日增长率</th>
+                    <th>近1周</th>
+                    <th>近1月</th>
+                    <th>近3月</th>
+                    <th>近6月</th>
+                    <th>今年来</th>
+                    <th>近1年</th>
+                    <th>近2年</th>
+                    <th>近3年</th>
+                    <th>成立来</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>华夏成长混合</td>
+                    <td>000001</td>
+                    <td>1.5234</td>
+                    <td>+1.25%</td>
+                    <td>+2.35%</td>
+                    <td>+5.67%</td>
+                    <td>+3.21%</td>
+                    <td>-1.23%</td>
+                    <td>+8.91%</td>
+                    <td>+12.34%</td>
+                    <td>+25.67%</td>
+                    <td>+18.92%</td>
+                    <td>+156.78%</td>
+                </tr>
+                <tr>
+                    <td>易方达消费行业</td>
+                    <td>110022</td>
+                    <td>2.3456</td>
+                    <td>-0.45%</td>
+                    <td>+1.23%</td>
+                    <td>+4.56%</td>
+                    <td>+2.34%</td>
+                    <td>-2.11%</td>
+                    <td>+6.78%</td>
+                    <td>+10.12%</td>
+                    <td>+20.34%</td>
+                    <td>+15.67%</td>
+                    <td>+234.56%</td>
+                </tr>
+                <tr>
+                    <td>嘉实新兴产业</td>
+                    <td>000751</td>
+                    <td>1.8765</td>
+                    <td>+0.78%</td>
+                    <td>+3.45%</td>
+                    <td>+6.78%</td>
+                    <td>+4.56%</td>
+                    <td>+0.45%</td>
+                    <td>+9.87%</td>
+                    <td>+15.43%</td>
+                    <td>+28.76%</td>
+                    <td>+22.34%</td>
+                    <td>+187.65%</td>
+                </tr>
+                <tr>
+                    <td>富国天惠成长</td>
+                    <td>161005</td>
+                    <td>1.2345</td>
+                    <td>+0.34%</td>
+                    <td>+1.89%</td>
+                    <td>+3.45%</td>
+                    <td>+1.23%</td>
+                    <td>-0.78%</td>
+                    <td>+5.67%</td>
+                    <td>+8.90%</td>
+                    <td>+18.76%</td>
+                    <td>+12.34%</td>
+                    <td>+345.67%</td>
+                </tr>
+                <tr>
+                    <td>中银中国</td>
+                    <td>163801</td>
+                    <td>0.9876</td>
+                    <td>-0.12%</td>
+                    <td>+0.56%</td>
+                    <td>+2.34%</td>
+                    <td>-0.34%</td>
+                    <td>-1.45%</td>
+                    <td>+3.21%</td>
+                    <td>+6.54%</td>
+                    <td>+15.43%</td>
+                    <td>+9.87%</td>
+                    <td>+123.45%</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 引入UIkit JS -->
+    <script src="../static/js/uikit.min.js"></script>
+    <script src="../static/js/uikit-icons.min.js"></script>
+    
+    <!-- 引入dom工具类 -->
+    <script>
+        const dom = {
+            gid: (id) => document.getElementById(id),
+            on: (element, event, handler) => {
+                if (element) {
+                    element.addEventListener(event, handler);
+                }
+            },
+            off: (element, event, handler) => {
+                if (element) {
+                    element.removeEventListener(event, handler);
+                }
+            }
+        };
+
+        /**
+         * WidgetRenderer类 - 前端控件渲染工具
+         * 用于根据配置和数据渲染不同类型的表单字段
+         * 参考PHP的renderControl方法实现
+         */
+        class WidgetRenderer {
+            /**
+             * 渲染单个控件
+             * @param {mixed} value - 字段值
+             * @param {Object} config - 控件配置
+             * @param {string} label - 标签值
+             * @param {string} compare - 比较值
+             * @returns {string} 渲染后的HTML
+             */
+            static renderControl(value, config, label = null, compare = null) {
+                const type = config.type || 'text';
+                const field = config.id || '';
+                const readonly = config.readonly ? 'readonly' : '';
+                const required = config.required ? 'required' : '';
+                const tips = config.tips ? `<small class=\"help-text\">${this.escapeHtml(config.tips)}</small>` : '';
+                const view = config.view || false;
+                const props = config.props || {};
+                
+                let html = '';
+                const readonlyClass = readonly ? ' uk-background-muted' : '';
+
+                switch (type) {
+                    case 'datepicker':
+                        if (view) {
+                            html += `<div class=\"uk-text-muted\">${this.escapeHtml(value)}</div>`;
+                        } else {
+                            html += `<input class=\"uk-input uk-width-1-1${readonlyClass}\" type=\"date\" name=\"data[${field}]\" value=\"${this.escapeHtml(value)}\" ${readonly} ${required}>`;
+                        }
+                        break;
+
+                    case 'select_new':
+                    case 'select':
+                        html += this.renderSelect(value, config, label, view);
+                        break;
+
+                    case 'percent':
+                        if (view) {
+                            html += `<div class=\"uk-text-muted\">${this.escapeHtml(value)}%</div>`;
+                        } else {
+                            html += `<div style=\"display: inline-flex; align-items: center; width: 100%;\"><input class=\"uk-input${readonlyClass}\" type=\"number\" step=\"0.01\" name=\"data[${field}]\" value=\"${this.escapeHtml(value)}\" ${readonly} ${required}><span style=\"margin-left: 5px;\">%</span></div>`;
+                        }
+                        break;
+
+                    case 'yuan':
+                        if (view) {
+                            html += `<div class=\"uk-text-muted\">¥${this.escapeHtml(value)}</div>`;
+                        } else {
+                            html += `<div style=\"display: inline-flex; align-items: center; width: 100%;\"><input class=\"uk-input${readonlyClass}\" type=\"number\" step=\"0.01\" name=\"data[${field}]\" value=\"${this.escapeHtml(value)}\" ${readonly} ${required} style=\"width: 90%;\"><span style=\"margin-left: 5px;\">¥</span></div>`;
+                        }
+                        break;
+
+                    case 'amount':
+                        if (view) {
+                            html += `<div class=\"uk-text-muted\">${this.escapeHtml(value)}</div>`;
+                        } else {
+                            html += `<input type=\"number\" class=\"uk-input${readonlyClass}\" name=\"data[${field}]\" value=\"${this.escapeHtml(value)}\" ${readonly} ${required} style=\"width: 90%;\">`;
+                        }
+                        break;
+
+                    case 'upload':
+                        if (view) {
+                            html += `<div class=\"uk-text-muted\">${this.escapeHtml(value)}</div>`;
+                        } else {
+                            const disabledAttr = readonly ? ' disabled' : '';
+                            html += `<input type=\"file\" name=\"data[${field}]\" style=\"width: 90%;\"${disabledAttr}>`;
+                        }
+                        break;
+
+                    case 'muti':
+                        if (view) {
+                            html += `<div class=\"uk-text-muted\">${this.escapeHtml(value).replace(/\n/g, '<br>')}</div>`;
+                        } else {
+                            html += `<textarea class=\"uk-textarea uk-width-1-1${readonlyClass}\" name=\"data[${field}]\" rows=\"5\" ${readonly} ${required}>${this.escapeHtml(value)}</textarea>`;
+                            html += tips;
+                        }
+                        break;
+
+                    case 'radio':
+                        if (view) {
+                            html += `<div class=\"uk-text-muted\">${this.escapeHtml(value)}</div>`;
+                        } else {
+                            // 解析选项列表
+                            const options = props.options ? props.options.split('\n') : [];
+                            options.forEach(option => {
+                                option = option.trim();
+                                if (option) {
+                                    const checked = value == option ? 'checked' : '';
+                                    html += `<label class=\"uk-form-label\"><input type=\"radio\" class=\"uk-radio\" name=\"data[${field}]\" value=\"${this.escapeHtml(option)}\" ${checked} ${readonly} ${required}> ${this.escapeHtml(option)}</label><br>`;
+                                }
+                            });
+                            html += tips;
+                        }
+                        break;
+
+                    case 'checkbox':
+                        if (view) {
+                            html += `<div class=\"uk-text-muted\">${value ? '是' : '否'}</div>`;
+                        } else {
+                            const checked = value ? 'checked' : '';
+                            html += `<label class=\"uk-form-label\"><input type=\"checkbox\" class=\"uk-checkbox\" name=\"data[${field}]\" value=\"1\" ${checked} ${readonly} ${required}> 是</label>`;
+                            html += tips;
+                        }
+                        break;
+
+                    case 'puretext':
+                        html += `<div class=\"uk-text-muted\">${props.tpl || ''}</div>`;
+                        break;
+
+                    case 'data':
+                        // 数据对象类型，需要异步加载数据
+                        html += this.renderDataObject(value, config, view);
+                        break;
+
+                    default:
+                        if (view) {
+                            html += `<div class=\"uk-text-muted\">${value}</div>`;
+                        } else {
+                            html += `<input type=\"text\" class=\"uk-input${readonlyClass}\" name=\"data[${field}]\" value=\"${this.escapeHtml(value)}\" ${readonly} ${required}>`;
+                            html += tips;
+                        }
+                }
+
+                if (compare) {
+                    html += ` <div class=\"uk-text-muted\"><del>${this.escapeHtml(compare)}</del></div>`;
+                }
+
+                return html;
+            }
+
+            /**
+             * 渲染选择框
+             * @param {mixed} value - 当前值
+             * @param {Object} config - 配置
+             * @param {string} label - 标签
+             * @param {boolean} view - 是否只读视图
+             * @returns {string} HTML
+             */
+            static renderSelect(value, config, label, view) {
+                if (view) {
+                    // 如果label为null或undefined，使用value作为显示内容
+                    const displayValue = (label !== null && label !== undefined) ? label : value;
+                    return `<div class=\"uk-text-muted\">${displayValue}</div>`;
+                }
+
+                const field = config.id || '';
+                const readonly = config.readonly ? 'readonly' : '';
+                const required = config.required ? 'required' : '';
+                const props = config.props || {};
+                
+                let html = `<select class=\"uk-select\" name=\"data[${field}]\" ${readonly} ${required}>`;
+                
+                if (props.options) {
+                    const options = props.options.split('\n');
+                    options.forEach(option => {
+                        option = option.trim();
+                        if (option) {
+                            const selected = value == option ? 'selected' : '';
+                            html += `<option value=\"${this.escapeHtml(option)}\" ${selected}>${this.escapeHtml(option)}</option>`;
+                        }
+                    });
+                }
+                
+                html += '</select>';
+                return html;
+            }
+
+            /**
+             * 渲染数据对象
+             * @param {mixed} value - 当前值
+             * @param {Object} config - 配置
+             * @param {boolean} view - 是否只读视图
+             * @returns {string} HTML
+             */
+            static renderDataObject(value, config, view) {
+                const props = config.props || {};
+                
+                // 这里可以添加异步加载数据的逻辑
+                // 暂时返回一个占位符
+                return `<div class=\"uk-alert uk-alert-primary\">
+                    <p>数据对象: ${props.data_source || '未指定数据源'}</p>
+                    <p>值: ${this.escapeHtml(value)}</p>
+                </div>`;
+            }
+
+            /**
+             * 转义HTML特殊字符
+             * @param {string} text - 待转义文本
+             * @returns {string} 转义后的文本
+             */
+            static escapeHtml(text) {
+                if (text === null || text === undefined) return '';
+                return text.toString()
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+        }
+    </script>
+    
+    <!-- 引入TableRender类 -->
+    <script src="../static/js/tableRender.js"></script>
+    
+    <script>
+        // 模拟基金数据
+        const mockData = [
+            {
+                id: '000001',
+                cells: [
+                    { l: '华夏成长混合', v: '华夏成长混合' },
+                    { l: '000001', v: '000001' },
+                    { l: '1.5234', v: '1.5234' },
+                    { l: '+1.25%', v: '+1.25%' },
+                    { l: '+2.35%', v: '+2.35%' },
+                    { l: '+5.67%', v: '+5.67%' },
+                    { l: '+3.21%', v: '+3.21%' },
+                    { l: '-1.23%', v: '-1.23%' },
+                    { l: '+8.91%', v: '+8.91%' },
+                    { l: '+12.34%', v: '+12.34%' },
+                    { l: '+25.67%', v: '+25.67%' },
+                    { l: '+18.92%', v: '+18.92%' },
+                    { l: '+156.78%', v: '+156.78%' }
+                ]
+            },
+            {
+                id: '110022',
+                cells: [
+                    { l: '易方达消费行业', v: '易方达消费行业' },
+                    { l: '110022', v: '110022' },
+                    { l: '2.3456', v: '2.3456' },
+                    { l: '-0.45%', v: '-0.45%' },
+                    { l: '+1.23%', v: '+1.23%' },
+                    { l: '+4.56%', v: '+4.56%' },
+                    { l: '+2.34%', v: '+2.34%' },
+                    { l: '-2.11%', v: '-2.11%' },
+                    { l: '+6.78%', v: '+6.78%' },
+                    { l: '+10.12%', v: '+10.12%' },
+                    { l: '+20.34%', v: '+20.34%' },
+                    { l: '+15.67%', v: '+15.67%' },
+                    { l: '+234.56%', v: '+234.56%' }
+                ]
+            },
+            {
+                id: '000751',
+                cells: [
+                    { l: '嘉实新兴产业', v: '嘉实新兴产业' },
+                    { l: '000751', v: '000751' },
+                    { l: '1.8765', v: '1.8765' },
+                    { l: '+0.78%', v: '+0.78%' },
+                    { l: '+3.45%', v: '+3.45%' },
+                    { l: '+6.78%', v: '+6.78%' },
+                    { l: '+4.56%', v: '+4.56%' },
+                    { l: '+0.45%', v: '+0.45%' },
+                    { l: '+9.87%', v: '+9.87%' },
+                    { l: '+15.43%', v: '+15.43%' },
+                    { l: '+28.76%', v: '+28.76%' },
+                    { l: '+22.34%', v: '+22.34%' },
+                    { l: '+187.65%', v: '+187.65%' }
+                ]
+            },
+            {
+                id: '161005',
+                cells: [
+                    { l: '富国天惠成长', v: '富国天惠成长' },
+                    { l: '161005', v: '161005' },
+                    { l: '1.2345', v: '1.2345' },
+                    { l: '+0.34%', v: '+0.34%' },
+                    { l: '+1.89%', v: '+1.89%' },
+                    { l: '+3.45%', v: '+3.45%' },
+                    { l: '+1.23%', v: '+1.23%' },
+                    { l: '-0.78%', v: '-0.78%' },
+                    { l: '+5.67%', v: '+5.67%' },
+                    { l: '+8.90%', v: '+8.90%' },
+                    { l: '+18.76%', v: '+18.76%' },
+                    { l: '+12.34%', v: '+12.34%' },
+                    { l: '+345.67%', v: '+345.67%' }
+                ]
+            },
+            {
+                id: '163801',
+                cells: [
+                    { l: '中银中国', v: '中银中国' },
+                    { l: '163801', v: '163801' },
+                    { l: '0.9876', v: '0.9876' },
+                    { l: '-0.12%', v: '-0.12%' },
+                    { l: '+0.56%', v: '+0.56%' },
+                    { l: '+2.34%', v: '+2.34%' },
+                    { l: '-0.34%', v: '-0.34%' },
+                    { l: '-1.45%', v: '-1.45%' },
+                    { l: '+3.21%', v: '+3.21%' },
+                    { l: '+6.54%', v: '+6.54%' },
+                    { l: '+15.43%', v: '+15.43%' },
+                    { l: '+9.87%', v: '+9.87%' },
+                    { l: '+123.45%', v: '+123.45%' }
+                ]
+            }
+        ];
+
+        // 字段配置
+        const fieldConfig = {
+            fundName: { label: '基金名称', type: 'text' },
+            fundCode: { label: '基金代码', type: 'text' },
+            nav: { label: '单位净值', type: 'number' },
+            dailyGrowth: { label: '日增长率', type: 'text' },
+            weekGrowth: { label: '近1周', type: 'text' },
+            monthGrowth: { label: '近1月', type: 'text' },
+            quarterGrowth: { label: '近3月', type: 'text' },
+            halfYearGrowth: { label: '近6月', type: 'text' },
+            yearGrowth: { label: '今年来', type: 'text' },
+            oneYearGrowth: { label: '近1年', type: 'text' },
+            twoYearGrowth: { label: '近2年', type: 'text' },
+            threeYearGrowth: { label: '近3年', type: 'text' },
+            sinceInception: { label: '成立来', type: 'text' }
+        };
+
+        // 初始化TableRender
+        document.addEventListener('DOMContentLoaded', function() {
+            const tableRender = new TableRender('test-table', {
+                fields: fieldConfig,
+                showChart: true,
+                data: mockData
+            });
+            
+            // 显示图表
+            tableRender.toggleChartModal();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图表Label显示测试</title>
+    <link rel="stylesheet" href="../static/css/uikit.min.css">
+    <link rel="stylesheet" href="../static/css/ionicons.min.css">
+    <script src="../static/js/uikit.min.js"></script>
+    <script src="../static/js/uikit-icons.min.js"></script>
+    <script src="../static/js/dom.js"></script>
+    <script src="../static/js/utility.js"></script>
+    <script src="../static/js/widgetRender.js"></script>
+    <script src="../static/js/tableRender.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="uk-container uk-margin-top">
+        <h2>图表Label显示测试</h2>
+        <p>此测试验证图表是否正确使用select字段的label值而不是value值</p>
+        <div id="test-table"></div>
+    </div>
+
+    <script>
+        // 模拟数据 - 包含select字段的value和label
+        const mockData = [
+            { id: '1', fund: '001', fund_label: '华夏成长基金', type: '1', type_label: '股票型', status: '1', status_label: '运行中', amount: '1000000' },
+            { id: '2', fund: '002', fund_label: '易方达稳健收益', type: '2', type_label: '债券型', status: '2', status_label: '已清盘', amount: '2000000' },
+            { id: '3', fund: '003', fund_label: '嘉实沪深300ETF', type: '1', type_label: '股票型', status: '1', status_label: '运行中', amount: '1500000' },
+            { id: '4', fund: '004', fund_label: '南方中证500ETF', type: '3', type_label: '混合型', status: '1', status_label: '运行中', amount: '3000000' }
+        ];
+
+        // 字段配置 - 定义select类型字段
+        const fields = {
+            fund: { label: '基金代码', type: 'select' },
+            type: { label: '基金类型', type: 'select' },
+            status: { label: '状态', type: 'select' },
+            amount: { label: '金额', type: 'number' }
+        };
+
+        // 页面加载完成后初始化表格
+        document.addEventListener('DOMContentLoaded', function() {
+            const tableRender = new TableRender('test-table', {
+                data: mockData,
+                fields: fields,
+                showChart: true,
+                showPagination: true,
+                pageSize: 10,
+                pageSizes: [10, 20, 50],
+                searchable: true,
+                enableCheckbox: true,
+                showEdit: true,
+                showDelete: true,
+                showCreate: true,
+                showExport: true,
+                showImport: true
+            });
+            
+            // 显示提示信息
+            console.log('测试数据已加载');
+            console.log('图表应该显示基金名称(如"华夏成长基金")而不是代码(如"001")');
+        });
+    </script>
+</body>
+</html>

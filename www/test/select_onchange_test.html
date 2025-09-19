@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Select字段测试</title>
+    <link rel="stylesheet" href="../static/css/uikit.min.css">
+    <script src="../static/js/uikit.min.js"></script>
+</head>
+<body>
+    <div class="uk-container uk-margin-top">
+        <h2>Select字段测试</h2>
+        
+        <!-- 模拟一个包含select字段的表单 -->
+        <form class="uk-form-stacked">
+            <div class="uk-margin">
+                <label class="uk-form-label">状态选择</label>
+                <div class="uk-form-controls">
+                    <select class="uk-select uk-width-1-1" name="data[status]" onchange="var hiddenField = document.getElementsByName('status_label')[0]; if (hiddenField) hiddenField.value = this.options[this.selectedIndex].text">
+                        <option value="">请选择</option>
+                        <option value="1">进行中</option>
+                        <option value="2">已完成</option>
+                        <option value="3">已取消</option>
+                    </select>
+                    <input type="hidden" name="data[status_label]" value="">
+                </div>
+            </div>
+            
+            <div class="uk-margin">
+                <button type="button" class="uk-button uk-button-primary" onclick="testSelect()">测试选择</button>
+            </div>
+        </form>
+        
+        <div id="result" class="uk-margin-top"></div>
+    </div>
+
+    <script>
+        function testSelect() {
+            const select = document.querySelector('select[name="data[status]"]');
+            const hiddenField = document.querySelector('input[name="data[status_label]"]');
+            const resultDiv = document.getElementById('result');
+            
+            resultDiv.innerHTML = `
+                <div class="uk-alert uk-alert-info">
+                    <p>选中值: ${select.value}</p>
+                    <p>隐藏字段值: ${hiddenField.value}</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

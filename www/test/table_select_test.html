@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Table Select Label Test</title>
+    <link rel="stylesheet" href="../static/css/uikit.min.css">
+    <script src="../static/js/uikit.min.js"></script>
+    <script src="../static/js/widgetRender.js"></script>
+    <script src="../static/js/tableRender.js"></script>
+</head>
+<body>
+    <div class="uk-container uk-margin-top">
+        <h2>Table Select Label Test</h2>
+        
+        <div class="uk-margin">
+            <h3>测试表格渲染</h3>
+            <div id="test-table-container"></div>
+        </div>
+    </div>
+
+    <script>
+        // 等待DOM加载完成
+        document.addEventListener('DOMContentLoaded', function() {
+            // 模拟表格配置数据
+            const tableConfig = {
+                containerId: 'test-table-container',
+                data: [{
+                    "id": "0lcsmrzu",
+                    "Fund": "k0img9d0",
+                    "Fund_label": "梓川3号",
+                    "Type": "债权转入",
+                    "Type_label": "债权转入",
+                    "Company": "emfrd3dc",
+                    "Company_label": "梓川科技"
+                }],
+                fields: {
+                    "Fund": {
+                        "id": "Fund",
+                        "name": "基金",
+                        "type": "select_new",
+                        "props": {}
+                    },
+                    "Type": {
+                        "id": "Type",
+                        "name": "类别",
+                        "type": "select_new",
+                        "props": {}
+                    },
+                    "Company": {
+                        "id": "Company",
+                        "name": "企业",
+                        "type": "select_new",
+                        "props": {}
+                    }
+                }
+            };
+            
+            // 创建表格
+            const tableContainer = document.getElementById('test-table-container');
+            const table = document.createElement('table');
+            table.className = 'uk-table uk-table-small uk-table-striped uk-table-hover';
+            table.id = 'test-table';
+            table.innerHTML = '<thead><tr><th>基金</th><th>类别</th><th>企业</th></tr></thead><tbody></tbody>';
+            tableContainer.appendChild(table);
+            
+            // 初始化TableRender
+            const tableRender = new TableRender('test-table', {
+                data: tableConfig.data,
+                fields: tableConfig.fields,
+                showPagination: false,
+                showInfo: false,
+                enableCheckbox: false
+            });
+            
+            // 渲染表格
+            tableRender.render();
+            
+            console.log('Table rendered');
+        });
+    </script>
+</body>
+</html>

@@ -8,8 +8,8 @@ class entity_m extends m {
 
   public function __construct($table = null) 
   {
-    global $db;
-    $this->db = $db; 
+    global $tdb;
+    $this->db = $tdb; 
     $this->table = 'tb_entity';
     $this->conditions = [];
     $this->key = 'id';    
@@ -44,6 +44,9 @@ class entity_m extends m {
     $offset = ($page - 1) * $limit;
     $where = $this->filter;
     
+    // 排除已删除的记录（del=1）
+    $where .= " AND (del IS NULL OR del = 0)";
+    
     if (!empty($conditions)) {
       $conditionParts = [];
       foreach ($conditions as $column => $value) {
@@ -62,6 +65,7 @@ class entity_m extends m {
     }
     
     $query = "SELECT * FROM {$this->table} WHERE {$where} LIMIT {$limit} OFFSET {$offset}";
+
     return $this->db->query($query);
   }
 
@@ -226,6 +230,8 @@ class entity_m extends m {
           $type = $this->db->escape($type);
           $where = "type = '{$type}'";
       }
+      // 排除已删除的记录（del=1）
+      $where .= " AND (del IS NULL OR del = 0)";
       $query = "SELECT * FROM {$this->table} WHERE {$where}";
       return $this->db->query($query);
   }

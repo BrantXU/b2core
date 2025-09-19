@@ -18,6 +18,15 @@ class TableRender {
         // 检查是否是表格元素，如果不是则创建表格
         if (this.container.tagName === 'TABLE') {
             this.table = this.container;
+            // 确保表格有thead和tbody
+            if (!this.table.querySelector('thead')) {
+                const thead = document.createElement('thead');
+                this.table.appendChild(thead);
+            }
+            if (!this.table.querySelector('tbody')) {
+                const tbody = document.createElement('tbody');
+                this.table.appendChild(tbody);
+            }
         } else {
             // 创建表格元素
             this.table = document.createElement('table');
@@ -106,10 +115,32 @@ class TableRender {
                 id: item.id || `row_${index}`,
                 element: null,
                 cells: this.options.fields ? 
-                    Object.keys(this.options.fields).map(fieldName => item[fieldName] || '') :
-                    Object.values(item)
+                    Object.keys(this.options.fields).map(fieldName => {
+                        // 对于select类型的字段，使用_label值作为显示值
+                        const fieldConfig = this.options.fields[fieldName];
+                        let value = item[fieldName] || '';
+                        let label = '';
+
+                        if (fieldConfig && (fieldConfig.type === 'select' || fieldConfig.type === 'select_new')) {
+                            // 如果存在对应的_label字段，则使用_label值作为显示值
+                            if (item[fieldName + '_label']) {
+                                label = item[fieldName + '_label'];
+                            }
+                        }
+                        
+                        return {
+                            k: fieldName,
+                            v: value,
+                            l: label
+                        };
+                    }) :
+                    Object.entries(item).map(([key, value]) => ({
+                        k: key,
+                        v: value
+                    }))
             }));
         } 
+        console.log('origin',this.originalData);
         // 初始化过滤数据为原始数据
         this.filteredData = [...this.originalData];
     }
@@ -210,12 +241,12 @@ class TableRender {
         return (this.options.showExport || this.options.showImport || this.options.showCreate || this.options.showChart) ? `
             <div class="uk-flex uk-flex-middle uk-button-group uk-margin-left">
                 ${this.options.showExport && this.baseUrl ? `
-                    <a href="${this.baseUrl.endsWith('/') ? this.baseUrl + 'export' : this.baseUrl + '/export'}" class="uk-button uk-button-secondary uk-button-small" uk-tooltip="title: 导出数据; pos: bottom;">
+                    <a href="${this.baseUrl.endsWith('/') ? this.baseUrl + 'export' : this.baseUrl + '/export'}" class="uk-button uk-button-default uk-button-small" uk-tooltip="title: 导出数据; pos: bottom;">
                         <i class="icon ion-md-download"></i>
                     </a>
                     ` : ''}
                     ${this.options.showImport && this.baseUrl ? `
-                    <a href="${this.baseUrl.endsWith('/') ? this.baseUrl + 'import' : this.baseUrl + '/import'}" class="uk-button uk-button-primary uk-button-small" uk-tooltip="title: 导入数据; pos: bottom;">
+                    <a href="${this.baseUrl.endsWith('/') ? this.baseUrl + 'import' : this.baseUrl + '/import'}" class="uk-button uk-button-default uk-button-small" uk-tooltip="title: 导入数据; pos: bottom;">
                         <i class="icon ion-md-cloud-upload"></i>
                     </a>
                     ` : ''}
@@ -363,9 +394,12 @@ class TableRender {
                 
                 // 初始化时不添加图标，只在排序时添加
                 dom.off(header, 'click'); // 先移除旧事件
-                dom.on(header, 'click', () => {
-                    this.sort(dataColumnIndex); // 传递数据列索引，不包含复选框列
-                });
+                // 使用立即执行函数来捕获当前的dataColumnIndex值
+                dom.on(header, 'click', ((columnIndex) => {
+                    return () => {
+                        this.sort(columnIndex); // 传递数据列索引，不包含复选框列
+                    };
+                })(dataColumnIndex));
                 
                 dataColumnIndex++; // 只增加数据列的索引
             });
@@ -737,7 +771,7 @@ class TableRender {
             // 格式：当前路径/view/{entity_id}
             const currentPath = window.location.pathname;
             const viewUrl = currentPath.endsWith('/') ? 
-                `${currentPath}view/${rowId}` : 
+                `${currentPath}view/${rowId}` :
                 `${currentPath}/view/${rowId}`;
             window.location.href = viewUrl;
         }
@@ -798,11 +832,12 @@ class TableRender {
         // 只为当前排序的列添加图标
         if (this.sortColumn !== null && this.sortColumn >= 0) {
             // 计算实际的表头索引（考虑复选框列）
-            let headerIndex = this.sortColumn;
-            
-            // 遍历表头，跳过复选框列，找到对应的数据列索引
+            let headerIndex = -1;
             let dataColumnIndex = 0;
-            for (let i = 0; i < headers.length && dataColumnIndex <= this.sortColumn; i++) {
+            
+            // 遍历表头，找到对应的数据列索引
+            for (let i = 0; i < headers.length; i++) {
+                // 跳过复选框列
                 if (headers[i].className !== 'checkbox-header') {
                     if (dataColumnIndex === this.sortColumn) {
                         headerIndex = i;
@@ -813,7 +848,7 @@ class TableRender {
             }
             
             // 确保索引在有效范围内
-            if (headerIndex < headers.length) {
+            if (headerIndex >= 0 && headerIndex < headers.length) {
                 const header = headers[headerIndex];
                 const sortIcon = document.createElement('span');
                 sortIcon.className = 'table-sort-icon uk-margin-left';
@@ -843,11 +878,21 @@ class TableRender {
         if (!searchTerm) {
             this.filteredData = [...this.originalData];
         } else {
-            this.filteredData = this.originalData.filter(item => 
-                item.cells.some(cell => cell.toLowerCase().includes(searchTerm))
-            );
+            this.filteredData = this.originalData.filter(item => {
+                if (item.cells) {
+                    // 新格式：cells是包含键值对对象的数组
+                    return item.cells.some(cellObj => {
+                        const cellValue = cellObj.v || '';
+                        return cellValue.toString().toLowerCase().includes(searchTerm);
+                    });
+                } else {
+                    // 旧格式：直接检查对象属性
+                    return Object.values(item).some(value => 
+                        value && value.toString().toLowerCase().includes(searchTerm)
+                    );
+                }
+            });
         }
-        
         this.currentPage = 1; // 搜索后重置为第一页
         this.render();
     }
@@ -867,8 +912,17 @@ class TableRender {
         
         // 执行排序
         this.filteredData.sort((a, b) => {
-            const aVal = a.cells[columnIndex] || '';
-            const bVal = b.cells[columnIndex] || '';
+            let aVal, bVal;
+            
+            if (a.cells && b.cells) {
+                // 新格式：从cells对象数组中获取值
+                aVal = a.cells[columnIndex]?.v || '';
+                bVal = b.cells[columnIndex]?.v || '';
+            } else {
+                // 旧格式：直接从cells数组中获取值
+                aVal = a.cells[columnIndex] || '';
+                bVal = b.cells[columnIndex] || '';
+            }
             
             // 尝试按数字排序
             const aNum = parseFloat(aVal);
@@ -885,7 +939,6 @@ class TableRender {
                 return bVal.localeCompare(aVal);
             }
         });
-        
         this.updateSortIcons();
         this.render();
     }
@@ -1020,7 +1073,6 @@ class TableRender {
     _renderTableRows(tbody) {
         const startIndex = (this.currentPage - 1) * this.options.pageSize;
         const endIndex = Math.min(startIndex + this.options.pageSize, this.filteredData.length);
-        
         // 渲染当前页的数据行
         for (let i = startIndex; i < endIndex; i++) {
             const rowData = this.filteredData[i];
@@ -1038,28 +1090,44 @@ class TableRender {
                 // 1. 旧格式：包含cells数组的对象
                 // 2. 新格式：包含字段名和对应值的对象
                 if (rowData.cells) {
-                    // 旧格式：使用cells数组
-                    rowData.cells.forEach(cellContent => {
+                    // 新格式：使用cells数组（包含键值对的对象）
+                    rowData.cells.forEach(cellObj => {
                         const cell = document.createElement('td');
-                        // 处理HTML内容
-                        if (typeof cellContent === 'string' && cellContent.includes('<')) {
-                            cell.innerHTML = cellContent;
-                        } else {
-                            cell.textContent = cellContent;
-                        }
+                        const cellValue = cellObj.v || '';
+                        const labelValue = cellObj.l || null;
+                        
+                        // 使用WidgetRenderer渲染控件（view模式）
+                        const fieldConfig = this.options.fields ? this.options.fields[cellObj.k] : {};
+                        const controlConfig = {
+                            type: fieldConfig ? fieldConfig.type : 'text',
+                            id: cellObj.k,
+                            readonly: fieldConfig ? !!fieldConfig.readonly : false,
+                            required: fieldConfig ? !!fieldConfig.required : false,
+                            tips: fieldConfig ? fieldConfig.tips : '',
+                            view: true, // 列表页面使用view模式
+                            props: fieldConfig ? fieldConfig.props || {} : {}
+                        };
+                        
+                        const renderedControl = WidgetRenderer.renderControl(
+                            cellValue, 
+                            controlConfig, 
+                            labelValue
+                        );
+                        
+                        cell.innerHTML = renderedControl;
                         row.appendChild(cell);
                     });
                 } else if (this.options.fields) {
                     // 新格式：根据fields配置提取值，使用WidgetRenderer渲染
-                    Object.entries(this.options.fields).forEach(([fieldName, fieldConfig]) => {
-                        const cellValue = rowData[fieldName] || '';
-                        const labelValue = rowData[fieldName + '_label'] || null;
+                    Object.entries(this.options.fields).forEach(([id, fieldConfig]) => {
+                        const cellValue = rowData[id] || '';
+                        const labelValue = rowData[id + '_label'] || null;
                         const cell = document.createElement('td');
                         
                         // 使用WidgetRenderer渲染控件（view模式）
                         const controlConfig = {
                             type: fieldConfig.type,
-                            id: fieldName,
+                            id: id,
                             readonly: !!fieldConfig.readonly,
                             required: !!fieldConfig.required,
                             tips: fieldConfig.tips,
@@ -1304,41 +1372,60 @@ class TableRender {
         
         // 创建图表容器HTML（插入到表格上方）
         const containerHtml = `
-            <div id="${this.table.id}-chart-container" class="uk-card uk-card-default uk-card-body uk-margin-bottom" style="width: ${tableWidth}px;">
-                <div class="uk-grid-small" uk-grid>
-                    <div class="uk-width-1-4">
-                        <select class="uk-select uk-form-small" id="${this.table.id}-chart-type">
-                            <option value="bar">柱状图</option>
-                            <option value="line">折线图</option>
-                            <option value="pie">饼图</option>
-                        </select>
-                    </div>
-                    
-                    <div class="uk-width-1-4">
-                        <select class="uk-select uk-form-small" id="${this.table.id}-chart-x">
-                            ${textFields.map(fieldLabel => `<option value="${fieldLabel}">${fieldLabel}</option>`).join('')}
-                        </select>
-                    </div>
-                    
-                    <div class="uk-width-1-4">
-                        <select class="uk-select uk-form-small" id="${this.table.id}-chart-y">
-                            ${numericFields.map(fieldLabel => `<option value="${fieldLabel}">${fieldLabel}</option>`).join('')}
-                        </select>
-                    </div>
-                    
-                    <div class="uk-width-1-4 uk-flex uk-flex-bottom">
-                        <button type="button" class="uk-button uk-button-primary uk-button-small" id="${this.table.id}-chart-generate">生成图表</button>
+            <div id="${this.table.id}-chart-container" class="uk-margin-bottom" style="width: 100%; position: relative;">
+                <!-- 控制面板区域 -->
+                <div id="${this.table.id}-chart-control-panel" class="uk-form-stacked" style="display: none;">
+                    <div class="uk-grid-small" uk-grid>
+                        <div class="uk-width-1-5">
+                            <select class="uk-select uk-form-small" id="${this.table.id}-chart-type">
+                                <option value="bar">柱状图</option>
+                                <option value="line">折线图</option>
+                                <option value="pie">饼图</option>
+                            </select>
+                        </div>
+                        
+                        <div class="uk-width-1-5">
+                            <select class="uk-select uk-form-small" id="${this.table.id}-chart-x">
+                                ${textFields.map(fieldLabel => `<option value="${fieldLabel}">${fieldLabel}</option>`).join('')}
+                            </select>
+                        </div>
+                        
+                        <div class="uk-width-1-5">
+                            <select class="uk-select uk-form-small" id="${this.table.id}-chart-y">
+                                ${numericFields.map(fieldLabel => `<option value="${fieldLabel}">${fieldLabel}</option>`).join('')}
+                            </select>
+                        </div>
+                        
+                        <div class="uk-width-1-5">
+                            <button type="button" class="uk-button uk-button-primary uk-button-small uk-width-1-1" id="${this.table.id}-chart-generate">更新图表</button>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="uk-margin-top">
-                    <canvas id="${this.table.id}-chart-canvas" width="${tableWidth - 40}" height="300"></canvas>
+                <div id="${this.table.id}-chart-area" class="uk-width-1-1">
+                    <div style="position: relative; height: 300px;">
+                        <canvas id="${this.table.id}-chart-canvas"></canvas>
+                        <!-- 悬浮在图表区域右上角的控制面板切换按钮 -->
+                    </div>
                 </div>
+
+               <button id="${this.table.id}-chart-toggle-control" class="uk-button uk-button-default uk-button-small" 
+                            style="position: absolute; top: 0px; right: 10px; z-index: 10;" title="展开控制面板">
+                            <i class="icon ion-md-menu"></i>
+              </button>
             </div>
         `;
         
         // 在表格前方插入图表容器
         this.table.insertAdjacentHTML('beforebegin', containerHtml);
+        
+        // 绑定控制面板展开/收起事件
+        const toggleBtn = dom.gid(`${this.table.id}-chart-toggle-control`);
+        if (toggleBtn) {
+            dom.on(toggleBtn, 'click', () => {
+                this.toggleChartControlPanel();
+            });
+        }
         
         // 绑定生成图表事件
         const generateBtn = dom.gid(`${this.table.id}-chart-generate`);
@@ -1347,6 +1434,58 @@ class TableRender {
                 this.generateChart();
             });
         }
+        
+        // 添加窗口大小调整事件监听器
+        this._bindChartResizeEvent();
+        
+        // 自动选择默认选项并生成图表
+        setTimeout(() => {
+            const xFieldSelect = dom.gid(`${this.table.id}-chart-x`);
+            const yFieldSelect = dom.gid(`${this.table.id}-chart-y`);
+            
+            // 如果有选项，选择第一个作为默认值
+            if (xFieldSelect && xFieldSelect.options.length > 0) {
+                xFieldSelect.value = xFieldSelect.options[0].value;
+            }
+            if (yFieldSelect && yFieldSelect.options.length > 0) {
+                yFieldSelect.value = yFieldSelect.options[0].value;
+            }
+            
+            // 如果两个字段都有值，则自动生成图表
+            if (xFieldSelect && yFieldSelect && 
+                xFieldSelect.value && yFieldSelect.value) {
+                this.generateChart();
+            }
+        }, 100);
+    }
+
+    /**
+     * 绑定图表大小调整事件
+     * @private
+     */
+    _bindChartResizeEvent() {
+        // 清除之前绑定的事件监听器（如果存在）
+        if (this._chartResizeHandler) {
+            window.removeEventListener('resize', this._chartResizeHandler);
+        }
+        
+        // 创建新的事件处理函数
+        this._chartResizeHandler = () => {
+            // 延迟执行以避免频繁调整
+            if (this._resizeTimer) {
+                clearTimeout(this._resizeTimer);
+            }
+            
+            this._resizeTimer = setTimeout(() => {
+                // 如果当前有图表实例，重新渲染图表
+                if (this.currentChart) {
+                    this.currentChart.resize();
+                }
+            }, 100);
+        };
+        
+        // 绑定事件监听器
+        window.addEventListener('resize', this._chartResizeHandler);
     }
 
     /**
@@ -1437,9 +1576,9 @@ class TableRender {
      * @private
      */
     _prepareChartData(xField, yField) {
+
         const labels = [];
         const data = [];
-        
         // 获取字段名到标签的映射
         const fieldLabelToName = {};
         if (this.options.fields) {
@@ -1462,21 +1601,35 @@ class TableRender {
         this.filteredData.forEach(row => {
             let xValue, yValue;
             
-            if (this.options.fields) {
-                // 新格式：从字段对象中提取值
+            if (this.options.fields && row.cells) {
+                // 新格式：从cells对象数组中提取值
+                // 获取字段索引 - 使用表头字段顺序而不是字段配置顺序
+                const headers = this._getTableHeaders();
+                const xFieldIndex = headers.indexOf(xField);
+                const yFieldIndex = headers.indexOf(yField);
+                
+                // 从cells对象数组中提取值
+                const xCellObj = row.cells[xFieldIndex];
+                const yCellObj = row.cells[yFieldIndex];
+                
+                // 使用label值（l）而不是value值（v）作为图表标签
+                xValue = xCellObj?.l || xCellObj?.v || '';
+                yValue = parseFloat(yCellObj?.v) || 0;
+            } else if (this.options.fields) {
+                // 旧格式：从字段对象中提取值
                 const xFieldName = fieldLabelToName[xField];
                 const yFieldName = fieldLabelToName[yField];
                 
-                // 获取字段索引
-                const fieldNames = Object.keys(this.options.fields);
-                const xFieldIndex = fieldNames.indexOf(xFieldName);
-                const yFieldIndex = fieldNames.indexOf(yFieldName);
+                // 获取字段索引 - 使用表头字段顺序而不是字段配置顺序
+                const headers = this._getTableHeaders();
+                const xFieldIndex = headers.indexOf(xField);
+                const yFieldIndex = headers.indexOf(yField);
                 
                 // 从cells数组中提取值
                 xValue = row.cells[xFieldIndex] || '';
                 yValue = parseFloat(row.cells[yFieldIndex]) || 0;
             } else {
-                // 旧格式：从cells数组中提取值
+                // 最旧格式：从cells数组中提取值
                 xValue = row.cells[xIndex];
                 yValue = parseFloat(row.cells[yIndex]) || 0;
             }
@@ -1508,6 +1661,13 @@ class TableRender {
             this.currentChart.destroy();
         }
         
+        // 设置canvas容器的父元素样式
+        const parent = canvas.parentElement;
+        if (parent) {
+            parent.style.position = 'relative';
+            parent.style.height = '300px';
+        }
+        
         // 创建新图表
         this.currentChart = new Chart(canvas.getContext('2d'), {
             type: chartType,
@@ -1526,21 +1686,40 @@ class TableRender {
                 maintainAspectRatio: false,
                 plugins: {
                     title: {
-                        display: true,
-                        text: `${xField} - ${yField} 分析图表`,
-                        font: {
-                            size: 16
-                        }
+                        display: false
                     },
                     legend: {
-                        position: 'top',
+                        position: chartType === 'pie' ? 'right' : 'bottom',
+                        labels: chartType === 'pie' ? {
+                            boxWidth: 15,
+                            padding: 10,
+                            generateLabels: function(chart) {
+                                const data = chart.data;
+                                if (data.labels.length && data.datasets.length) {
+                                    return data.labels.map((label, i) => {
+                                        const dataset = data.datasets[0];
+                                        return {
+                                            text: label,
+                                            fillStyle: dataset.backgroundColor[i],
+                                            hidden: isNaN(dataset.data[i]) || chart.getDatasetMeta(0).data[i].hidden,
+                                            index: i
+                                        };
+                                    });
+                                }
+                                return [];
+                            }
+                        } : {}
                     }
                 },
                 scales: chartType !== 'pie' ? {
                     y: {
                         beginAtZero: true
                     }
-                } : {}
+                } : {},
+                // 添加响应式配置
+                onResize: (chart, size) => {
+                    console.log('Chart resized:', size);
+                }
             }
         });
     }
@@ -1570,6 +1749,42 @@ class TableRender {
             return colors.slice(0, count);
         } else {
             return [colors[3]]; // 柱状图和折线图使用单一颜色
+        }
+    }
+
+    /**
+     * 切换图表控制面板的显示状态
+     */
+    toggleChartControlPanel() {
+        const controlPanel = dom.gid(`${this.table.id}-chart-control-panel`);
+        const toggleBtn = dom.gid(`${this.table.id}-chart-toggle-control`);
+        const controlArea = dom.gid(`${this.table.id}-control-area`);
+        
+        if (!controlPanel || !toggleBtn) return;
+        
+        // 获取控制面板的当前显示状态
+        const isHidden = controlPanel.style.display === 'none';
+        
+        if (isHidden) {
+            // 展开控制面板
+            controlPanel.style.display = 'block';
+            toggleBtn.innerHTML = '<i class="icon ion-md-arrow-back"></i>';
+            toggleBtn.title = '收起控制面板';
+            
+            // 显示控制区域
+            if (controlArea) {
+                controlArea.style.display = 'block';
+            }
+        } else {
+            // 收起控制面板
+            controlPanel.style.display = 'none';
+            toggleBtn.innerHTML = '<i class="icon ion-md-menu"></i>';
+            toggleBtn.title = '展开控制面板';
+            
+            // 隐藏控制区域
+            if (controlArea) {
+                controlArea.style.display = 'none';
+            }
         }
     }
 }

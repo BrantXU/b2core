@@ -46,18 +46,27 @@ class entity extends base {
     // 获取实体配置
     $item = $this->m->getItem($this->type);
     
-    // 自动检测状态字段
+    // 提取select类型字段作为看板分类选项
     $statusFields = [];
     $selectedStatusField = '';
     
     if (isset($item['fields']) && is_array($item['fields'])) {
         foreach ($item['fields'] as $fieldName => $fieldConfig) {
-            // 通过字段名关键词检测状态字段
-            if (strpos(strtolower($fieldName), 'status') !== false || 
-                strpos(strtolower($fieldName), 'state') !== false ||
-                strpos(strtolower($fieldName), 'stage') !== false) {
+            // 检查字段类型是否为select或select_new
+            if (isset($fieldConfig['type']) && 
+                ($fieldConfig['type'] === 'select' || $fieldConfig['type'] === 'select_new')) {
                 $statusFields[$fieldName] = $fieldConfig;
                 if (empty($selectedStatusField)) {
+                    $selectedStatusField = $fieldName;
+                }
+            }
+            // 通过字段名关键词检测状态字段（作为备选方案）
+            elseif (strpos(strtolower($fieldName), 'status') !== false || 
+                strpos(strtolower($fieldName), 'state') !== false ||
+                strpos(strtolower($fieldName), 'stage') !== false) {
+                // 只有在还没有找到select字段时才使用
+                if (empty($selectedStatusField)) {
+                    $statusFields[$fieldName] = $fieldConfig;
                     $selectedStatusField = $fieldName;
                 }
             }
@@ -307,20 +316,50 @@ class entity extends base {
   /**
    * 删除
    */
-  public function delete($id): void {
-    if (empty($id)) {
-      redirect(tenant_url(seg(1)), 'ID不存在');
-      return;
+  public function delete($ids = null): void {
+    // 设置JSON响应头
+    header('Content-Type: application/json');
+    
+    // 支持从POST请求体中获取JSON数据
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      $input = json_decode(file_get_contents('php://input'), true);
+      if (isset($input['ids']) && is_array($input['ids'])) {
+        $ids = $input['ids'];
+      } elseif ($ids === null) {
+        // 如果没有提供ids参数，返回错误
+        echo json_encode([
+          'success' => false,
+          'message' => '未提供要删除的实体ID。'
+        ]);
+        exit;
+      }
     }
-    $ids = explode(',',$id);
-    foreach($ids as $id){
-      $result = $this->m->deleteEntity($id);
+    
+    // 如果ids是字符串，转换为数组（兼容旧版URL参数）
+    if (is_string($ids)) {
+      $ids = explode(',', $ids);
     }
+    
+    $result = true;
+    foreach ($ids as $id) {
+      if (!$this->m->deleteEntity($id)) {
+        $result = false;
+        break;
+      }
+    }
+    
     if ($result) {
-      redirect(tenant_url(seg(1)), '删除成功。');
+      echo json_encode([
+        'success' => true,
+        'message' => '实体删除成功。'
+      ]);
     } else {
-      redirect(tenant_url(seg(1)), '删除失败。');
+      echo json_encode([
+        'success' => false,
+        'message' => '删除实体失败。'
+      ]);
     }
+    exit;
   }
   
   /* view 是个核心方法， 它包含了一部分路由的功能 */
@@ -401,6 +440,7 @@ class entity extends base {
         }
       }
     }
+    $entityData['id'] = $entity['id'];
     $item = $view?$this->m->getItem($view):$this->m->getItem($entity['type']);
     // 构建面包屑 
     $param = [

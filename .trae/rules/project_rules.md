@@ -44,6 +44,9 @@ URI格式遵循以下模式：
 可以用的图标如下
   www/static/css/ionlist.md
 
+html 控件通过前端进行渲染。渲染代码在
+ www/static/js/widgetRender.js   
+
 
 ## 这是一个 aPaas 平台 ，entity 是数据管理模块， 支持多种展示方式： 列表、看板、日程等。 分别用 entity 下不同的方法实现。
    列表：list()
@@ -51,8 +54,16 @@ URI格式遵循以下模式：
    日程：calendar()
 
 ## 浏览器测试
-可以参考这个地址测试
-http://localhost:8080/default/company/list
+可以参考这些地址测试
+列表页面
+http://localhost:8080/default/company/
 
+详情页面
+http://localhost:8080/default/deal/view/about/0lcsmrzu
+
+如果需要登录使用账号admin 密码 admin
+
+
+测试和 debug 文件放在  www/test 目录下
 测试时使用租户下的数据库 data/default/db.sqlite
 测试时使用租户下的配置文件 data/default/conf.json

@@ -88,6 +88,12 @@ class config extends base {
         case 'sys':
           $this->mod($config);
           break;
+
+        
+        case 'layout':
+          $this->layout($config);
+          break;
+
         default:
           $this->yaml($id);
       }
@@ -96,6 +102,12 @@ class config extends base {
   public function mod($config): void {
     $param['config'] = $config;
     $this->display('v/config/mod',$param);
+  }
+
+
+  public function layout($config): void {
+    $param['config'] = $config;
+    $this->display('v/config/layout',$param);
   }
 
   public function yaml($id): void {
@@ -128,7 +140,7 @@ class config extends base {
       require_once(APP . 'lib/yaml.php');
     }
     
-    $conf = array('key' => 'required', 'value' => 'required');
+    $conf = array('key' => 'required');
     $err = validate($conf);
     
     if (!empty($_POST) && $err === TRUE) {
@@ -238,15 +250,44 @@ class config extends base {
   /**
    * 删除配置
    */
-  public function delete(): void {
-    $id = $_GET['id'];
-    $result = $this->m->deleteConfig($id);
+  public function delete($ids = null): void {
+    // 设置JSON响应头
+    header('Content-Type: application/json');
+    
+    // 支持从POST请求体中获取JSON数据
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      $input = json_decode(file_get_contents('php://input'), true);
+      if (isset($input['ids']) && is_array($input['ids'])) {
+        $ids = $input['ids'];
+      } elseif ($ids === null) {
+        // 如果没有提供ids参数，返回错误
+        echo json_encode([
+          'success' => false,
+          'message' => '未提供要删除的配置ID。'
+        ]);
+        exit;
+      }
+    }
+    
+    // 如果ids是字符串，转换为数组（兼容旧版URL参数）
+    if (is_string($ids)) {
+      $ids = explode(',', $ids);
+    }
+    
+    $result = $this->m->deleteConfig($ids);
     
     if ($result) {
-      redirect(tenant_url('config/'), '配置删除成功。');
+      echo json_encode([
+        'success' => true,
+        'message' => '配置删除成功。'
+      ]);
     } else {
-      redirect(tenant_url('config/'), '删除配置失败。');
+      echo json_encode([
+        'success' => false,
+        'message' => '删除配置失败。'
+      ]);
     }
+    exit;
   }
 
   /**

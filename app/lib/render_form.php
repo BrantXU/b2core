@@ -64,6 +64,8 @@ class FormRenderer {
                 'view' => $view,
                 'props' => $config['props'] ?? []
             ];
+            // 如果是 data 对象，那么 value 我们就取 eid
+            if($config['type'] =='data') $value = $entityData['id'] ;
             $html .= self::renderControl($value, $controlConfig, $label , $compare);
 
             // 添加错误信息
@@ -201,16 +203,21 @@ class FormRenderer {
                 $tr = new TableRenderer();
                 $tr->item = load('m/entity_m')->getItem($config['props']['data_source']);
                 $conditions = [];
-                if(isset($config['filter'])) {
-                    $filter = explode(':',$config['filter']);
+
+                $filters = isset($config['props']['filter'])?$config['props']['filter']:(isset($config['filter'])?$config['filter']:'');
+                // if(isset($config['props']['filter']))$config['filter'] = $config['props']['filter'];
+                // if(isset($config['filter'])) {
+                $filter = explode(':',$filters);
+                if(count($filter) == 2) {
                     $tr_filter = array($filter[0] => $filter[1]);
-                    foreach($tr_filter as $key => $value) {
+                    //echo($value);
+                    foreach($tr_filter as $key => $v) {
                         // Store the key and value separately for proper escaping in the model
-                        $value = $value=='eid'?$value['eid']:$value;
-                        $conditions["json_filter_{$key}"] = $value;
+                        $v = $v=='eid'?$value:$v;
+                        $conditions["json_filter_{$key}"] = $v;
                     }
                 }
-                
+
                 $tr->data =  load('m/entity_m')->getPage(1,200,$conditions);
                 $tr->entity_type = $config['props']['data_source'];
                 $html.= $tr->render();

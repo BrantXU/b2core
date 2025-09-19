@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DateTimePicker2 控件测试</title>
+    <link rel="stylesheet" href="/static/css/uikit.min.css">
+    <script src="/static/js/uikit.min.js"></script>
+    <script src="/static/js/widgetRender.js"></script>
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .control-preview {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #e5e5e5;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h2>DateTimePicker2 控件测试</h2>
+        
+        <div class="control-preview">
+            <h3>编辑模式下的 DateTimePicker2</h3>
+            <div id="edit-mode"></div>
+        </div>
+        
+        <div class="control-preview">
+            <h3>查看模式下的 DateTimePicker2</h3>
+            <div id="view-mode"></div>
+        </div>
+    </div>
+
+    <script>
+        // 等待DOM加载完成
+        document.addEventListener('DOMContentLoaded', function() {
+            // 测试数据
+            const testValue = '2023-12-25T14:30';
+            
+            // 控件配置
+            const config = {
+                type: 'datetimepicker2',
+                id: 'test_datetime',
+                required: true,
+                readonly: false
+            };
+            
+            // 在编辑模式下渲染控件
+            const editHtml = WidgetRenderer.renderControl(testValue, config);
+            document.getElementById('edit-mode').innerHTML = editHtml;
+            
+            // 在查看模式下渲染控件
+            const viewConfig = {...config, view: true};
+            const viewHtml = WidgetRenderer.renderControl(testValue, viewConfig);
+            document.getElementById('view-mode').innerHTML = viewHtml;
+            
+            console.log('DateTimePicker2 控件测试完成');
+        });
+    </script>
+</body>
+</html>

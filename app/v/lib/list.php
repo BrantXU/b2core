@@ -31,21 +31,22 @@ foreach ($item as $fieldName => $fieldConfig) {
     }
 }
 
-// 生成数据数组
-    foreach ($entities as $entity) {
-        $data = json_decode($entity['data'],true);
-        $rowData = ['id' => $entity['id']];
-        $cells = [];
-        foreach ($fields as $fieldName => $fieldConfig) {
-            $label =  isset($data[$fieldName.'_label'])?$data[$fieldName.'_label']:''; 
-            $cellValue = FormRenderer::item($data[$fieldName] ?? '', $fieldConfig,$label, $data);
-            $rowData[$fieldName] = $cellValue;
-            $cells[] = $cellValue;
-        }
-        // 添加cells属性供TableRender使用
-        $rowData['cells'] = $cells;
-        $jsData[] = $rowData;
+// 生成数据数组（传递原始数据，由前端渲染）
+foreach ($entities as $entity) {
+    $data = json_decode($entity['data'],true);
+    $rowData = ['id' => $entity['id']];
+    $cells = [];
+    foreach ($fields as $fieldName => $fieldConfig) {
+        $label =  isset($data[$fieldName.'_label'])?$data[$fieldName.'_label']:''; 
+        // 传递原始数据，由前端WidgetRenderer渲染
+        $rowData[$fieldName] = $data[$fieldName] ?? '';
+        $rowData[$fieldName.'_label'] = $label;
+        $cells[] = $data[$fieldName] ?? '';
     }
+    // 添加cells属性供TableRender使用
+    $rowData['cells'] = $cells;
+    $jsData[] = $rowData;
+}
 
 ?>
 

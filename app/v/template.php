@@ -13,10 +13,12 @@
   <link href="/static/css/calendar.css" rel="stylesheet" type="text/css">
   <script src="/static/js/uikit.min.js"></script>
   <script src="/static/js/base.js"></script>
+  <script src="/static/js/widgetRender.js"></script>
   <script src="/static/js/tableRender.js"></script>
   <script src="/static/js/modal.js"></script>
   <script src="/static/js/dom.js"></script>
   <script src="/static/js/calendarRender.js"></script>
+  <script src="/static/js/chart.js"></script>
 </head>
 <body>
   <div> 

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Select Label Test</title>
+    <link rel="stylesheet" href="../static/css/uikit.min.css">
+    <script src="../static/js/uikit.min.js"></script>
+    <script src="../static/js/widgetRender.js"></script>
+</head>
+<body>
+    <div class="uk-container uk-margin-top">
+        <h2>Select Label Test</h2>
+        
+        <div class="uk-margin">
+            <h3>测试1: 正常传递label值</h3>
+            <div id="test1"></div>
+        </div>
+        
+        <div class="uk-margin">
+            <h3>测试2: 传递null作为label值</h3>
+            <div id="test2"></div>
+        </div>
+        
+        <div class="uk-margin">
+            <h3>测试3: 传递空字符串作为label值</h3>
+            <div id="test3"></div>
+        </div>
+        
+        <div class="uk-margin">
+            <h3>测试4: 不传递label参数</h3>
+            <div id="test4"></div>
+        </div>
+    </div>
+
+    <script>
+        // 等待DOM加载完成
+        document.addEventListener('DOMContentLoaded', function() {
+            // 测试配置
+            const config = {
+                type: 'select_new',
+                id: 'test_field',
+                view: true,
+                props: {}
+            };
+            
+            // 测试1: 正常传递label值
+            const result1 = WidgetRenderer.renderControl('value1', config, 'Label1');
+            document.getElementById('test1').innerHTML = result1;
+            
+            // 测试2: 传递null作为label值
+            const result2 = WidgetRenderer.renderControl('value2', config, null);
+            document.getElementById('test2').innerHTML = result2;
+            
+            // 测试3: 传递空字符串作为label值
+            const result3 = WidgetRenderer.renderControl('value3', config, '');
+            document.getElementById('test3').innerHTML = result3;
+            
+            // 测试4: 不传递label参数
+            const result4 = WidgetRenderer.renderControl('value4', config);
+            document.getElementById('test4').innerHTML = result4;
+            
+            console.log('Test 1 (with label):', result1);
+            console.log('Test 2 (with null):', result2);
+            console.log('Test 3 (with empty string):', result3);
+            console.log('Test 4 (without label):', result4);
+        });
+    </script>
+</body>
+</html>

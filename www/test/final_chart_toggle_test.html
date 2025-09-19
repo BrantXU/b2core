@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>最终图表控制面板测试</title>
+    <link rel="stylesheet" href="../static/css/uikit.min.css">
+    <link rel="stylesheet" href="../static/css/ionicons.min.css">
+    <script src="../static/js/uikit.min.js"></script>
+    <script src="../static/js/chart.min.js"></script>
+    <style>
+        .test-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .width-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 10;
+        }
+        .chart-placeholder {
+            position: relative;
+            height: 300px;
+            background: #f8f8f8;
+            border: 1px dashed #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h2>最终图表控制面板测试</h2>
+        <p>此页面用于测试使用实际tableRender.js代码的图表控制面板展开/收起功能。</p>
+        
+        <table id="test-table" class="uk-table uk-table-striped uk-table-hover">
+            <thead>
+                <tr>
+                    <th>基金名称</th>
+                    <th>基金代码</th>
+                    <th>单位净值</th>
+                    <th>日增长率</th>
+                    <th>持仓占比</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>华夏成长混合</td>
+                    <td>000001</td>
+                    <td>1.5678</td>
+                    <td>2.34%</td>
+                    <td>15.6%</td>
+                </tr>
+                <tr>
+                    <td>易方达消费行业</td>
+                    <td>110022</td>
+                    <td>2.3456</td>
+                    <td>1.87%</td>
+                    <td>12.3%</td>
+                </tr>
+                <tr>
+                    <td>嘉实新兴产业</td>
+                    <td>000751</td>
+                    <td>1.8901</td>
+                    <td>-0.56%</td>
+                    <td>9.8%</td>
+                </tr>
+                <tr>
+                    <td>富国天惠成长</td>
+                    <td>161005</td>
+                    <td>3.4567</td>
+                    <td>0.89%</td>
+                    <td>18.2%</td>
+                </tr>
+                <tr>
+                    <td>中银中国</td>
+                    <td>163801</td>
+                    <td>1.2345</td>
+                    <td>-1.23%</td>
+                    <td>7.4%</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // 模拟dom工具类
+        const dom = {
+            gid: function(id) {
+                return document.getElementById(id);
+            },
+            on: function(element, event, handler) {
+                element.addEventListener(event, handler);
+            },
+            off: function(element, event, handler) {
+                element.removeEventListener(event, handler);
+            }
+        };
+
+        /**
+         * TableRender类 - 表格渲染工具
+         * 用于渲染具有图表功能的表格
+         */
+        class TableRender {
+            constructor(tableId, options = {}) {
+                this.table = dom.gid(tableId);
+                this.options = {
+                    showChart: false,
+                    fields: {
+                        "name": { label: "基金名称", type: "text" },
+                        "code": { label: "基金代码", type: "text" },
+                        "nav": { label: "单位净值", type: "yuan" },
+                        "growth": { label: "日增长率", type: "percent" },
+                        "position": { label: "持仓占比", type: "percent" }
+                    },
+                    ...options
+                };
+                
+                if (this.options.showChart) {
+                    this.initChart();
+                }
+            }
+            
+            initChart() {
+                // 获取文本字段和数值字段
+                const textFields = this._getTextFields();
+                const numericFields = this._getNumericFields();
+                
+                // 创建图表容器HTML（插入到表格上方）
+                const containerHtml = `
+                    <div id="${this.table.id}-chart-container" class="uk-card uk-card-default uk-margin-bottom" style="width: 100%;">
+                        <div class="width-indicator" id="${this.table.id}-width-indicator">图表区域宽度: 75%</div>
+                        <div class="uk-card-body">
+                            <div class="uk-grid-small" uk-grid>
+                                <div id="${this.table.id}-chart-area" class="uk-width-3-4">
+                                    <div style="position: relative; height: 300px;">
+                                        <canvas id="${this.table.id}-chart-canvas"></canvas>
+                                    </div>
+                                </div>
+                                
+                                <div id="${this.table.id}-control-area" class="uk-width-1-4">
+                                    <button id="${this.table.id}-chart-toggle-control" class="uk-button uk-button-default uk-button-small" title="收起控制面板">
+                                        <i class="icon ion-md-arrow-forward"></i>
+                                    </button>
+                                    <div class="uk-form-stacked" id="${this.table.id}-chart-control-panel">
+                                        <div class="uk-margin-small">
+                                            <select class="uk-select uk-form-small" id="${this.table.id}-chart-type">
+                                                <option value="bar">柱状图</option>
+                                                <option value="line">折线图</option>
+                                              </select>
+                                        </div>
+                                        
+                                        <div class="uk-margin-small">
+                                            <select class="uk-select uk-form-small" id="${this.table.id}-chart-x">
+                                                ${textFields.map(fieldLabel => `<option value="${fieldLabel}">${fieldLabel}</option>`).join('')}
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="uk-margin-small">
+                                            <select class="uk-select uk-form-small" id="${this.table.id}-chart-y">
+                                                ${numericFields.map(fieldLabel => `<option value="${fieldLabel}">${fieldLabel}</option>`).join('')}
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="uk-margin-small">
+                                            <button type="button" class="uk-button uk-button-primary uk-button-small uk-width-1-1" id="${this.table.id}-chart-generate">更新</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // 在表格前方插入图表容器
+                this.table.insertAdjacentHTML('beforebegin', containerHtml);
+                
+                // 更新宽度指示器
+                this.updateWidthIndicator();
+                
+                // 默认隐藏控制面板
+                setTimeout(() => {
+                    this.toggleChartControlPanel();
+                }, 100);
+                
+                // 绑定控制面板展开/收起事件
+                const toggleBtn = dom.gid(`${this.table.id}-chart-toggle-control`);
+                if (toggleBtn) {
+                    dom.on(toggleBtn, 'click', () => {
+                        this.toggleChartControlPanel();
+                    });
+                }
+            }
+            
+            /**
+             * 切换图表控制面板的显示状态
+             */
+            toggleChartControlPanel() {
+                const controlPanel = dom.gid(`${this.table.id}-chart-control-panel`);
+                const toggleBtn = dom.gid(`${this.table.id}-chart-toggle-control`);
+                const chartArea = dom.gid(`${this.table.id}-chart-area`);
+                const controlArea = dom.gid(`${this.table.id}-control-area`);
+                const widthIndicator = dom.gid(`${this.table.id}-width-indicator`);
+                
+                if (!controlPanel || !toggleBtn) return;
+                
+                // 获取控制面板的当前显示状态
+                const isHidden = controlPanel.style.display === 'none';
+                
+                if (isHidden) {
+                    // 展开控制面板
+                    controlPanel.style.display = 'block';
+                    toggleBtn.innerHTML = '<i class="icon ion-md-arrow-forward"></i>';
+                    toggleBtn.title = '收起控制面板';
+                    
+                    // 恢复图表区域和控制区域的宽度
+                    if (chartArea) {
+                        chartArea.className = 'uk-width-3-4';
+                    }
+                    if (controlArea) {
+                        controlArea.className = 'uk-width-1-4';
+                    }
+                } else {
+                    // 收起控制面板
+                    controlPanel.style.display = 'none';
+                    toggleBtn.innerHTML = '<i class="icon ion-md-arrow-back"></i>';
+                    toggleBtn.title = '展开控制面板';
+                    
+                    // 调整图表区域宽度为95%，控制区域隐藏
+                    if (chartArea) {
+                        chartArea.className = 'uk-width-9-10';
+                    }
+                    if (controlArea) {
+                        controlArea.className = 'uk-width-1-10';
+                    }
+                }
+                
+                // 更新宽度指示器
+                setTimeout(() => {
+                    this.updateWidthIndicator();
+                }, 10);
+            }
+            
+            /**
+             * 更新宽度指示器
+             */
+            updateWidthIndicator() {
+                const chartContainer = dom.gid(`${this.table.id}-chart-container`);
+                const widthIndicator = dom.gid(`${this.table.id}-width-indicator`);
+                const chartArea = dom.gid(`${this.table.id}-chart-area`);
+                
+                if (chartContainer && widthIndicator && chartArea) {
+                    // 获取图表容器的实际宽度
+                    const containerWidth = chartContainer.offsetWidth;
+                    // 获取图表区域的实际宽度
+                    const areaWidth = chartArea.offsetWidth;
+                    // 计算百分比
+                    const percentage = Math.round((areaWidth / containerWidth) * 100);
+                    // 更新指示器文本
+                    widthIndicator.textContent = `图表区域宽度: ${percentage}%`;
+                }
+            }
+            
+            /**
+             * 获取文本字段
+             * @returns {Array} 文本字段数组
+             * @private
+             */
+            _getTextFields() {
+                const fields = [];
+                if (this.options.fields) {
+                    Object.entries(this.options.fields).forEach(([fieldName, fieldConfig]) => {
+                        if (this._isTextField(fieldConfig.type)) {
+                            fields.push(fieldConfig.label || fieldConfig.name);
+                        }
+                    });
+                }
+                return fields;
+            }
+
+            /**
+             * 获取数值字段
+             * @returns {Array} 数值字段数组
+             * @private
+             */
+            _getNumericFields() {
+                const fields = [];
+                if (this.options.fields) {
+                    Object.entries(this.options.fields).forEach(([fieldName, fieldConfig]) => {
+                        if (this._isNumericField(fieldConfig.type)) {
+                            fields.push(fieldConfig.label || fieldConfig.name);
+                        }
+                    });
+                }
+                return fields;
+            }
+
+            /**
+             * 判断字段是否为文本类型
+             * @param {string} fieldType - 字段类型
+             * @returns {boolean} 是否为文本类型
+             * @private
+             */
+            _isTextField(fieldType) {
+                // 文本类字段：text、select、radio、checkbox、muti、textarea等
+                const textTypes = ['text', 'select', 'select_new', 'radio', 'checkbox', 'muti', 'textarea'];
+                return textTypes.includes(fieldType);
+            }
+
+            /**
+             * 判断字段是否为数值类型
+             * @param {string} fieldType - 字段类型
+             * @returns {boolean} 是否为数值类型
+             * @private
+             */
+            _isNumericField(fieldType) {
+                // 数值类字段：number、yuan、percent、amount等
+                const numericTypes = ['number', 'yuan', 'percent', 'amount'];
+                return numericTypes.includes(fieldType);
+            }
+        }
+
+        // 初始化TableRender
+        document.addEventListener('DOMContentLoaded', function() {
+            const tableRender = new TableRender('test-table', {
+                showChart: true
+            });
+        });
+    </script>
+</body>
+</html>

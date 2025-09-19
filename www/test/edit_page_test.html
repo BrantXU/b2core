@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>编辑页面测试</title>
+    <link rel="stylesheet" href="../static/css/uikit.min.css">
+    <script src="../static/js/uikit.min.js"></script>
+</head>
+<body>
+    <div class="uk-container uk-margin-top">
+        <h2>编辑页面测试</h2>
+        
+        <div class="uk-alert uk-alert-danger" style="display: none;" id="errorDiv"></div>
+        
+        <!-- 模拟编辑表单 -->
+        <form method="post" class="uk-padding uk-form uk-form-stacked" enctype="multipart/form-data">
+            <div class="uk-grid uk-child-width-1-1" uk-grid>
+                <!-- 模拟通过FormRenderer::renderFormFields渲染的字段 -->
+                <div class="uk-width-1-3@m uk-padding-small">
+                    <label class="uk-form-label">状态<span style="color: red;">*</span></label>
+                    <div class="uk-form-controls">
+                        <select class="uk-select uk-width-1-1" name="data[status]" required onchange="var hiddenField = document.getElementsByName('status_label')[0]; if (hiddenField) hiddenField.value = this.options[this.selectedIndex].text">
+                            <option value="">请选择</option>
+                            <option value="1">进行中</option>
+                            <option value="2">已完成</option>
+                            <option value="3">已取消</option>
+                        </select>
+                        <input type="hidden" name="data[status_label]" value="">
+                        <span class="help-inline"></span>
+                    </div>
+                </div>
+                
+                <div class="uk-width-1-3@m uk-padding-small">
+                    <label class="uk-form-label">优先级</label>
+                    <div class="uk-form-controls">
+                        <select class="uk-select uk-width-1-1" name="data[priority]" onchange="var hiddenField = document.getElementsByName('priority_label')[0]; if (hiddenField) hiddenField.value = this.options[this.selectedIndex].text">
+                            <option value="">请选择</option>
+                            <option value="1">高</option>
+                            <option value="2">中</option>
+                            <option value="3">低</option>
+                        </select>
+                        <input type="hidden" name="data[priority_label]" value="">
+                        <span class="help-inline"></span>
+                    </div>
+                </div>
+                
+                <!-- 模拟没有隐藏字段的情况 -->
+                <div class="uk-width-1-3@m uk-padding-small">
+                    <label class="uk-form-label">类型</label>
+                    <div class="uk-form-controls">
+                        <select class="uk-select uk-width-1-1" name="data[type]" onchange="var hiddenField = document.getElementsByName('type_label')[0]; if (hiddenField) hiddenField.value = this.options[this.selectedIndex].text">
+                            <option value="">请选择</option>
+                            <option value="1">任务</option>
+                            <option value="2">问题</option>
+                            <option value="3">需求</option>
+                        </select>
+                        <!-- 故意不添加隐藏字段来测试修复效果 -->
+                        <span class="help-inline"></span>
+                    </div>
+                </div>
+                
+                <div class="uk-width-1-1 uk-padding-small uk-grid-margin uk-first-column">
+                    <input type="hidden" name="redirect_url" value="">
+                    <button type="submit" class="uk-button uk-button-primary uk-margin-right">更新</button>
+                    <a href="#" class="uk-button">返回</a>
+                </div>
+            </div>
+        </form>
+        
+        <div class="uk-margin-top">
+            <button class="uk-button uk-button-default" onclick="testErrorHandling()">测试错误处理</button>
+            <div id="testResult" class="uk-margin-top"></div>
+        </div>
+    </div>
+
+    <script>
+        function testErrorHandling() {
+            const resultDiv = document.getElementById('testResult');
+            
+            try {
+                // 模拟触发onchange事件
+                const statusSelect = document.querySelector('select[name="data[status]"]');
+                const prioritySelect = document.querySelector('select[name="data[priority]"]');
+                const typeSelect = document.querySelector('select[name="data[type]"]');
+                
+                // 触发事件
+                if (statusSelect) statusSelect.dispatchEvent(new Event('change'));
+                if (prioritySelect) prioritySelect.dispatchEvent(new Event('change'));
+                if (typeSelect) typeSelect.dispatchEvent(new Event('change'));
+                
+                resultDiv.innerHTML = '<div class="uk-alert uk-alert-success">测试完成，没有出现错误！</div>';
+            } catch (error) {
+                const errorDiv = document.getElementById('errorDiv');
+                errorDiv.style.display = 'block';
+                errorDiv.textContent = '错误: ' + error.message;
+                resultDiv.innerHTML = '<div class="uk-alert uk-alert-danger">测试失败: ' + error.message + '</div>';
+            }
+        }
+    </script>
+</body>
+</html>

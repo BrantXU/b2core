@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Label Display Test</title>
+    <link rel="stylesheet" href="../static/css/uikit.min.css">
+    <link rel="stylesheet" href="../static/css/ionicons.min.css">
+    <script src="../static/js/uikit.min.js"></script>
+    <script src="../static/js/widgetRender.js"></script>
+    <script src="../static/js/tableRender.js"></script>
+</head>
+<body>
+    <div class="uk-container uk-margin-top">
+        <h2>Select Label Display Test</h2>
+        <table id="test-table" class="uk-table uk-table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>基金名称</th>
+                    <th>类型</th>
+                    <th>状态</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script>
+        // 模拟数据，包含_label字段
+        const testData = [
+            {
+                id: '1',
+                fund: '001',
+                fund_label: '华夏成长混合',
+                type: '002',
+                type_label: '混合型',
+                status: '003',
+                status_label: '正常'
+            },
+            {
+                id: '2',
+                fund: '002',
+                fund_label: '易方达消费行业',
+                type: '001',
+                type_label: '股票型',
+                status: '003',
+                status_label: '正常'
+            },
+            {
+                id: '3',
+                fund: '003',
+                fund_label: '嘉实沪深300指数',
+                type: '003',
+                type_label: '指数型',
+                status: '004',
+                status_label: '暂停'
+            }
+        ];
+
+        // 字段配置
+        const fieldConfig = {
+            fund: {
+                type: 'select',
+                label: '基金名称'
+            },
+            type: {
+                type: 'select',
+                label: '类型'
+            },
+            status: {
+                type: 'select',
+                label: '状态'
+            }
+        };
+
+        // 初始化表格
+        document.addEventListener('DOMContentLoaded', function() {
+            const table = new TableRender({
+                table: document.getElementById('test-table'),
+                data: testData,
+                fields: fieldConfig,
+                enableCheckbox: false,
+                searchable: false,
+                showPagination: false
+            });
+        });
+    </script>
+</body>
+</html>

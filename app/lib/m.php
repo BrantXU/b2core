@@ -30,6 +30,9 @@ class m {
     $offset = ($page - 1) * $limit;
     $where = $this->filter;
     
+    // 排除已删除的记录（del=1）
+    $where .= " AND (del IS NULL OR del = 0)";
+    
     if (!empty($conditions)) {
       $conditionParts = [];
       //print_r($conditions);
@@ -51,13 +54,19 @@ class m {
    * @return array|null
    */
   protected function getOne($id) {
+    // 如果传入的是数组，记录错误并返回null
+    if (is_array($id)) {
+      error_log('getOne() 方法接收到数组参数，期望字符串或整数: ' . print_r($id, true));
+      return null;
+    }
+    
     // 根据ID类型进行不同的处理
     if (is_numeric($id)) {
       $id = (int)$id;
-      $query = "SELECT * FROM {$this->table} WHERE {$this->key}={$id} LIMIT 1";
+      $query = "SELECT * FROM {$this->table} WHERE {$this->key}={$id} AND (del IS NULL OR del = 0) LIMIT 1";
     } else {
       $id = "'".$this->db->escape($id)."'";
-      $query = "SELECT * FROM {$this->table} WHERE {$this->key}={$id} LIMIT 1";
+      $query = "SELECT * FROM {$this->table} WHERE {$this->key}={$id} AND (del IS NULL OR del = 0) LIMIT 1";
     }
     $result = $this->db->query($query);
     return isset($result[0]) ? $result[0] : null;
@@ -124,7 +133,7 @@ class m {
   }
 
   /**
-   * 删除记录
+   * 删除记录（逻辑删除，更新del字段为1）
    * @param string|int $id
    * @return bool
    */
@@ -132,14 +141,17 @@ class m {
     // 根据ID类型进行不同的处理
     if (is_numeric($id)) {
       $id = (int)$id;
-      $query = "DELETE FROM {$this->table} WHERE {$this->key}={$id}";
+      $where = "{$this->key}={$id}";
     } else {
       $id = "'" . $this->db->escape($id) . "'";
-      $query = "DELETE FROM {$this->table} WHERE {$this->key}={$id}";
+      $where = "{$this->key}={$id}";
     }
     
+    // 逻辑删除：更新del字段为1
+    $query = "UPDATE {$this->table} SET del=1 WHERE {$where}";
+    
     // 添加调试日志
-    error_log('执行删除SQL: ' . $query);
+    error_log('执行逻辑删除SQL: ' . $query);
     $result = $this->db->query($query);
     
     if (!$result) {

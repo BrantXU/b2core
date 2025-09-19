@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>看板分类字段测试</title>
+    <link rel="stylesheet" href="/static/css/uikit.min.css">
+    <link rel="stylesheet" href="/static/css/ionicons.min.css">
+    <script src="/static/js/uikit.min.js"></script>
+    <script src="/static/js/kanbanRender.js"></script>
+    <style>
+        .kanban-card {
+            cursor: pointer;
+        }
+        .kanban-ghost {
+            opacity: 0.5;
+            background: #c8ebfb;
+        }
+        .kanban-chosen {
+            background: #f0f0f0;
+        }
+        .kanban-drag {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="uk-container uk-margin-top">
+        <h2>看板分类字段测试</h2>
+        
+        <div class="uk-margin-bottom" uk-grid>
+            <div class="uk-width-1-1">
+                <div class="uk-card uk-card-default uk-card-body">
+                    <div uk-grid>
+                        <div class="uk-width-1-3@m">
+                            <label class="uk-form-label">选择分类字段:</label>
+                            <select id="statusFieldSelect" class="uk-select">
+                                <option value="fund_state">基金阶段</option>
+                                <option value="status">状态</option>
+                                <option value="priority">优先级</option>
+                            </select>
+                        </div>
+                        <div class="uk-width-1-3@m">
+                            <input type="text" id="searchInput" class="uk-input" placeholder="搜索...">
+                        </div>
+                        <div class="uk-width-1-3@m uk-text-right">
+                            <button class="uk-button uk-button-primary" id="refreshBtn">
+                                <i class="icon ion-md-refresh"></i> 刷新
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="kanbanContainer" class="kanban-view"></div>
+    </div>
+
+    <script>
+        // 示例配置数据
+        const configData = {
+            "item": {
+                "abs": {
+                    "id": "abs",
+                    "name": "概况",
+                    "type": "tab"
+                },
+                "name": {
+                    "id": "name",
+                    "name": "名称",
+                    "type": "text",
+                    "listed": 1,
+                    "required": 1
+                },
+                "fundname": {
+                    "id": "fundname",
+                    "name": "基金全称",
+                    "width": 2,
+                    "type": "text"
+                },
+                "setup_date": {
+                    "id": "setup_date",
+                    "listed": 1,
+                    "name": "成立日期",
+                    "type": "datepicker",
+                    "width": 1
+                },
+                "duration": {
+                    "id": "duration",
+                    "listed": 1,
+                    "name": "基金期限",
+                    "type": "text",
+                    "width": 1
+                },
+                "fund_state": {
+                    "id": "fund_state",
+                    "name": "基金阶段",
+                    "type": "select_new",
+                    "props": {
+                        "data_source": "设立中\n投资期\n退出期\n清算期\n展期\n终止\n"
+                    },
+                    "width": 1,
+                    "listed": 1
+                },
+                "status": {
+                    "id": "status",
+                    "name": "状态",
+                    "type": "select",
+                    "props": {
+                        "data_source": "草稿\n审核中\n已发布\n已归档\n"
+                    },
+                    "width": 1,
+                    "listed": 1
+                },
+                "priority": {
+                    "id": "priority",
+                    "name": "优先级",
+                    "type": "select",
+                    "props": {
+                        "data_source": "低\n中\n高\n紧急\n"
+                    },
+                    "width": 1,
+                    "listed": 1
+                }
+            }
+        };
+
+        // 示例实体数据
+        const entityData = [
+            {
+                "id": "1",
+                "name": "基金A",
+                "fields": {
+                    "name": "基金A",
+                    "fundname": "基金A全称",
+                    "setup_date": "2020-01-01",
+                    "duration": "5年",
+                    "fund_state": "投资期",
+                    "status": "已发布",
+                    "priority": "高"
+                }
+            },
+            {
+                "id": "2",
+                "name": "基金B",
+                "fields": {
+                    "name": "基金B",
+                    "fundname": "基金B全称",
+                    "setup_date": "2021-03-15",
+                    "duration": "7年",
+                    "fund_state": "设立中",
+                    "status": "审核中",
+                    "priority": "中"
+                }
+            },
+            {
+                "id": "3",
+                "name": "基金C",
+                "fields": {
+                    "name": "基金C",
+                    "fundname": "基金C全称",
+                    "setup_date": "2019-06-20",
+                    "duration": "10年",
+                    "fund_state": "退出期",
+                    "status": "已发布",
+                    "priority": "紧急"
+                }
+            },
+            {
+                "id": "4",
+                "name": "基金D",
+                "fields": {
+                    "name": "基金D",
+                    "fundname": "基金D全称",
+                    "setup_date": "2022-11-10",
+                    "duration": "3年",
+                    "fund_state": "投资期",
+                    "status": "草稿",
+                    "priority": "低"
+                }
+            }
+        ];
+
+        // 提取select类型字段
+        function extractSelectFields(config) {
+            const selectFields = {};
+            if (config.item) {
+                for (const [fieldName, fieldConfig] of Object.entries(config.item)) {
+                    if (fieldConfig.type === 'select' || fieldConfig.type === 'select_new') {
+                        selectFields[fieldName] = fieldConfig;
+                    }
+                }
+            }
+            return selectFields;
+        }
+
+        // 初始化看板
+        document.addEventListener('DOMContentLoaded', function() {
+            // 提取select字段
+            const selectFields = extractSelectFields(configData);
+            console.log('Select fields:', selectFields);
+            
+            // 更新选择器选项
+            const statusFieldSelect = document.getElementById('statusFieldSelect');
+            statusFieldSelect.innerHTML = '';
+            for (const [fieldName, fieldConfig] of Object.entries(selectFields)) {
+                const option = document.createElement('option');
+                option.value = fieldName;
+                option.textContent = fieldConfig.name;
+                statusFieldSelect.appendChild(option);
+            }
+            
+            // 初始化看板渲染器
+            const kanbanRender = new KanbanRender('kanbanContainer', {
+                kanbanData: entityData,
+                categoryField: 'fund_state',
+                defaultCategory: 'fund_state',
+                enableSearch: true,
+                enableDrag: true,
+                enableCache: true
+            }, '/default/fund/');
+
+            // 初始化看板
+            kanbanRender.init();
+
+            // 搜索功能
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', function(e) {
+                    kanbanRender.search(e.target.value);
+                });
+            }
+
+            // 刷新按钮
+            const refreshBtn = document.getElementById('refreshBtn');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', function() {
+                    kanbanRender.refresh();
+                });
+            }
+
+            // 分类字段切换事件
+            statusFieldSelect.addEventListener('change', function(e) {
+                const selectedField = e.target.value;
+                console.log('切换分类字段到:', selectedField);
+                kanbanRender.setCategoryField(selectedField);
+            });
+        });
+    </script>
+</body>
+</html>

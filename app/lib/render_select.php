@@ -34,7 +34,17 @@ function render_select($value,$config,$label,$view) {
         $selectedValue = isset($value) ? $value : '';
         // 处理mod类型的数据源
         $html .= '<select class="uk-select uk-width-1-1' . $readonlyClass . '" name="data['.$field.']" '.$required
-            .' onchange="document.getElementsByName(\''.$hiddenName.'\')[0].value = this.options[this.selectedIndex].text">';
+            .' onchange="var hiddenField = document.getElementsByName(\''.$hiddenName.'\')[0]; if (hiddenField) hiddenField.value = this.options[this.selectedIndex].text">';
+        // 添加JavaScript代码确保在页面加载时也正确设置_label字段
+        $html .= '<script>
+            (function() {
+                var selectElement = document.querySelector(\'select[name="data['.$field.']"]\');
+                var hiddenField = document.getElementsByName(\''.$hiddenName.'\')[0];
+                if (selectElement && hiddenField && selectElement.options[selectElement.selectedIndex]) {
+                    hiddenField.value = selectElement.options[selectElement.selectedIndex].text;
+                }
+            })();
+        </script>';
         $html .= $tips;
 
         if ($sourceType === 'mod' && !empty($dataSource)) {

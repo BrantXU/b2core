@@ -6,21 +6,29 @@ class KanbanRender {
     /**
      * 构造函数
      * @param {string} containerId - 容器元素的ID
-     * @param {Object} options - 配置选项
-     * @param {string} baseUrl - 基础URL，所有操作URL都基于此生成
+     * @param {Object} config - 配置对象，包含实体数据和配置信息
      */
-    constructor(containerId, options = {}, baseUrl = '') {
+    constructor(containerId, config = {}) {
         // 容器引用
-        this.container = dom.gid(containerId);
+        this.container = document.getElementById(containerId);
         if (!this.container) {
             throw new Error(`Element with id "${containerId}" not found`);
         }
         
-        // 基础URL
-        this.baseUrl = baseUrl;
+        // 配置信息
+        this.config = config;
+        this.entities = config.entities || [];
+        this.item = config.item || {};
+        // 从item中筛选出select和select_new类型的控件作为statusFields
+        this.statusFields = this._filterStatusFields(config.statusFields || {}, this.item);
+        this.selectedStatusField = config.selectedStatusField || '';
+        this.entityType = config.entityType || '';
+        this.baseUrl = config.baseUrl || '';
+        this.objectMenuKey = config.objectMenuKey || '';
+        this.objectId = config.objectId || '';
         
-        // 配置选项
-        this.options = this._getDefaultOptions(options);
+        // 选项配置
+        this.options = this._getDefaultOptions(config);
         
         // 数据存储
         this.originalData = []; // 原始数据
@@ -28,30 +36,69 @@ class KanbanRender {
         this.kanbanData = {}; // 按分类分组的数据
         
         // 分类字段
-        this.categoryField = this.options.categoryField || 'status';
+        this.categoryField = this.selectedStatusField || 'status';
         
         // 初始化
         this.init();
     }
-    
+
     /**
-     * 获取默认配置选项
-     * @param {Object} customOptions - 自定义配置
-     * @returns {Object} 合并后的配置
+     * 从item中筛选出select和select_new类型的控件
+     * @param {Object} statusFields - 原始状态字段
+     * @param {Object} item - 项目配置
+     * @returns {Object} 筛选后的状态字段
+     * @private
+     */
+    _filterStatusFields(statusFields, item) {
+        // 如果已经提供了statusFields（后端已经筛选过了），直接使用
+        if (statusFields && Object.keys(statusFields).length > 0) {
+            return statusFields;
+        }
+        
+        // 否则从item中筛选select和select_new类型的控件
+        const filteredFields = {};
+        // 根据用户提供的item结构，item本身就是一个包含字段的对象，而不是有fields属性的对象
+        if (item) {
+            Object.entries(item).forEach(([fieldName, fieldConfig]) => {
+                if (fieldConfig && (fieldConfig.type === 'select' || fieldConfig.type === 'select_new')) {
+                    filteredFields[fieldName] = fieldConfig;
+                }
+            });
+        }
+        return filteredFields;
+    }
+
+    /**
+     * 获取默认选项配置
+     * @param {Object} customOptions - 自定义选项
+     * @returns {Object} 合并后的选项配置
      * @private
      */
     _getDefaultOptions(customOptions) {
         return {
-            categoryField: 'status', // 分类字段名
-            defaultCategories: ['待处理', '进行中', '已完成'], // 默认分类
-            showSearch: true, // 是否显示搜索框
-            showCreate: true, // 是否显示创建按钮
-            searchPlaceholder: '搜索看板内容...', // 搜索框占位符
-            enableDrag: true, // 是否启用拖拽功能
-            enableCache: true, // 是否启用浏览器缓存
-            cacheKey: 'kanban_state', // 缓存键名
+            defaultCategories: customOptions.defaultCategories || this._getDefaultCategories(),
             ...customOptions
         };
+    }
+
+    /**
+     * 获取默认分类
+     * @returns {Array} 默认分类数组
+     * @private
+     */
+    _getDefaultCategories() {
+        // 如果没有指定defaultCategories，则使用第一个select或select_new字段的值作为defaultCategories
+        if (this.statusFields && Object.keys(this.statusFields).length > 0) {
+            // 查找第一个select或select_new类型的字段
+            const firstSelectField = Object.values(this.statusFields).find(field => 
+                field && (field.type === 'select' || field.type === 'select_new') && field.options
+            );
+            
+            if (firstSelectField) {
+                return Object.keys(firstSelectField.options);
+            }
+        }
+        return [];
     }
 
     /**
@@ -61,25 +108,29 @@ class KanbanRender {
         this.extractData(); // 提取数据
         this.createControls(); // 创建控制面板
         this.bindEvents(); // 绑定事件处理
+        
+        // 如果有预设的selectedStatusField，设置为当前分类字段
+        if (this.selectedStatusField) {
+            this.setCategoryField(this.selectedStatusField);
+        } else 
+        {
+            const firstStatusField = Object.keys(this.statusFields)[0];
+            this.setCategoryField(firstStatusField);
+        }
+        
         this.loadFromCache(); // 从缓存加载状态
         this.render(); // 首次渲染看板
     }
 
     /**
-     * 从表格中提取数据或使用提供的JS数组数据
+     * 从配置中提取数据
      */
     extractData() {
-        if (this.options.data && Array.isArray(this.options.data)) {
-            // 使用提供的JS数组数据
-            this.originalData = this.options.data.map((item, index) => ({
+        if (this.entities && Array.isArray(this.entities)) {
+            // 使用提供的实体数据
+            this.originalData = this.entities.map((item, index) => ({
                 id: item.id || `item_${index}`,
-                element: null,
-                fields: this.options.fields ? 
-                    Object.keys(this.options.fields).reduce((acc, fieldName) => {
-                        acc[fieldName] = item[fieldName] || '';
-                        return acc;
-                    }, {}) :
-                    item
+                ...item
             }));
         }
         
@@ -105,7 +156,8 @@ class KanbanRender {
         
         // 分组数据
         this.filteredData.forEach(item => {
-            const category = item.fields[this.categoryField] || item[this.categoryField] || '未分类';
+            // 兼容不同的数据结构，支持 item.fields 和直接属性访问
+            const category = (item.fields && item.fields[this.categoryField]) || item[this.categoryField] || '未分类';
             if (!this.kanbanData[category]) {
                 this.kanbanData[category] = [];
             }
@@ -119,177 +171,152 @@ class KanbanRender {
     createControls() {
         const container = this.container;
         
-        // 创建控制面板
+        // 创建控制面板容器
         const controlPanel = document.createElement('div');
-        controlPanel.className = 'kanban-controls uk-margin';
-        controlPanel.innerHTML = this._getControlPanelHtml();
+        controlPanel.className = 'uk-margin-bottom';
+        controlPanel.setAttribute('uk-grid', '');
+        
+        // 创建卡片容器
+        const card = document.createElement('div');
+        card.className = 'uk-width-1-1';
+        
+        const cardBody = document.createElement('div');
+        cardBody.className = 'uk-card uk-card-default uk-card-body';
+        
+        // 创建内部网格
+        const innerGrid = document.createElement('div');
+        innerGrid.setAttribute('uk-grid', '');
+        
+        // 创建分类字段选择器
+        const statusFieldColumn = document.createElement('div');
+        statusFieldColumn.className = 'uk-width-1-3@m';
+        
+        const statusFieldSelect = document.createElement('select');
+        statusFieldSelect.id = 'statusFieldSelect';
+        statusFieldSelect.className = 'uk-select';
+        
+        // 添加分类字段选项
+        if (this.statusFields && Object.keys(this.statusFields).length > 0) {
+            Object.entries(this.statusFields).forEach(([fieldName, fieldConfig]) => {
+                const option = document.createElement('option');
+                option.value = fieldName;
+                option.textContent = fieldConfig.name || fieldName;
+                if (fieldName === this.selectedStatusField) {
+                    option.selected = true;
+                }
+                statusFieldSelect.appendChild(option);
+            });
+        }
+        
+        statusFieldColumn.appendChild(statusFieldSelect);
+        
+        // 创建搜索框
+        const searchColumn = document.createElement('div');
+        searchColumn.className = 'uk-width-1-3@m';
+        
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.id = 'searchInput';
+        searchInput.className = 'uk-input';
+        searchInput.placeholder = '搜索...';
+        
+        searchColumn.appendChild(searchInput);
+        
+        // 创建按钮组
+        const buttonColumn = document.createElement('div');
+        buttonColumn.className = 'uk-width-1-3@m uk-text-right';
+        
+        // 刷新按钮
+        const refreshBtn = document.createElement('button');
+        refreshBtn.id = 'refreshBtn';
+        refreshBtn.className = 'uk-button uk-button-primary';
+        refreshBtn.innerHTML = '<i class="icon ion-md-refresh"></i>';
+        
+        // 添加项目按钮
+        const addItemBtn = document.createElement('button');
+        addItemBtn.id = 'addItemBtn';
+        addItemBtn.className = 'uk-button uk-button-primary';
+        addItemBtn.innerHTML = '<i class="icon ion-md-add"></i>';
+        
+        buttonColumn.appendChild(refreshBtn);
+        buttonColumn.appendChild(addItemBtn);
+        
+        // 组装控制面板
+        innerGrid.appendChild(statusFieldColumn);
+        innerGrid.appendChild(searchColumn);
+        innerGrid.appendChild(buttonColumn);
+        
+        cardBody.appendChild(innerGrid);
+        card.appendChild(cardBody);
+        controlPanel.appendChild(card);
         
         // 将控制面板插入到容器中
         container.appendChild(controlPanel);
-    }
-    
-    /**
-     * 获取控制面板HTML内容
-     * @returns {string} 控制面板HTML
-     * @private
-     */
-    _getControlPanelHtml() {
-        return `
-            <div class="uk-flex uk-flex-between uk-flex-middle">
-                <div class="uk-flex uk-flex-middle">
-                    ${this._getSearchHtml()}
-                    ${this._getCreateButtonHtml()}
-                </div>
-                
-                ${this._getCacheControlsHtml()}
-            </div>
-        `;
-    }
-    
-    /**
-     * 获取搜索框HTML
-     * @returns {string} 搜索框HTML或空字符串
-     * @private
-     */
-    _getSearchHtml() {
-        return this.options.showSearch ? `
-            <div class="uk-margin-right">
-                <i class="icon ion-md-search"></i>
-            </div>
-            <div class="uk-search uk-search-default uk-margin-right">
-                <input class="uk-search-input" type="search" placeholder="${this.options.searchPlaceholder}" id="${this.container.id}-search">
-            </div>
-        ` : '';
-    }
-    
-    /**
-     * 获取创建按钮HTML
-     * @returns {string} 创建按钮HTML或空字符串
-     * @private
-     */
-    _getCreateButtonHtml() {
-        return this.options.showCreate && this.baseUrl ? `
-            <div class="uk-margin-right">
-                <a href="${this.baseUrl.endsWith('/') ? this.baseUrl + 'add' : this.baseUrl + '/add'}" class="uk-button uk-button-primary uk-button-small" uk-tooltip="title: 创建新项目; pos: bottom;">
-                    <i class="icon ion-md-add"></i>
-                    新建
-                </a>
-            </div>
-        ` : '';
-    }
-    
-    /**
-     * 获取缓存控制按钮HTML
-     * @returns {string} 缓存控制按钮HTML或空字符串
-     * @private
-     */
-    _getCacheControlsHtml() {
-        return this.options.enableCache ? `
-            <div class="uk-flex uk-flex-middle uk-button-group">
-                <button id="${this.container.id}-saveCache" class="uk-button uk-button-default uk-button-small" uk-tooltip="title: 保存看板状态; pos: bottom;">
-                    <i class="icon ion-md-save"></i>
-                </button>
-                <button id="${this.container.id}-loadCache" class="uk-button uk-button-default uk-button-small" uk-tooltip="title: 加载看板状态; pos: bottom;">
-                    <i class="icon ion-md-refresh"></i>
-                </button>
-                <button id="${this.container.id}-clearCache" class="uk-button uk-button-default uk-button-small" uk-tooltip="title: 清除看板状态; pos: bottom;">
-                    <i class="icon ion-md-close-circle"></i>
-                </button>
-            </div>
-        ` : '';
     }
 
     /**
      * 绑定事件处理
      */
     bindEvents() {
-        this._bindSearchEvent(); // 绑定搜索事件
-        this._bindCacheEvents(); // 绑定缓存事件
-        this._bindDragEvents(); // 绑定拖拽事件
-    }
-    
-    /**
-     * 绑定搜索事件
-     * @private
-     */
-    _bindSearchEvent() {
-        if (this.options.showSearch) {
-            const searchInput = dom.gid(`${this.container.id}-search`);
+        // 绑定分类字段切换事件
+        const statusFieldSelect = document.getElementById('statusFieldSelect');
+        if (statusFieldSelect) {
+            statusFieldSelect.addEventListener('change', (e) => {
+                this.setCategoryField(e.target.value);
+            });
+        }
+        
+        // 绑定搜索事件
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
             searchInput.addEventListener('input', (e) => {
                 this.search(e.target.value);
             });
         }
-    }
-    
-    /**
-     * 绑定缓存事件
-     * @private
-     */
-    _bindCacheEvents() {
-        if (this.options.enableCache) {
-            // 保存缓存
-            const saveCacheBtn = dom.gid(`${this.container.id}-saveCache`);
-            if (saveCacheBtn) {
-                dom.on(saveCacheBtn, 'click', () => {
-                    this.saveToCache();
-                    UIkit.notification('看板状态已保存', {status: 'success'});
-                });
-            }
-            
-            // 加载缓存
-            const loadCacheBtn = dom.gid(`${this.container.id}-loadCache`);
-            if (loadCacheBtn) {
-                dom.on(loadCacheBtn, 'click', () => {
-                    this.loadFromCache();
-                    this.render();
-                    UIkit.notification('看板状态已加载', {status: 'success'});
-                });
-            }
-            
-            // 清除缓存
-            const clearCacheBtn = dom.gid(`${this.container.id}-clearCache`);
-            if (clearCacheBtn) {
-                dom.on(clearCacheBtn, 'click', () => {
-                    this.clearCache();
-                    this.render();
-                    UIkit.notification('看板状态已清除', {status: 'success'});
-                });
-            }
+        
+        // 绑定刷新按钮事件
+        const refreshBtn = document.getElementById('refreshBtn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                this.refresh();
+            });
         }
-    }
-    
-    /**
-     * 绑定拖拽事件
-     * @private
-     */
-    _bindDragEvents() {
-        if (this.options.enableDrag) {
-            // 拖拽功能将在渲染后通过Sortable.js实现
+        
+        // 绑定添加项目按钮事件
+        const addItemBtn = document.getElementById('addItemBtn');
+        if (addItemBtn) {
+            addItemBtn.addEventListener('click', () => {
+                // 这里可以添加创建新项目的逻辑
+                alert('添加新项目功能待实现');
+            });
         }
+        
+        // 绑定拖拽事件
+        // 拖拽功能将在渲染后通过Sortable.js实现
     }
 
     /**
      * 保存看板状态到浏览器缓存
      */
     saveToCache() {
-        if (!this.options.enableCache) return;
-        
+        // 默认启用缓存
         const cacheData = {
             kanbanData: this.kanbanData,
             categoryField: this.categoryField,
             timestamp: new Date().toISOString()
         };
         
-        localStorage.setItem(this.options.cacheKey, JSON.stringify(cacheData));
+        const cacheKey = `kanban_${this.entityType}_state`;
+        localStorage.setItem(cacheKey, JSON.stringify(cacheData));
     }
 
     /**
      * 从浏览器缓存加载看板状态
      */
     loadFromCache() {
-        if (!this.options.enableCache) return;
-        
-        const cachedData = localStorage.getItem(this.options.cacheKey);
+        // 默认启用缓存
+        const cacheKey = `kanban_${this.entityType}_state`;
+        const cachedData = localStorage.getItem(cacheKey);
         if (cachedData) {
             try {
                 const parsedData = JSON.parse(cachedData);
@@ -306,9 +333,9 @@ class KanbanRender {
      * 清除浏览器缓存
      */
     clearCache() {
-        if (!this.options.enableCache) return;
-        
-        localStorage.removeItem(this.options.cacheKey);
+        // 默认启用缓存
+        const cacheKey = `kanban_${this.entityType}_state`;
+        localStorage.removeItem(cacheKey);
         // 重新分组数据
         this.groupDataByCategory();
     }
@@ -324,7 +351,7 @@ class KanbanRender {
             this.filteredData = [...this.originalData];
         } else {
             this.filteredData = this.originalData.filter(item => 
-                Object.values(item.fields || item).some(value => 
+                Object.values(item).some(value => 
                     value && value.toString().toLowerCase().includes(searchTerm)
                 )
             );
@@ -349,6 +376,7 @@ class KanbanRender {
         const kanbanContainer = document.createElement('div');
         kanbanContainer.className = 'kanban-container uk-grid uk-grid-small uk-grid-match';
         kanbanContainer.setAttribute('uk-grid', '');
+        kanbanContainer.id = 'kanbanContainer';
         
         // 渲染每个分类列
         Object.entries(this.kanbanData).forEach(([category, items]) => {
@@ -357,17 +385,11 @@ class KanbanRender {
         });
         
         // 将看板容器插入到控制面板之后
-        const controlPanel = this.container.querySelector('.kanban-controls');
-        if (controlPanel && controlPanel.nextSibling) {
-            this.container.insertBefore(kanbanContainer, controlPanel.nextSibling);
-        } else {
-            this.container.appendChild(kanbanContainer);
-        }
+        this.container.appendChild(kanbanContainer);
         
         // 初始化拖拽功能
-        if (this.options.enableDrag) {
-            this._initDragAndDrop();
-        }
+        // 默认启用拖拽
+        this._initDragAndDrop();
     }
     
     /**
@@ -379,7 +401,7 @@ class KanbanRender {
      */
     _createKanbanColumn(category, items) {
         const column = document.createElement('div');
-        column.className = 'kanban-column uk-width-1-3@m uk-width-1-1@s';
+        column.className = 'kanban-column uk-width-1-4@m uk-width-1-2@s';
         column.dataset.category = category;
         
         const columnHeader = document.createElement('div');
@@ -421,7 +443,8 @@ class KanbanRender {
         const card = document.createElement('div');
         card.className = 'kanban-card uk-card uk-card-default uk-card-small uk-card-hover';
         card.dataset.itemId = item.id;
-        card.draggable = this.options.enableDrag;
+        // 默认启用拖拽
+        card.draggable = true;
         
         // 卡片内容
         const cardContent = this._getCardContent(item);
@@ -444,26 +467,11 @@ class KanbanRender {
      * @private
      */
     _getCardContent(item) {
-        const fields = item.fields || item;
-        const title = fields.title || fields.name || '未命名项目';
-        const description = fields.description || fields.content || '';
+        const title = item.title || item.name || '未命名项目';
         
         return `
             <div class="uk-card-body">
                 <h4 class="uk-card-title uk-margin-remove">${title}</h4>
-                ${description ? `<p class="uk-text-muted uk-margin-small-top">${description.substring(0, 100)}${description.length > 100 ? '...' : ''}</p>` : ''}
-                
-                <div class="kanban-card-meta uk-flex uk-flex-between uk-flex-middle uk-margin-top">
-                    <div class="uk-text-small uk-text-muted">
-                        ${this._getCardMeta(item)}
-                    </div>
-                    
-                    <div class="kanban-card-actions">
-                        <button class="uk-button uk-button-default uk-button-small" onclick="event.stopPropagation();" uk-tooltip="title: 编辑; pos: top;">
-                            <i class="icon ion-md-create"></i>
-                        </button>
-                    </div>
-                </div>
             </div>
         `;
     }
@@ -475,22 +483,21 @@ class KanbanRender {
      * @private
      */
     _getCardMeta(item) {
-        const fields = item.fields || item;
         const meta = [];
         
         // 添加优先级
-        if (fields.priority) {
-            meta.push(`<span class="uk-label">${fields.priority}</span>`);
+        if (item.priority) {
+            meta.push(`<span class="uk-label">${item.priority}</span>`);
         }
         
         // 添加截止日期
-        if (fields.dueDate) {
-            meta.push(`<span>${fields.dueDate}</span>`);
+        if (item.dueDate) {
+            meta.push(`<span>${item.dueDate}</span>`);
         }
         
         // 添加负责人
-        if (fields.assignee) {
-            meta.push(`<span>${fields.assignee}</span>`);
+        if (item.assignee) {
+            meta.push(`<span>${item.assignee}</span>`);
         }
         
         return meta.join(' • ');
@@ -537,9 +544,7 @@ class KanbanRender {
         this._moveItemToCategory(itemId, fromCategory, toCategory);
         
         // 保存到缓存
-        if (this.options.enableCache) {
-            this.saveToCache();
-        }
+        this.saveToCache();
         
         // 重新渲染看板
         this.render();
@@ -573,11 +578,7 @@ class KanbanRender {
             // 更新原始数据中的分类字段
             const originalItem = this.originalData.find(i => i.id === itemId);
             if (originalItem) {
-                if (originalItem.fields) {
-                    originalItem.fields[this.categoryField] = toCategory;
-                } else {
-                    originalItem[this.categoryField] = toCategory;
-                }
+                originalItem[this.categoryField] = toCategory;
             }
         }
     }
@@ -590,8 +591,8 @@ class KanbanRender {
         if (this.baseUrl) {
             // 基于baseUrl生成查看URL
             const viewPath = this.baseUrl.endsWith('/') ?
-                `${this.baseUrl}view/about/`+ itemId :
-                `${this.baseUrl}/view/about/`+ itemId;
+                `${this.baseUrl}view/about/${itemId}` :
+                `${this.baseUrl}/view/about/${itemId}`;
             window.location.href = viewPath;
         } else {
             // 根据系统URI规则生成查看URL
@@ -608,15 +609,19 @@ class KanbanRender {
      * 刷新看板数据
      */
     refresh() {
+        // 清除缓存
+        this.clearCache();
+        
+        // 重新加载数据
         this.extractData();
-        this.filteredData = [...this.originalData];
-        this.groupDataByCategory();
+        
+        // 重新渲染
         this.render();
     }
 
     /**
-     * 获取当前看板数据
-     * @returns {Object} 看板数据对象
+     * 获取看板数据
+     * @returns {Object} 看板数据
      */
     getData() {
         return this.kanbanData;
@@ -624,10 +629,10 @@ class KanbanRender {
 
     /**
      * 设置分类字段
-     * @param {string} fieldName - 分类字段名
+     * @param {string} field - 分类字段名
      */
-    setCategoryField(fieldName) {
-        this.categoryField = fieldName;
+    setCategoryField(field) {
+        this.categoryField = field;
         this.groupDataByCategory();
         this.render();
     }
@@ -644,17 +649,11 @@ class KanbanRender {
     }
 
     /**
-     * 移除分类
+     * 删除分类
      * @param {string} categoryName - 分类名称
      */
     removeCategory(categoryName) {
         if (this.kanbanData[categoryName]) {
-            // 将分类中的项目移动到默认分类
-            const defaultCategory = this.options.defaultCategories[0] || '未分类';
-            this.kanbanData[categoryName].forEach(item => {
-                this._moveItemToCategory(item.id, categoryName, defaultCategory);
-            });
-            
             delete this.kanbanData[categoryName];
             this.render();
         }

@@ -45,7 +45,7 @@ class config_m extends m {
    * @return array
    */
   public function getAll() {
-    $sql = "SELECT * FROM {$this->table} ORDER BY created_at DESC";
+    $sql = "SELECT * FROM {$this->table} WHERE (del IS NULL OR del = 0) ORDER BY created_at DESC";
     
     try {
       return $this->db->query($sql);
@@ -137,29 +137,76 @@ class config_m extends m {
 
   /**
    * 删除配置
-   * @param string $id 配置ID
+   * @param string|array $ids 配置ID（单个ID或逗号分隔的多个ID）
    * @return bool
    */
-  public function deleteConfig($id) {
-    // 获取配置信息用于更新配置文件
-    $config = $this->getConfig($id);
-    
-    $result = $this->del($id);
-    
-    // 添加调试日志
-    if ($result) {
-      error_log('成功删除配置 ID: ' . $id);
-      // 记录删除操作日志
-      $this->saveConfigLog($config, 'delete');
+  public function deleteConfig($ids) {
+    // 处理多个ID的情况（字符串逗号分隔或数组）
+    if (is_array($ids) || (is_string($ids) && strpos($ids, ',') !== false)) {
+      // 如果是字符串，转换为数组
+      if (is_string($ids)) {
+        $idArray = explode(',', $ids);
+      } else {
+        $idArray = $ids;
+      }
+      
+      $result = true;
+      $tenantIds = [];
+      
+      foreach ($idArray as $id) {
+        $id = trim($id);
+        if (empty($id)) continue;
+        
+        // 获取配置信息用于更新配置文件
+        $config = $this->getConfig($id);
+        
+        $deleteResult = $this->del($id);
+        
+        // 添加调试日志
+        if ($deleteResult) {
+          error_log('成功删除配置 ID: ' . $id);
+          // 记录删除操作日志
+          $this->saveConfigLog($config, 'delete');
+          
+          // 记录租户ID
+          if ($config && isset($config['tenant_id'])) {
+            $tenantIds[$config['tenant_id']] = true;
+          }
+        } else {
+          error_log('删除配置失败 ID: ' . $id);
+          $result = false;
+        }
+      }
+      
+      // 更新受影响的租户的配置文件
+      foreach (array_keys($tenantIds) as $tenantId) {
+        $this->updateConfigFile($tenantId);
+      }
+      
+      return $result;
     } else {
-      error_log('删除配置失败 ID: ' . $id);
+      // 单个ID的情况
+      $id = $ids;
+      // 获取配置信息用于更新配置文件
+      $config = $this->getConfig($id);
+      
+      $result = $this->del($id);
+      
+      // 添加调试日志
+      if ($result) {
+        error_log('成功删除配置 ID: ' . $id);
+        // 记录删除操作日志
+        $this->saveConfigLog($config, 'delete');
+      } else {
+        error_log('删除配置失败 ID: ' . $id);
+      }
+      
+      // 如果删除成功，更新配置文件
+      if ($result && $config && isset($config['tenant_id'])) {
+        $this->updateConfigFile($config['tenant_id']);
+      }
+      return $result;
     }
-    
-    // 如果删除成功，更新配置文件
-    if ($result && $config && isset($config['tenant_id'])) {
-      $this->updateConfigFile($config['tenant_id']);
-    }
-    return $result;
   }
 
   /**

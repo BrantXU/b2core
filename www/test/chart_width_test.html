@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图表控制面板宽度测试</title>
+    <link rel="stylesheet" href="../static/css/uikit.min.css">
+    <link rel="stylesheet" href="../static/css/ionicons.min.css">
+    <script src="../static/js/uikit.min.js"></script>
+    <script src="../static/js/chart.min.js"></script>
+    <style>
+        .test-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .width-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h2>图表控制面板宽度测试</h2>
+        <p>此页面用于测试图表控制面板展开/收起时的宽度变化。</p>
+        
+        <table id="test-table" class="uk-table uk-table-striped uk-table-hover">
+            <thead>
+                <tr>
+                    <th>基金名称</th>
+                    <th>基金代码</th>
+                    <th>单位净值</th>
+                    <th>日增长率</th>
+                    <th>持仓占比</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>华夏成长混合</td>
+                    <td>000001</td>
+                    <td>1.5678</td>
+                    <td>2.34%</td>
+                    <td>15.6%</td>
+                </tr>
+                <tr>
+                    <td>易方达消费行业</td>
+                    <td>110022</td>
+                    <td>2.3456</td>
+                    <td>1.87%</td>
+                    <td>12.3%</td>
+                </tr>
+                <tr>
+                    <td>嘉实新兴产业</td>
+                    <td>000751</td>
+                    <td>1.8901</td>
+                    <td>-0.56%</td>
+                    <td>9.8%</td>
+                </tr>
+                <tr>
+                    <td>富国天惠成长</td>
+                    <td>161005</td>
+                    <td>3.4567</td>
+                    <td>0.89%</td>
+                    <td>18.2%</td>
+                </tr>
+                <tr>
+                    <td>中银中国</td>
+                    <td>163801</td>
+                    <td>1.2345</td>
+                    <td>-1.23%</td>
+                    <td>7.4%</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // 模拟dom工具类
+        const dom = {
+            gid: function(id) {
+                return document.getElementById(id);
+            },
+            on: function(element, event, handler) {
+                element.addEventListener(event, handler);
+            },
+            off: function(element, event, handler) {
+                element.removeEventListener(event, handler);
+            }
+        };
+
+        /**
+         * WidgetRenderer类 - 前端控件渲染工具
+         * 用于根据配置和数据渲染不同类型的表单字段
+         * 参考PHP的renderControl方法实现
+         */
+        class WidgetRenderer {
+            /**
+             * 渲染单个控件
+             * @param {mixed} value - 字段值
+             * @param {Object} config - 控件配置
+             * @param {string} label - 标签值
+             * @param {string} compare - 比较值
+             * @returns {string} 渲染后的HTML
+             */
+            static renderControl(value, config, label = null, compare = null) {
+                const type = config.type || 'text';
+                const field = config.id || '';
+                const readonly = config.readonly ? 'readonly' : '';
+                const required = config.required ? 'required' : '';
+                const tips = config.tips ? `<small class="help-text">${this.escapeHtml(config.tips)}</small>` : '';
+                const view = config.view || false;
+                const props = config.props || '';
+                
+                let html = '';
+                const readonlyClass = readonly ? ' uk-background-muted' : '';
+
+                switch (type) {
+                    case 'datepicker':
+                        if (view) {
+                            html += `<div class="uk-text-muted">${this.escapeHtml(value)}</div>`;
+                        } else {
+                            html += `<input class="uk-input uk-width-1-1${readonlyClass}" type="date" name="data[${field}]" value="${this.escapeHtml(value)}" ${readonly} ${required}>`;
+                        }
+                        break;
+
+                    case 'select_new':
+                    case 'select':
+                        html += this.renderSelect(value, config, label, view);
+                        break;
+
+                    case 'percent':
+                        if (view) {
+                            html += `<div class="uk-text-muted">${this.escapeHtml(value)}%</div>`;
+                        } else {
+                            html += `<div style="display: inline-flex; align-items: center; width: 100%;"><input class="uk-input${readonlyClass}" type="number" step="0.01" name="data[${field}]" value="${this.escapeHtml(value)}" ${readonly} ${required}><span style="margin-left: 5px;">%</span></div>`;
+                        }
+                        break;
+
+                    case 'yuan':
+                        if (view) {
+                            html += `<div class="uk-text-muted">¥${this.escapeHtml(value)}</div>`;
+                        } else {
+                            html += `<div style="display: inline-flex; align-items: center; width: 100%;"><input class="uk-input${readonlyClass}" type="number" step="0.01" name="data[${field}]" value="${this.escapeHtml(value)}" ${readonly} ${required} style="width: 90%;"><span style="margin-left: 5px;">¥</span></div>`;
+                        }
+                        break;
+
+                    case 'amount':
+                        if (view) {
+                            html += `<div class="uk-text-muted">${this.escapeHtml(value)}</div>`;
+                        } else {
+                            html += `<input type="number" class="uk-input${readonlyClass}" name="data[${field}]" value="${this.escapeHtml(value)}" ${readonly} ${required} style="width: 90%;">`;
+                        }
+                        break;
+
+                    case 'upload':
+                        if (view) {
+                            html += `<div class="uk-text-muted">${this.escapeHtml(value)}</div>`;
+                        } else {
+                            const disabledAttr = readonly ? ' disabled' : '';
+                            html += `<input type="file" name="data[${field}]" style="width: 90%;"${disabledAttr}>`;
+                        }
+                        break;
+
+                    case 'muti':
+                        if (view) {
+                            html += `<div class="uk-text-muted">${this.escapeHtml(value).replace(/\n/g, '<br>')}</div>`;
+                        } else {
+                            html += `<textarea class="uk-textarea uk-width-1-1${readonlyClass}" name="data[${field}]" rows="5" ${readonly} ${required}>${this.escapeHtml(value)}</textarea>`;
+                            html += tips;
+                        }
+                        break;
+
+                    case 'radio':
+                        if (view) {
+                            html += `<div class="uk-text-muted">${this.escapeHtml(value)}</div>`;
+                        } else {
+                            // 解析选项列表
+                            const options = props.options ? props.options.split('\n') : [];
+                            options.forEach(option => {
+                                option = option.trim();
+                                if (option) {
+                                    const checked = value == option ? 'checked' : '';
+                                    html += `<label class="uk-form-label"><input type="radio" class="uk-radio" name="data[${field}]" value="${this.escapeHtml(option)}" ${checked} ${readonly} ${required}> ${this.escapeHtml(option)}</label><br>`;
+                                }
+                            });
+                            html += tips;
+                        }
+                        break;
+
+                    case 'checkbox':
+                        if (view) {
+                            html += `<div class="uk-text-muted">${value ? '是' : '否'}</div>`;
+                        } else {
+                            const checked = value ? 'checked' : '';
+                            html += `<label class="uk-form-label"><input type="checkbox" class="uk-checkbox" name="data[${field}]" value="1" ${checked} ${readonly} ${required}> 是</label>`;
+                            html += tips;
+                        }
+                        break;
+
+                    case 'puretext':
+                        html += `<div class="uk-text-muted">${props.tpl || ''}</div>`;
+                        break;
+
+                    case 'data':
+                        // 数据对象类型，需要异步加载数据
+                        html += this.renderDataObject(value, config, view);
+                        break;
+
+                    default:
+                        if (view) {
+                            html += `<div class="uk-text-muted">${value}</div>`;
+                        } else {
+                            html += `<input type="text" class="uk-input${readonlyClass}" name="data[${field}]" value="${this.escapeHtml(value)}" ${readonly} ${required}>`;
+                            html += tips;
+                        }
+                }
+
+                if (compare) {
+                    html += ` <div class="uk-text-muted"><del>${this.escapeHtml(compare)}</del></div>`;
+                }
+
+                return html;
+            }
+
+            /**
+             * 渲染选择框
+             * @param {mixed} value - 当前值
+             * @param {Object} config - 配置
+             * @param {string} label - 标签
+             * @param {boolean} view - 是否只读视图
+             * @returns {string} HTML
+             */
+            static renderSelect(value, config, label, view) {
+                if (view) {
+                    // 如果label为null或undefined，使用value作为显示内容
+                    const displayValue = (label !== null && label !== undefined) ? label : value;
+                    return `<div class="uk-text-muted">${displayValue}</div>`;
+                }
+
+                const field = config.id || '';
+                const readonly = config.readonly ? 'readonly' : '';
+                const required = config.required ? 'required' : '';
+                const props = config.props || {};
+                
+                let html = `<select class="uk-select" name="data[${field}]" ${readonly} ${required}>`;
+                
+                if (props.options) {
+                    const options = props.options.split('\n');
+                    options.forEach(option => {
+                        option = option.trim();
+                        if (option) {
+                            const selected = value == option ? 'selected' : '';
+                            html += `<option value="${this.escapeHtml(option)}" ${selected}>${this.escapeHtml(option)}</option>`;
+                        }
+                    });
+                }
+                
+                html += '</select>';
+                return html;
+            }
+
+            /**
+             * 渲染数据对象
+             * @param {mixed} value - 当前值
+             * @param {Object} config - 配置
+             * @param {boolean} view - 是否只读视图
+             * @returns {string} HTML
+             */
+            static renderDataObject(value, config, view) {
+                const props = config.props || {};
+                
+                // 这里可以添加异步加载数据的逻辑
+                // 暂时返回一个占位符
+                return `<div class="uk-alert uk-alert-primary">
+                    <p>数据对象: ${props.data_source || '未指定数据源'}</p>
+                    <p>值: ${this.escapeHtml(value)}</p>
+                </div>`;
+            }
+
+            /**
+             * 转义HTML特殊字符
+             * @param {string} text - 待转义文本
+             * @returns {string} 转义后的文本
+             */
+            static escapeHtml(text) {
+                if (text === null || text === undefined) return '';
+                return text.toString()
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+        }
+
+        // 模拟TableRender类的部分功能
+        class TableRender {
+            constructor(tableId, options = {}) {
+                this.table = dom.gid(tableId);
+                this.options = {
+                    showChart: false,
+                    ...options
+                };
+                
+                if (this.options.showChart) {
+                    this.initChart();
+                }
+            }
+            
+            initChart() {
+                // 创建图表容器HTML（插入到表格上方）
+                const containerHtml = `
+                    <div id="${this.table.id}-chart-container" class="uk-card uk-card-default uk-margin-bottom" style="width: 100%; position: relative;">
+                        <div class="width-indicator" id="${this.table.id}-width-indicator">宽度: 100%</div>
+                        <div class="uk-card-body">
+                            <div class="uk-grid-small" uk-grid>
+                                <div id="${this.table.id}-chart-area" class="uk-width-3-4">
+                                    <div style="position: relative; height: 300px; background: #f8f8f8; border: 1px dashed #ddd; display: flex; align-items: center; justify-content: center;">
+                                        <span>图表区域</span>
+                                    </div>
+                                </div>
+                                
+                                <div id="${this.table.id}-control-area" class="uk-width-1-4">
+                                    <button id="${this.table.id}-chart-toggle-control" class="uk-button uk-button-default uk-button-small" title="收起控制面板">
+                                        <i class="icon ion-md-arrow-forward"></i>
+                                    </button>
+                                    <div class="uk-form-stacked" id="${this.table.id}-chart-control-panel">
+                                        <div class="uk-margin-small">
+                                            <label class="uk-form-label">图表类型</label>
+                                            <select class="uk-select uk-form-small" id="${this.table.id}-chart-type">
+                                                <option value="bar">柱状图</option>
+                                                <option value="line">折线图</option>
+                                                <option value="pie">饼图</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="uk-margin-small">
+                                            <label class="uk-form-label">X轴字段</label>
+                                            <select class="uk-select uk-form-small" id="${this.table.id}-chart-x">
+                                                <option value="基金名称">基金名称</option>
+                                                <option value="基金代码">基金代码</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="uk-margin-small">
+                                            <label class="uk-form-label">Y轴字段</label>
+                                            <select class="uk-select uk-form-small" id="${this.table.id}-chart-y">
+                                                <option value="单位净值">单位净值</option>
+                                                <option value="日增长率">日增长率</option>
+                                                <option value="持仓占比">持仓占比</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="uk-margin-small">
+                                            <button type="button" class="uk-button uk-button-primary uk-button-small uk-width-1-1" id="${this.table.id}-chart-generate">更新</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // 在表格前方插入图表容器
+                this.table.insertAdjacentHTML('beforebegin', containerHtml);
+                
+                // 更新宽度指示器
+                this.updateWidthIndicator();
+                
+                // 绑定控制面板展开/收起事件
+                const toggleBtn = dom.gid(`${this.table.id}-chart-toggle-control`);
+                if (toggleBtn) {
+                    dom.on(toggleBtn, 'click', () => {
+                        this.toggleChartControlPanel();
+                    });
+                }
+                
+                // 默认隐藏控制面板
+                setTimeout(() => {
+                    this.toggleChartControlPanel();
+                }, 100);
+            }
+            
+            /**
+             * 切换图表控制面板的显示状态
+             */
+            toggleChartControlPanel() {
+                const controlPanel = dom.gid(`${this.table.id}-chart-control-panel`);
+                const toggleBtn = dom.gid(`${this.table.id}-chart-toggle-control`);
+                const chartArea = dom.gid(`${this.table.id}-chart-area`);
+                const controlArea = dom.gid(`${this.table.id}-control-area`);
+                const widthIndicator = dom.gid(`${this.table.id}-width-indicator`);
+                
+                if (!controlPanel || !toggleBtn) return;
+                
+                // 获取控制面板的当前显示状态
+                const isHidden = controlPanel.style.display === 'none';
+                
+                if (isHidden) {
+                    // 展开控制面板
+                    controlPanel.style.display = 'block';
+                    toggleBtn.innerHTML = '<i class="icon ion-md-arrow-forward"></i>';
+                    toggleBtn.title = '收起控制面板';
+                    
+                    // 恢复图表区域和控制区域的宽度
+                    if (chartArea) {
+                        chartArea.className = 'uk-width-3-4';
+                    }
+                    if (controlArea) {
+                        controlArea.className = 'uk-width-1-4';
+                    }
+                } else {
+                    // 收起控制面板
+                    controlPanel.style.display = 'none';
+                    toggleBtn.innerHTML = '<i class="icon ion-md-arrow-back"></i>';
+                    toggleBtn.title = '展开控制面板';
+                    
+                    // 调整图表区域宽度为95%，控制区域隐藏
+                    if (chartArea) {
+                        chartArea.className = 'uk-width-9-10';
+                    }
+                    if (controlArea) {
+                        controlArea.className = 'uk-width-1-10';
+                    }
+                }
+                
+                // 更新宽度指示器
+                this.updateWidthIndicator();
+            }
+            
+            /**
+             * 更新宽度指示器
+             */
+            updateWidthIndicator() {
+                const chartContainer = dom.gid(`${this.table.id}-chart-container`);
+                const widthIndicator = dom.gid(`${this.table.id}-width-indicator`);
+                const chartArea = dom.gid(`${this.table.id}-chart-area`);
+                
+                if (chartContainer && widthIndicator && chartArea) {
+                    // 获取图表容器的实际宽度
+                    const containerWidth = chartContainer.offsetWidth;
+                    // 获取图表区域的实际宽度
+                    const areaWidth = chartArea.offsetWidth;
+                    // 计算百分比
+                    const percentage = Math.round((areaWidth / containerWidth) * 100);
+                    // 更新指示器文本
+                    widthIndicator.textContent = `图表区域宽度: ${percentage}%`;
+                }
+            }
+        }
+
+        // 初始化TableRender
+        document.addEventListener('DOMContentLoaded', function() {
+            const tableRender = new TableRender('test-table', {
+                showChart: true
+            });
+        });
+    </script>
+</body>
+</html>

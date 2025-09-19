@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>看板卡片宽度测试</title>
+    <link rel="stylesheet" href="/static/css/uikit.min.css">
+    <link rel="stylesheet" href="/static/css/ionicons.min.css">
+    <script src="/static/js/uikit.min.js"></script>
+    <script src="/static/js/kanbanRender.js"></script>
+    <style>
+        .kanban-card {
+            cursor: pointer;
+        }
+        .kanban-ghost {
+            opacity: 0.5;
+            background: #c8ebfb;
+        }
+        .kanban-chosen {
+            background: #f0f0f0;
+        }
+        .kanban-drag {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="uk-container uk-margin-top">
+        <h2>看板卡片宽度测试</h2>
+        
+        <div id="kanbanApp"></div>
+    </div>
+
+    <script>
+        // 模拟数据
+        const entityData = [
+            {
+                id: '1',
+                name: '项目A',
+                description: '这是一个项目描述信息，用于展示卡片内容',
+                priority: '高',
+                dueDate: '2023-12-31',
+                assignee: '张三',
+                status: '进行中'
+            },
+            {
+                id: '2',
+                name: '项目B',
+                description: '这是另一个项目描述信息',
+                priority: '中',
+                dueDate: '2023-11-30',
+                assignee: '李四',
+                status: '待办'
+            },
+            {
+                id: '3',
+                name: '项目C',
+                description: '第三个项目的描述信息',
+                priority: '低',
+                dueDate: '2023-10-15',
+                assignee: '王五',
+                status: '已完成'
+            }
+        ];
+
+        // 模拟配置数据
+        const configData = {
+            item: {
+                name: { name: '名称', type: 'text' },
+                description: { name: '描述', type: 'text' },
+                priority: { name: '优先级', type: 'select' },
+                dueDate: { name: '截止日期', type: 'date' },
+                assignee: { name: '负责人', type: 'text' },
+                status: { name: '状态', type: 'select' }
+            }
+        };
+
+        // 提取select类型字段
+        function extractSelectFields(config) {
+            const selectFields = {};
+            if (config.item) {
+                for (const [fieldName, fieldConfig] of Object.entries(config.item)) {
+                    if (fieldConfig.type === 'select' || fieldConfig.type === 'select_new') {
+                        selectFields[fieldName] = fieldConfig;
+                    }
+                }
+            }
+            return selectFields;
+        }
+
+        // 初始化看板
+        document.addEventListener('DOMContentLoaded', function() {
+            const selectFields = extractSelectFields(configData);
+            
+            // 初始化看板渲染器
+            const kanbanRender = new KanbanRender('kanbanApp', {
+                entities: entityData,
+                item: configData.item,
+                statusFields: selectFields,
+                selectedStatusField: 'status',
+                entityType: 'project',
+                baseUrl: '/default/project/'
+            });
+        });
+    </script>
+</body>
+</html>

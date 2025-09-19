@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图表控制面板按钮悬浮测试</title>
+    <link rel="stylesheet" href="../static/css/uikit.min.css">
+    <link rel="stylesheet" href="../static/css/ionicons.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .test-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .test-table th, .test-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .test-table th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>图表控制面板按钮悬浮测试</h1>
+    
+    <table id="fundTable" class="test-table">
+        <thead>
+            <tr>
+                <th>基金名称</th>
+                <th>基金代码</th>
+                <th>单位净值</th>
+                <th>日涨幅</th>
+                <th>持仓比例</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>华夏成长混合</td>
+                <td>000001</td>
+                <td>1.2560</td>
+                <td>2.35%</td>
+                <td>15.2%</td>
+            </tr>
+            <tr>
+                <td>易方达消费行业</td>
+                <td>110022</td>
+                <td>2.3680</td>
+                <td>-1.25%</td>
+                <td>12.8%</td>
+            </tr>
+            <tr>
+                <td>嘉实新兴产业股票</td>
+                <td>000751</td>
+                <td>1.8750</td>
+                <td>0.85%</td>
+                <td>10.5%</td>
+            </tr>
+            <tr>
+                <td>富国天惠成长混合</td>
+                <td>161005</td>
+                <td>1.6820</td>
+                <td>1.52%</td>
+                <td>9.7%</td>
+            </tr>
+            <tr>
+                <td>中银中国A股</td>
+                <td>163801</td>
+                <td>1.4250</td>
+                <td>-0.65%</td>
+                <td>8.3%</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script src="../static/js/uikit.min.js"></script>
+    <script src="../static/js/uikit-icons.min.js"></script>
+    <script src="../static/js/chart.min.js"></script>
+    
+    <script>
+        // 模拟dom工具函数
+        const dom = {
+            gid: (id) => document.getElementById(id),
+            on: (element, event, handler) => {
+                if (element) element.addEventListener(event, handler);
+            }
+        };
+        
+        // 模拟TableRender类的部分功能
+        class TableRender {
+            constructor(table, options = {}) {
+                this.table = table;
+                this.options = options;
+                this.currentChart = null;
+                this._resizeTimer = null;
+                this._chartResizeHandler = null;
+                
+                // 初始化图表
+                this.initChart();
+            }
+            
+            initChart() {
+                // 获取表格宽度
+                const tableWidth = this.table.offsetWidth;
+                
+                // 创建图表容器HTML（插入到表格上方）
+                const containerHtml = `
+                    <div id="${this.table.id}-chart-container" class="uk-card uk-card-default uk-margin-bottom" style="width: 100%; position: relative;">
+                        <div class="uk-card-body">
+                            <div id="${this.table.id}-chart-area" class="uk-width-1-1">
+                                <div style="position: relative; height: 300px;">
+                                    <canvas id="${this.table.id}-chart-canvas"></canvas>
+                                    <!-- 悬浮在图表区域右上角的控制面板切换按钮 -->
+                                    <button id="${this.table.id}-chart-toggle-control" class="uk-button uk-button-default uk-button-small" 
+                                        style="position: absolute; top: 10px; right: 10px; z-index: 10;" title="收起控制面板">
+                                        <i class="icon ion-md-arrow-forward"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 控制面板区域 -->
+                    <div id="${this.table.id}-control-area" class="uk-card uk-card-default uk-margin-bottom" style="width: 100%;">
+                        <div class="uk-card-body">
+                            <div class="uk-form-stacked" id="${this.table.id}-chart-control-panel">
+                                <div class="uk-grid-small" uk-grid>
+                                    <div class="uk-width-1-3">
+                                        <div class="uk-margin-small">
+                                            <label class="uk-form-label">图表类型</label>
+                                            <select class="uk-select uk-form-small" id="${this.table.id}-chart-type">
+                                                <option value="bar">柱状图</option>
+                                                <option value="line">折线图</option>
+                                                <option value="pie">饼图</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="uk-width-1-3">
+                                        <div class="uk-margin-small">
+                                            <label class="uk-form-label">X轴字段</label>
+                                            <select class="uk-select uk-form-small" id="${this.table.id}-chart-x">
+                                                <option value="基金名称">基金名称</option>
+                                                <option value="基金代码">基金代码</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="uk-width-1-3">
+                                        <div class="uk-margin-small">
+                                            <label class="uk-form-label">Y轴字段</label>
+                                            <select class="uk-select uk-form-small" id="${this.table.id}-chart-y">
+                                                <option value="单位净值">单位净值</option>
+                                                <option value="日涨幅">日涨幅</option>
+                                                <option value="持仓比例">持仓比例</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="uk-width-1-1">
+                                        <div class="uk-margin-small">
+                                            <button type="button" class="uk-button uk-button-primary uk-button-small" id="${this.table.id}-chart-generate">更新图表</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // 在表格前方插入图表容器
+                this.table.insertAdjacentHTML('beforebegin', containerHtml);
+                
+                // 默认隐藏控制面板
+                setTimeout(() => {
+                    this.toggleChartControlPanel();
+                }, 100);
+                
+                // 绑定控制面板展开/收起事件
+                const toggleBtn = dom.gid(`${this.table.id}-chart-toggle-control`);
+                if (toggleBtn) {
+                    dom.on(toggleBtn, 'click', () => {
+                        this.toggleChartControlPanel();
+                    });
+                }
+                
+                // 绑定生成图表事件
+                const generateBtn = dom.gid(`${this.table.id}-chart-generate`);
+                if (generateBtn) {
+                    dom.on(generateBtn, 'click', () => {
+                        this.generateChart();
+                    });
+                }
+                
+                // 添加窗口大小调整事件监听器
+                this._bindChartResizeEvent();
+                
+                // 自动选择默认选项并生成图表
+                setTimeout(() => {
+                    const xFieldSelect = dom.gid(`${this.table.id}-chart-x`);
+                    const yFieldSelect = dom.gid(`${this.table.id}-chart-y`);
+                    
+                    // 如果有选项，选择第一个作为默认值
+                    if (xFieldSelect && xFieldSelect.options.length > 0) {
+                        xFieldSelect.value = xFieldSelect.options[0].value;
+                    }
+                    if (yFieldSelect && yFieldSelect.options.length > 0) {
+                        yFieldSelect.value = yFieldSelect.options[0].value;
+                    }
+                    
+                    // 如果两个字段都有值，则自动生成图表
+                    if (xFieldSelect && yFieldSelect && 
+                        xFieldSelect.value && yFieldSelect.value) {
+                        this.generateChart();
+                    }
+                }, 100);
+            }
+            
+            /**
+             * 绑定图表大小调整事件
+             * @private
+             */
+            _bindChartResizeEvent() {
+                // 清除之前绑定的事件监听器（如果存在）
+                if (this._chartResizeHandler) {
+                    window.removeEventListener('resize', this._chartResizeHandler);
+                }
+                
+                // 创建新的事件处理函数
+                this._chartResizeHandler = () => {
+                    // 延迟执行以避免频繁调整
+                    if (this._resizeTimer) {
+                        clearTimeout(this._resizeTimer);
+                    }
+                    
+                    this._resizeTimer = setTimeout(() => {
+                        // 如果当前有图表实例，重新渲染图表
+                        if (this.currentChart) {
+                            this.currentChart.resize();
+                        }
+                    }, 100);
+                };
+                
+                // 绑定事件监听器
+                window.addEventListener('resize', this._chartResizeHandler);
+            }
+            
+            /**
+             * 切换图表控制面板的显示状态
+             */
+            toggleChartControlPanel() {
+                const controlPanel = dom.gid(`${this.table.id}-chart-control-panel`);
+                const toggleBtn = dom.gid(`${this.table.id}-chart-toggle-control`);
+                const controlArea = dom.gid(`${this.table.id}-control-area`);
+                
+                if (!controlPanel || !toggleBtn) return;
+                
+                // 获取控制面板的当前显示状态
+                const isHidden = controlPanel.style.display === 'none';
+                
+                if (isHidden) {
+                    // 展开控制面板
+                    controlPanel.style.display = 'block';
+                    toggleBtn.innerHTML = '<i class="icon ion-md-arrow-forward"></i>';
+                    toggleBtn.title = '收起控制面板';
+                    
+                    // 显示控制区域
+                    if (controlArea) {
+                        controlArea.style.display = 'block';
+                    }
+                } else {
+                    // 收起控制面板
+                    controlPanel.style.display = 'none';
+                    toggleBtn.innerHTML = '<i class="icon ion-md-arrow-back"></i>';
+                    toggleBtn.title = '展开控制面板';
+                    
+                    // 隐藏控制区域
+                    if (controlArea) {
+                        controlArea.style.display = 'none';
+                    }
+                }
+            }
+            
+            /**
+             * 生成图表
+             */
+            generateChart() {
+                const chartType = dom.gid(`${this.table.id}-chart-type`).value;
+                const xField = dom.gid(`${this.table.id}-chart-x`).value;
+                const yField = dom.gid(`${this.table.id}-chart-y`).value;
+                
+                // 准备图表数据
+                const chartData = this._prepareChartData(xField, yField);
+                
+                // 渲染图表
+                this._renderChart(chartType, chartData, xField, yField);
+            }
+            
+            /**
+             * 准备图表数据
+             * @private
+             */
+            _prepareChartData(xField, yField) {
+                // 获取表头索引
+                const headers = Array.from(this.table.querySelectorAll('thead th')).map(th => th.textContent);
+                const xIndex = headers.indexOf(xField);
+                const yIndex = headers.indexOf(yField);
+                
+                // 提取数据
+                const rows = this.table.querySelectorAll('tbody tr');
+                const labels = [];
+                const data = [];
+                
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length > Math.max(xIndex, yIndex)) {
+                        const xValue = cells[xIndex].textContent;
+                        const yValue = parseFloat(cells[yIndex].textContent) || 0;
+                        
+                        labels.push(xValue);
+                        data.push(yValue);
+                    }
+                });
+                
+                return { labels, data };
+            }
+            
+            /**
+             * 渲染图表
+             * @private
+             */
+            _renderChart(chartType, chartData, xField, yField) {
+                const canvas = dom.gid(`${this.table.id}-chart-canvas`);
+                if (!canvas) return;
+                
+                // 清除之前的图表
+                if (this.currentChart) {
+                    this.currentChart.destroy();
+                }
+                
+                // 设置canvas容器的父元素样式
+                const parent = canvas.parentElement;
+                if (parent) {
+                    parent.style.position = 'relative';
+                    parent.style.height = '300px';
+                }
+                
+                // 创建新图表
+                this.currentChart = new Chart(canvas.getContext('2d'), {
+                    type: chartType,
+                    data: {
+                        labels: chartData.labels,
+                        datasets: [{
+                            label: yField,
+                            data: chartData.data,
+                            backgroundColor: this._getChartColors(chartType, chartData.data.length),
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: false
+                            },
+                            legend: {
+                                position: chartType === 'pie' ? 'right' : 'bottom'
+                            }
+                        },
+                        scales: chartType !== 'pie' ? {
+                            y: {
+                                beginAtZero: true
+                            }
+                        } : {}
+                    }
+                });
+            }
+            
+            /**
+             * 获取图表颜色
+             * @private
+             */
+            _getChartColors(chartType, count) {
+                const colors = [
+                    'rgba(255, 99, 132, 0.6)',
+                    'rgba(54, 162, 235, 0.6)',
+                    'rgba(255, 206, 86, 0.6)',
+                    'rgba(75, 192, 192, 0.6)',
+                    'rgba(153, 102, 255, 0.6)',
+                    'rgba(255, 159, 64, 0.6)',
+                    'rgba(199, 199, 199, 0.6)',
+                    'rgba(83, 102, 255, 0.6)',
+                    'rgba(40, 159, 64, 0.6)',
+                    'rgba(210, 105, 30, 0.6)'
+                ];
+                
+                if (chartType === 'pie') {
+                    return colors.slice(0, count);
+                } else {
+                    return [colors[3]]; // 柱状图和折线图使用单一颜色
+                }
+            }
+        }
+        
+        // 初始化表格渲染
+        document.addEventListener('DOMContentLoaded', function() {
+            const table = document.getElementById('fundTable');
+            if (table) {
+                new TableRender(table);
+            }
+        });
+    </script>
+</body>
+</html>

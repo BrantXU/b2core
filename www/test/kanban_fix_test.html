@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>看板修复测试</title>
+    <link rel="stylesheet" href="/static/css/uikit.min.css">
+    <link rel="stylesheet" href="/static/css/ionicons.min.css">
+    <script src="/static/js/uikit.min.js"></script>
+    <script src="/static/js/kanbanRender.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .test-description {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>看板修复测试</h1>
+        
+        <div class="test-description">
+            <p>此页面用于测试看板初始化时，当默认分列为空时是否正确使用 statusFieldSelect 的值作为默认分类。</p>
+        </div>
+        
+        <div class="card">
+            <h2>测试看板 1: 没有预设 selectedStatusField</h2>
+            <div id="kanbanContainer1"></div>
+        </div>
+        
+        <div class="card">
+            <h2>测试看板 2: 有预设 selectedStatusField</h2>
+            <div id="kanbanContainer2"></div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟配置数据
+        const configData1 = {
+            item: {
+                fund_state: {
+                    name: "基金状态",
+                    type: "select",
+                    options: {
+                        "设立中": "设立中",
+                        "投资期": "投资期",
+                        "退出期": "退出期",
+                        "清算期": "清算期"
+                    }
+                },
+                priority: {
+                    name: "优先级",
+                    type: "select",
+                    options: {
+                        "高": "高",
+                        "中": "中",
+                        "低": "低"
+                    }
+                },
+                status: {
+                    name: "状态",
+                    type: "select",
+                    options: {
+                        "草稿": "草稿",
+                        "已提交": "已提交",
+                        "已审核": "已审核",
+                        "已发布": "已发布"
+                    }
+                }
+            }
+        };
+
+        const configData2 = {
+            item: {
+                fund_state: {
+                    name: "基金状态",
+                    type: "select",
+                    options: {
+                        "设立中": "设立中",
+                        "投资期": "投资期",
+                        "退出期": "退出期",
+                        "清算期": "清算期"
+                    }
+                },
+                priority: {
+                    name: "优先级",
+                    type: "select",
+                    options: {
+                        "高": "高",
+                        "中": "中",
+                        "低": "低"
+                    }
+                },
+                status: {
+                    name: "状态",
+                    type: "select",
+                    options: {
+                        "草稿": "草稿",
+                        "已提交": "已提交",
+                        "已审核": "已审核",
+                        "已发布": "已发布"
+                    }
+                }
+            }
+        };
+
+        // 模拟实体数据
+        const entityData = [
+            {
+                id: '1',
+                fields: {
+                    name: '基金A',
+                    fund_state: '设立中',
+                    priority: '高',
+                    status: '草稿',
+                    setup_date: '2020-01-01',
+                    duration: '5年'
+                }
+            },
+            {
+                id: '2',
+                fields: {
+                    name: '基金B',
+                    fund_state: '投资期',
+                    priority: '中',
+                    status: '已提交',
+                    setup_date: '2019-05-15',
+                    duration: '7年'
+                }
+            },
+            {
+                id: '3',
+                fields: {
+                    name: '基金C',
+                    fund_state: '退出期',
+                    priority: '低',
+                    status: '已审核',
+                    setup_date: '2018-03-20',
+                    duration: '10年'
+                }
+            },
+            {
+                id: '4',
+                fields: {
+                    name: '基金D',
+                    fund_state: '清算期',
+                    priority: '高',
+                    status: '草稿',
+                    setup_date: '2022-11-10',
+                    duration: '3年'
+                }
+            },
+            {
+                id: '5',
+                fields: {
+                    name: '基金E',
+                    fund_state: '设立中',
+                    priority: '中',
+                    status: '已提交',
+                    setup_date: '2021-02-28',
+                    duration: '6年'
+                }
+            }
+        ];
+
+        // 提取select类型字段
+        function extractSelectFields(config) {
+            const selectFields = {};
+            if (config.item) {
+                for (const [fieldName, fieldConfig] of Object.entries(config.item)) {
+                    if (fieldConfig.type === 'select' || fieldConfig.type === 'select_new') {
+                        selectFields[fieldName] = fieldConfig;
+                    }
+                }
+            }
+            return selectFields;
+        }
+
+        // 初始化看板
+        document.addEventListener('DOMContentLoaded', function() {
+            // 测试看板 1: 没有预设 selectedStatusField
+            const selectFields1 = extractSelectFields(configData1);
+            const kanbanRender1 = new KanbanRender('kanbanContainer1', {
+                entities: entityData,
+                item: configData1.item,
+                statusFields: selectFields1,
+                entityType: 'fund',
+                baseUrl: '/default/fund/'
+            });
+
+            // 测试看板 2: 有预设 selectedStatusField
+            const selectFields2 = extractSelectFields(configData2);
+            const kanbanRender2 = new KanbanRender('kanbanContainer2', {
+                entities: entityData,
+                item: configData2.item,
+                statusFields: selectFields2,
+                selectedStatusField: 'priority',
+                entityType: 'fund',
+                baseUrl: '/default/fund/'
+            });
+        });
+    </script>
+</body>
+</html>
