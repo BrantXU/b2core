@@ -13,7 +13,7 @@
 2. 配置数据保存两个文件版本：
    - JSON格式：`data/{tenant_id}/conf/{config_id}.json`
    - YAML格式：`data/{tenant_id}/conf/{config_id}.yaml`
-3. 配置清单保存在`data/{tenant_id}/conf.json`文件中，包含Id和key的对应清单以及按type汇总的对应清单。
+3. 配置清单保存在`data/{tenant_id}/conf.json`文件中，包含Id和key的对应清单以及按type汇总的对应清单。 
 4. 实体更新时保存缓存文件：`data/{tenant_id}/entity/{entity_id}.json`，包含实体的所有数据。
 5. 实体版本保存文件: `data/{tenant_id}/hist/{entity_id}/{hist_id}.json`，包含实体的所有数据。
 6. 配置版本保存文件 `data/{tenant_id}/conf_hist/{config_id}/{hist_id}.json`
@@ -63,7 +63,10 @@ http://localhost:8080/default/deal/view/about/0lcsmrzu
 
 如果需要登录使用账号admin 密码 admin
 
-
 测试和 debug 文件放在  www/test 目录下
 测试时使用租户下的数据库 data/default/db.sqlite
 测试时使用租户下的配置文件 data/default/conf.json
+data/default/conf.json 是所有配置文件的清单，具体的配置文件在 data/default/conf/ 目录下。
+
+
+*** data/default/conf.json 非常重要，因为它是配置文件的入口，所有的配置文件都需要在这个文件中注册。且我们很多业务逻辑是记录在配置文件里面的。

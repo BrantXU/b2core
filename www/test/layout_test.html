@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Layout配置测试</title>
+  <link href="/static/css/uikit.min.css" rel="stylesheet" type="text/css">
+  <link href="/static/css/ionicons.min.css" rel="stylesheet">
+  <script src="/static/js/uikit.min.js"></script>
+  <script src="/static/js/chart.js"></script>
+  <style>
+    .dashboard-container {
+      padding: 20px;
+    }
+    .widget {
+      margin-bottom: 20px;
+      border: 1px solid #e5e5e5;
+      border-radius: 5px;
+    }
+    .widget-header {
+      padding: 10px 15px;
+      background-color: #f8f8f8;
+      border-bottom: 1px solid #e5e5e5;
+      font-weight: bold;
+    }
+    .widget-content {
+      padding: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+    <h1>Layout配置测试</h1>
+    <div id="dashboard"></div>
+  </div>
+
+  <script>
+    // 模拟从服务器获取的layout配置
+    const layoutConfig = {
+      "layout": [
+        {
+          "type": "text",
+          "title": "欢迎来到我的仪表盘",
+          "width": 12,
+          "height": "auto",
+          "options": {
+            "text": "这是一个自定义的仪表盘"
+          }
+        },
+        {
+          "type": "chart",
+          "title": "销售趋势",
+          "width": 6,
+          "height": 400,
+          "options": {
+            "type": "line",
+            "data": {
+              "labels": ["周一", "周二", "周三", "周四", "周五", "周六", "周日"],
+              "datasets": [{
+                "label": "销售额",
+                "data": [120, 190, 300, 500, 200, 300, 400],
+                "borderColor": "rgb(75, 192, 192)",
+                "tension": 0.1
+              }]
+            }
+          }
+        },
+        {
+          "type": "chart",
+          "title": "用户分布",
+          "width": 6,
+          "height": 400,
+          "options": {
+            "type": "bar",
+            "data": {
+              "labels": ["产品A", "产品B", "产品C", "产品D", "产品E"],
+              "datasets": [{
+                "label": "用户数",
+                "data": [120, 190, 300, 500, 200],
+                "backgroundColor": [
+                  "rgba(255, 99, 132, 0.2)",
+                  "rgba(54, 162, 235, 0.2)",
+                  "rgba(255, 205, 86, 0.2)",
+                  "rgba(75, 192, 192, 0.2)",
+                  "rgba(153, 102, 255, 0.2)"
+                ],
+                "borderColor": [
+                  "rgb(255, 99, 132)",
+                  "rgb(54, 162, 235)",
+                  "rgb(255, 205, 86)",
+                  "rgb(75, 192, 192)",
+                  "rgb(153, 102, 255)"
+                ],
+                "borderWidth": 1
+              }]
+            }
+          }
+        }
+      ]
+    };
+
+    // 渲染仪表盘
+    function renderDashboard() {
+      const dashboard = document.getElementById('dashboard');
+      dashboard.innerHTML = '';
+
+      layoutConfig.layout.forEach(widget => {
+        const widgetElement = document.createElement('div');
+        widgetElement.className = 'widget';
+        widgetElement.style.width = `${(widget.width / 12) * 100}%`;
+        widgetElement.style.display = 'inline-block';
+        widgetElement.style.verticalAlign = 'top';
+
+        const header = document.createElement('div');
+        header.className = 'widget-header';
+        header.textContent = widget.title;
+
+        const content = document.createElement('div');
+        content.className = 'widget-content';
+
+        if (widget.type === 'text') {
+          content.innerHTML = `<p>${widget.options.text}</p>`;
+        } else if (widget.type === 'chart') {
+          const canvas = document.createElement('canvas');
+          content.appendChild(canvas);
+          
+          // 等待DOM更新后再渲染图表
+          setTimeout(() => {
+            const ctx = canvas.getContext('2d');
+            new Chart(ctx, {
+              type: widget.options.type,
+              data: widget.options.data,
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: widget.options.type === 'bar' ? {
+                  y: {
+                    beginAtZero: true
+                  }
+                } : {}
+              }
+            });
+            canvas.style.height = widget.height + 'px';
+          }, 0);
+        }
+
+        widgetElement.appendChild(header);
+        widgetElement.appendChild(content);
+        dashboard.appendChild(widgetElement);
+      });
+    }
+
+    // 页面加载完成后渲染仪表盘
+    document.addEventListener('DOMContentLoaded', renderDashboard);
+  </script>
+</body>
+</html>
