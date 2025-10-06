@@ -1,12 +1,23 @@
-body{background: #f6f6f6;line-height: 1.5;}
+/* 色彩变量定义 */
+:root {
+  --primary-color: #2196f5;         /* 主色调：明亮蓝色 */
+  --background-color: #fff;      /* 背景色：极浅灰 */
+  --secondary-color: #e0f2fe;       /* 辅助色：淡蓝色 */
+  --accent-color: #1976d2;          /* 强调色：比主色深一级的蓝色（适合菜单高亮） */
+  --text-color: #263238;            /* 文字色：深灰蓝 */
+}
+
+body{background: var(--background-color);line-height: 1.5;}
 del{color:#F33;}
 h3.uk-first-column{padding:0 15px;}
 .uk-form{max-width: 800px;}
 /* 移除网格间距覆盖，使用UKit默认间距 */
-.canvas{background: #fff;padding: 20px;}
+.canvas{background: var(--background-color);padding: 20px;}
 .container{padding: 0 10px;}
-a{color: #000;}
-.help-inline{color: #f00;}
+a{color: var(--primary-color);}
+.help-inline{color: var(--accent-color);}
+.uk-navbar-left{column-gap: 0;}
+.uk-logo{padding: 0 15px;}
 .top-menu li>a, .sub-menu li>a{min-height: 50px; padding: 0.3rem 0.5rem;}
 /* 调整导航菜单样式 */
 .uk-navbar-nav > li > a {
@@ -30,21 +41,21 @@ a{color: #000;}
 }
 /* 两排菜单样式 */
 .top-menu {
-    background: #f8f8f8;
+    background: var(--primary-color)!important;
     border-bottom: 1px solid #e5e5e5;
 }
 
 .sub-menu {
-    background: #fff;
+    background: var(--background-color);
     padding: 10px 0;
 }
 
 .sub-menu .uk-navbar-nav > li > a {
     line-height: 30px;
 }
-.top-menu li>a, .uk-dropdown-navbar .uk-nav-navbar li>a{min-height: 50px; padding: 0.3rem 1rem; background: #fff; color: #000; line-height: 50px;}
-.top-menu li>a:hover, .uk-dropdown-navbar .uk-nav-navbar li>a:hover{background: #f5f5f5;}
-.top-menu li.uk-active>a, .uk-dropdown-navbar .uk-nav-navbar li.uk-active>a{background: #e0e0e0; font-weight: bold;}
+.top-menu li>a, .uk-dropdown-navbar .uk-nav-navbar li>a{min-height: 50px; padding: 0.3rem 1rem; background: var(--primary-color); color: var(--background-color); line-height: 50px;}
+.top-menu li>a:hover, .uk-dropdown-navbar .uk-nav-navbar li>a:hover{background: var(--accent-color);}
+.top-menu li.uk-active>a, .uk-dropdown-navbar .uk-nav-navbar li.uk-active>a{background: var(--accent-color); color: var(--background-color); font-weight: bold;}
 .uk-navbar-nav, .uk-nav-navbar{gap:0px;}
 .usr-panel{float:right;}
 
@@ -63,11 +74,11 @@ a{color: #000;}
 
 .modal-content {
     position: relative;
-    background-color: #fff;
+    background-color: var(--background-color);
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     z-index: 1001;
 }
 
-.hd-title{padding:10px 15px;margin:10px 0;font-size:20px;background-color: #f9f9f9;}
+.hd-title{padding:10px 15px;margin:10px 0;font-size:20px;background-color: var(--secondary-color); color: var(--text-color);}

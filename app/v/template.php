@@ -26,6 +26,9 @@
   <!-- 顶部主菜单 -->
   <nav class="uk-navbar-container top-menu" uk-navbar>
     <div class="uk-navbar-left">
+      <a class="uk-navbar-item uk-logo" href="/">
+        <img src="/static/humdb_w.png" alt="Logo" style="height: 40px; width: auto;">
+      </a>
       <?=render_top_menu($menu_data)?>
     </div>
   </nav>

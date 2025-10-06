@@ -9,13 +9,13 @@
           key: '<?=addslashes($config['key'])?>',
           mod: '<?=renderConfigType($config['config_type'])?>',
           desc: '<?=addslashes($config['description'])?>',
-          time: '<?=addslashes($config['updated_at'])?>\n<?=addslashes($config['created_at'])?>'
+          time: '<?=addslashes($config['updated_at'])?>'
         },
       <?php endforeach; ?>
     ];
 
     const enhancer = new TableRender('configTable', {
-      pageSize: 10,
+      pageSize: 10,q
       searchable: true,
       sortable: true,
       enableCheckbox: true,
@@ -30,6 +30,5 @@
         time: { label: '时间', name: 'time' }
       }
     }, '<?=tenant_url('config/') ?>');
-    
   </script>
 </div>

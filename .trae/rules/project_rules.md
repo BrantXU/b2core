@@ -56,10 +56,10 @@ html 控件通过前端进行渲染。渲染代码在
 ## 浏览器测试
 可以参考这些地址测试
 列表页面
-http://localhost:8080/default/company/
+http://localhost:8000/default/company/
 
 详情页面
-http://localhost:8080/default/deal/view/about/0lcsmrzu
+http://localhost:8000/default/deal/view/about/0lcsmrzu
 
 如果需要登录使用账号admin 密码 admin
 
@@ -69,4 +69,7 @@ http://localhost:8080/default/deal/view/about/0lcsmrzu
 data/default/conf.json 是所有配置文件的清单，具体的配置文件在 data/default/conf/ 目录下。
 
 
-*** data/default/conf.json 非常重要，因为它是配置文件的入口，所有的配置文件都需要在这个文件中注册。且我们很多业务逻辑是记录在配置文件里面的。
+### 非常重要 
+默认服务器启动挂在 http://localhost:8000/ 
+data/default/conf.json ，因为它是配置文件的入口，所有的配置文件都需要在这个文件中注册。且我们很多业务逻辑是记录在配置文件里面的。
+data/default/conf/581734.json 是菜单配置文件，它记录了菜单的所有信息，包括菜单的名称和核心业务逻辑。
